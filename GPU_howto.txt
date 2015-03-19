@@ -1,0 +1,8 @@
+Code that runs on CUDA devices needs to be compiled specifically for the user's device. Compilation is done by evoking the function 'install.m' from Matlab. 'install.m' will compile two mex files 
+
+- fnearneigh_gpu.mexa64
+- rangesearch_all_gpu.mexa64
+
+from the corresponding *.cpp files using the library libgpuKnnLibrary.a. libgpuKnnLibrary.a contains uncompiled CUDA code for all devices to date (as of May 2013). 
+(Make sure, both mex files are within the TRENTOOL folder before starting any calculations.)
+

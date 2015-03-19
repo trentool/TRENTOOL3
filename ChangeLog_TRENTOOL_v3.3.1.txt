@@ -1,0 +1,97 @@
+%% TRENTOOL 3.3.1 Release Notes - 18/12/2014 - www.trentool.de 
+%
+%
+%	Main features:
+%		- speed up for interaction delay reconstruction
+%		- speed ups for group and single subject analysis
+%		- bug fixes in group analysis functions
+%		- TSTool functions are now integrated into TRENTOOL
+%		- deprecated functions now issue a warning 
+%	
+%	The toolbox now contains four example analysis folders in
+% 	'exampledata/' with analysis and plotting scripts.
+%
+
+InteractionDelayReconstruction_calculate.m
+	PW: TEprepare is now called only once for each data set, using the
+	max. requested value for u (previously it was called for every u, which doesn't make a difference for the
+	embedding parameter optimization)
+	PW: The interaction delay is now reconstructed by only calculating the
+	TE for all values for u and then testing only the value that maximizes
+	TE for statistical significance
+
+TEsurrogatestats.m, TEsurrogatestats_ensemble.m
+	PW: minor changes to fit the new work flow
+
+InteractionDelayReconstruction_analyze.m
+	PW: new criterion for opt u selection to fit the new work flow
+
+InteractionDelayReconstruction_plotting.m
+	PW: changed to fit the new work flow
+
+TEplot2D.m
+	PW: new option that allows the plotting of the graph analysis output
+	(plots flagged edges in red)
+	PW: plotting the head contour is now optional
+
+TEC_dsvalues.m, TEC_dsvalues_noSourceEmb.m
+	PW: TSTool functions are now called for all search points at once,
+	i.e. the function doesn't loop over neighbour searches per point -
+	this saves a lot of computational time
+	PW: bug fixes
+
+TEgetACT.m
+	PW: function that returns the ACT for the data, helps to determine
+	parameters for embedding optimization
+
+TEarch.m
+	PW: Adds the appropriate subfolder of the tstool_functions folder
+	(according to architecture and OS) - all functions calling TSTool
+	functions now no longer need to cd into the TSTool folder
+	(TEprepare.m, transferentropy.m, TEragwitz.m)
+
+TEgroup_prepare.m
+	PW: TEprepare is now called only once for each data set, using the
+	max. requested u 
+	PW: Parameter optimization is aborted if for any subject the max.
+	requested dim (ragdim) is found to be optimal for embedding; the max.
+	ragdim is then used for all data sets
+
+TEprepare.m
+	PW: Function now accepts scalar values for both ragtau and ragdim
+	PW: The path to TSTool is no longer a necessary parameter
+
+TEsurrogatestats_binomstats.m
+	PW: added three additional outputs (occurrences, bino_cdf,
+	occurr_thresh)
+	PW: bug fix - cfg.alpha wasn't used
+	PW: bug fix - 0 occurences of a link caused the function to crash
+
+TRENTOOL2BrainNet.m	
+	PW: bug fix in the edge coloring
+
+TEsurrogatestats_ensemble.m
+	PW: For debugging the neighbour counts can be written to disc
+
+private/transferentropy.m
+	PW: bug fix in the parfor loop (needed for running TRENTOOL with the parallel toolbox)
+	PW: changes to accomodate the new work flow for the reconstruction of interaction delays
+	
+private/TEcmc.m
+	PW: bug fix - threhsold for FDR correction was not calculated
+	correctly
+
+private/TEbacktracking.m
+	PW: changed the output format for alternative paths
+
+private/TEflagedges.m
+	PW: simplified the code and added documentation
+
+private/TEfindDelay.m
+	PW: optimizes the interaction delay by calculating all TE values w/o
+	doing surrogate testing
+
+The following functions are considered deprecated:
+	TEconditionstatssingle.m -> use TEgroup_prepare/TEgroup_stats instead
+	TEgroup_calculate.m -> use TEgroup_prepare/TEgroup_stats instead
+

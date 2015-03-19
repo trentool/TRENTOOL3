@@ -1,0 +1,284 @@
+function TGA=InteractionDelayReconstruction_analyze(cfg,data)
+
+% analyzes and compacts the output of InteractionDelayReconstruction_calculate
+%
+% the output of InteractionDelayReconstruction_calculate which serves as an input here
+% is a cell array of results from separate TEsurrogatestats processes --
+% each TEsurrogatestats has been called with an individual prediction
+% time u one, and the output is collected as one result of TEsurrogatestats
+% per cell (see below for details)
+% The ouput of InteractionDelayReconstruction_analyze looks like the output of
+% TEpermstats with a column for the optimal interaction
+%  delay (predicttime_u) added as a seventh column
+%
+% You can call this function directly as follows:
+%         dataout=TEprepare(cfg, data)
+%
+% * DEPENDENCIES
+%
+% * INPUT PARAMETERS
+%
+%   data           = output of InteractionDelayReconstruction_calculate. Cell array with as many
+%                        cells as predictime_u's that were scanned in InteractionDelayReconstruction_calculate.
+%                        Each cell contains the output of a call to TEsurrogatestats (TEpermtest and TEresult)
+%                        (see below for details)
+%
+%             TEpermtest
+%            .TEpermvalues  = matrix with size:
+%                             (channelpair,value)
+%                           The last dimension "value" includes:
+%                           1 - p_values of the statistic within the
+%                               distribution given by the permutations
+%                           2 - 1 (0), if the statistics is significant at
+%                               the prescribed alpha level (or not)
+%                           3 - 1 (0), if the statistics is significant
+%                               after correction for multiple comparisons
+%                               (or not)
+%                           4 - 1 (0), mean difference or tvalue of mean
+%                               difference depending on cfg.permstatstype
+%                           5 - 1 (0), if instantaneous mixing (volume
+%                               conduction) exists (or not)
+%            .TEmat         = matrix containing raw TE values for each
+%                             channel combination (channelcombi x trial for
+%                             TE estimation on CPU or channelcombi x 1 for
+%                             TE estimation using the ensemble method/GPU
+%                             estimation)
+%            .dimord        = dimensions of TEpermvalues
+%            .cfg           = configuration file used to calculate TE and
+%                             permtest
+%            .sgncmb        = labels of channel combinations (source ->
+%                             target)
+%            .numpermutation = number of permutations
+%            .ACT           = structure including
+%                .act       = ACT matrix (channelcombi x 2 x trial)
+%            .nr2cmc        = number of tests to correct for multiple
+%                             comparisons
+%            .TEprepare     = results of the function TEprepare from the
+%                             data
+%
+%            AND
+%
+%           TEresult             (= Output structure of the function tranferentropy)
+%          .TEmat       = resultmatrix including transfer entropy(TE)
+%                         values (channelpairs x u x trial)
+%          .MImat       = resultmatrix including mutual information (MI)
+%                         values (channelpairs x u x trial)
+%          .dimord      = 'channelpair_u_trial'; the dimensions of TEmat
+%                         and MImat
+%          .cfg         = configuration file used to calculate TE
+%          .trials      = trial numbers selected from raw dataset
+%          .act         = ACT matrix (channelcombi x 2 x trial)
+%          .sgncmb      = labels of channel combinations (source -> target)
+%          .TEprepare   = results of the function TEprepare from the
+%                         data
+%   if instantaneous mixing is found in the data, then another field will
+%   be added:
+%          .instantaneousmixing = matrix (channel x u) which indicates were
+%          the instantaneous mixings were found (1) or not (0).%
+%
+%  cfg     a configuration structure with the fields
+%
+%          .select_opt_u =  selects the way the optimal u is determined
+%                          optiomns are:
+%
+%                          'min_p' - optimal predictiontime u is the one
+%                          with the largest statistical distance (smallest
+%                          randomization p-value) to  surrogate data.
+%                          This option might be problematic with
+%                          respect to later testing of existence of
+%                          a link if not used on independent data first.
+%               
+%                          'max_TE' - optimal predictiontime u is the
+%                          one with the highest TE raw value (mean TE value
+%                          over trials). This is used as default when
+%                          determining the optimal information transfer
+%                          delay.
+%
+%                          'max_TEdiff' - optimal predictiontime u is the
+%                          one with the largest difference in the test
+%                          statistic between data and surrogates.
+%                          This option might be problematic if different
+%                          predictiontimes u lead to vastly different
+%                          embedding via the optimization in the ragwitz
+%                          criterion.
+%                                                                               
+%                         'product_evidence' - optimal predictiontime u is
+%                         the one which maximes the product (1-p)*TEdiff.
+%                         is is a statistically weighted measure of
+%                         TEdifferences between data and surrogates
+%                         (experimental feature)
+%
+%          .select_opt_u_pos= 'shortest' select the shortest u if multiple u's
+%                             optimize the target quantity (minimum p,
+%                             maximum TE difference); 'longest' select the
+%                             longest u that optimizes the target quantity
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation;
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY;
+% version2.0
+% (C) Michael Wibral, Raul Vicente and Michael Lindner 2012
+
+% CHANGELOG
+% Nicu Pampu:bugfix for the nan index (initial was without value when using function max) now set to 1 
+% 13-11-03 PW: add u-reconstruction for ensemble method
+% 13-27-06 PW: field .groupprepare is added to the ouptput if
+% TEprepare_group was run on the data previous to TE analysis
+% 13-12-11 PW: field .TEmat containing the raw TE values for each channel
+% combination is added to the ouptput, raw TE values are needed for the
+% group statistics
+% 27-11-14 PW: added option 'max_TE' for opt u selection
+
+NumOfUs    = length(data);           % the number of different prediction times u scanned in previous call to InteractionDelayReconstruction_calculate
+NumSgnCmbs = size(data{1}.sgncmb,1); % the number of signal combinations in the input, taken from the first cell
+
+% collect data into an efficient structure
+TGA = data{1}; % dummy copy, output structure
+
+% create a container to collect indivicual TEpermvalues into a 3-dim array
+TGA.TEpermvaluesTmp = nan([NumSgnCmbs NumOfUs]);
+
+% preallocate the output array
+TGA.TEpermvalues = zeros([NumSgnCmbs 5]);
+
+TGA.sgncmb=data{1}.sgncmb;
+% remove misleading old information
+%TGA=rmfield(TGA.cfg,'predicttime_u');
+
+TEDiffMat = nan(NumSgnCmbs,NumOfUs); % called TEDiffmat, because it contains TE values in the form of differences against surrogates
+TERawmat  = nan(NumSgnCmbs,NumOfUs); % collect all raw TE values, used for 'max_TE'
+uvec      = nan(NumOfUs,1);
+TEmat     = nan(size(data{1}.TEmat)); % remember the raw TE values, needed for group statistics
+
+
+% collect TEpermvalues tables for all u's into one temporary data structure
+for uu=1:NumOfUs
+    %TGA.TEpermvaluesTmp(:,:,uu) = data{uu}.TEpermvalues;
+    uvec(uu)                    = data{uu}.cfg.predicttime_u(1);
+    %TEDiffMat(:,uu)             = data{uu}.TEpermvalues(:,4);
+    TERawmat(:,uu)              = mean(data{uu}.TEmat,2);
+end
+
+minp    = nan(NumSgnCmbs,1);
+IdxMinP = nan(NumSgnCmbs,1);
+OptUTmp = nan(NumSgnCmbs,1);
+
+% loop over channel combinations
+for cc=1:NumSgnCmbs
+    
+     if strcmp(cfg.select_opt_u,'min_p') % look for the u with the smallest p-value
+         
+         % find the index of the optimal u
+         minp(cc)   = min(squeeze(TGA.TEpermvaluesTmp(cc,1,:)));
+         IdxMinPTmp = find(TGA.TEpermvaluesTmp(cc,1,:)==minp(cc));    
+         
+         if strcmp(cfg.select_opt_u_pos,'shortest')
+             IdxMinP(cc) = IdxMinPTmp(1); 
+         elseif strcmp(cfg.select_opt_u_pos,'longest')
+             IdxMinP(cc) = IdxMinPTmp(end);
+         end
+         
+         % get data according to the index of the optimal u
+         if ~isnan( IdxMinP(cc) )
+            TGA.TEpermvalues(cc,:) = TGA.TEpermvaluesTmp(cc,:,IdxMinP(cc));  % get line from TEpermvalues 
+            OptUTmp(cc)            = data{IdxMinP(cc)}.cfg.predicttime_u;    % get the u
+            TEmat(cc,:)            = data{IdxMinP(cc)}.TEmat(cc,:);          % get raw TE values
+         else % if all TEpermvalues have been nans then also set the final value to nan 
+            TGA.TEpermvalues(cc,:) = [1 0 0 NaN 1 0]; % p, sig(uncor), sig (corr), TE, volcond, delay 
+            OptUTmp(cc)            = 0;
+            TEmat(cc,:)            = zeros(size(data{1}.TEmat(cc,:)));
+         end
+         
+     elseif strcmp(cfg.select_opt_u,'max_TEdiff') % look for the u with the largest TE difference
+         
+         % find the index of the optimal u
+         maxTE       = max(squeeze(TGA.TEpermvaluesTmp(cc,4,:)));    % find the maximum TE difference over all u's
+         IdxMaxTETmp = find(TGA.TEpermvaluesTmp(cc,4,:)==maxTE);
+         
+         if isnan(maxTE)            % if the index is a nan, we set it manually, 
+           IdxMaxTE = 1;            % otherwhise MATLAB will produce an error
+         else              
+            if strcmp(cfg.select_opt_u_pos,'shortest')
+                 IdxMaxTE = IdxMaxTETmp(1);
+            elseif strcmp(cfg.select_opt_u_pos,'longest')
+                 IdxMaxTE = IdxMaxTETmp(end);
+            end
+         end  
+         
+         % get data according to the index of the optimal u
+         TGA.TEpermvalues(cc,:) = TGA.TEpermvaluesTmp(cc,:,IdxMaxTE);   % get line from TEpermvalues 
+         OptUTmp(cc)            = data{IdxMaxTE}.cfg.predicttime_u;     % get the u
+         TEmat(cc,:)            = data{IdxMaxTE}.TEmat(cc,:);           % get raw TE values
+         
+     elseif strcmp(cfg.select_opt_u,'product_evidence') % get a evidence weighted TEdifference metric
+         
+         % find the index of the optimal u
+         Product          = (1-squeeze(TGA.TEpermvaluesTmp(cc,1,:))) .* squeeze(TGA.TEpermvaluesTmp(cc,4,:));
+         maxProduct       = max(Product);
+         IdxMaxProductTmp = find(Product==maxProduct);
+         
+         if isnan(maxProduct)            % if the index is a nan, we set it manually, 
+            IdxMaxProduct = NaN;         % otherwhise MATLAB will produce an error
+         else       
+            if strcmp(cfg.select_opt_u_pos,'shortest')
+                IdxMaxProduct = IdxMaxProductTmp(1);
+            elseif strcmp(cfg.select_opt_u_pos,'longest')
+                IdxMaxProduct = IdxMaxProductTmp(end);
+            end  
+         end
+         
+         % get data according to the index of the optimal u         
+         if ~isnan( IdxMaxProduct )
+            TGA.TEpermvalues(cc,:) = TGA.TEpermvaluesTmp(cc,:,IdxMaxProduct);  % get line from TEpermvalues 
+            OptUTmp(cc)            = data{IdxMaxProduct}.cfg.predicttime_u;    % get the u
+            TEmat(cc,:)            = data{IdxMaxProduct}.TEmat(cc,:);          % get raw TE values
+         else % if all TEpermvalues have been nans then also set the final value to nan 
+            TGA.TEpermvalues(cc,:) = [1 0 0 NaN 1]; % p, sig(uncor), sig (corr), TE, volcond, delay 
+            OptUTmp(cc)            = 0;  
+            TEmat(cc,:)            = zeros(size(data{1}.TEmat(cc,:)));
+         end
+         
+     elseif strcmp(cfg.select_opt_u,'max_TE') % use the max. raw TE value to select the opt u
+         % find the index of the optimal u
+         [maxTE, IdxMaxTETmp] = max(TERawmat(cc,:));
+         
+         if isnan(maxTE)            % if the index is a nan, we set it manually,
+             IdxMaxTE = 1;            % otherwhise MATLAB will produce an error
+         else
+             if strcmp(cfg.select_opt_u_pos,'shortest')
+                 IdxMaxTE = IdxMaxTETmp(1);
+             elseif strcmp(cfg.select_opt_u_pos,'longest')
+                 IdxMaxTE = IdxMaxTETmp(end);
+             end
+         end
+         
+         % get data according to the index of the optimal u
+         %TGA.TEpermvalues(cc,:) = TGA.TEpermvaluesTmp(cc,:,IdxMaxTE);   % get line from TEpermvalues
+         OptUTmp(cc)            = data{IdxMaxTE}.cfg.predicttime_u(1);  % get the u
+         TEmat(cc,:)            = data{IdxMaxTE}.TEmat(cc,:);           % get raw TE values
+         
+     end
+end
+
+% insert the vector of optimal u-value and remove volume conduction (volume conduction will result in  u = 0 ms).
+if strcmp(data{1}.cfg.ensemblemethod,'yes')
+    
+    % do not correct for volume conduction, this is handled by the 
+    % mandatory use of the Faes-method
+    TGA.TEpermvalues(:,6)=(OptUTmp);    
+
+else
+    VolCondIndicator      = (ones(size(squeeze(TGA.TEpermvalues(:,5))))-squeeze(TGA.TEpermvalues(:,5))); % 0 for volume conduction, 1 for OK
+    TGA.TEpermvalues(:,6) = (OptUTmp).*VolCondIndicator;
+end;
+
+% add additional parameters to the output
+TGA.TEmat     = TEmat;
+TGA.uvec      = uvec;
+%TGA.TEDiffMat = TEDiffMat;
+if isfield(data{1},'groupprepare')
+    TGA.groupprepare = data{1}.groupprepare;
+end

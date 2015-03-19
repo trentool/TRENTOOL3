@@ -1,0 +1,66 @@
+function data = TEfindDelay(predicttimevec_u,cfgTESS,data)
+
+% FUNCTION TEFINDDELAY
+%
+% Reconstructs optimal interaction delay u from a vector of assumed delays.
+% The function estimates TE for all channels and all interaction delays and
+% returns the optimal interaction delay as the value for u that maximizes
+% the TE. 
+%
+% INPUT
+%   predicttimevector_u - vector with interaction delays to be scanned
+%   cfgTESS             - cfg structure for calls to TEsurrogatestats or
+%                         TEsurrogatestats_ensemble
+%   data   		- data that has already undergone preparation by TEprepare
+%
+% OUTPUT
+%   data - data, where the prediction time in fields of data.TEprepare are
+%	   replaced by a vector of the optimal interaction delay for each
+%	   channel combination. The following fields are changed by the
+%	   function:
+%		data.TEprepare.u_in_ms
+%		data.TEprepare.u_in_samples
+%		data.TEprepare.cfg.predicttime_u
+%
+% PW 27/11/2014
+
+fprintf('Finding optimal information transfer delay ...\n\n');
+
+cfgTESS.numpermutation = 'findDelay';
+TGA_results = cell(1, length(predicttimevec_u));
+predicttimevec_u_samples = round(predicttimevec_u/1000*data.fsample);
+fileidout = cfgTESS.fileidout;
+n_channelcombis = size(data.TEprepare.channelcombilabel,1);
+
+for uu=1:max(size(predicttimevec_u))
+    
+    fprintf('Calling TEsurrogatestats with u = %.0f ms\n', predicttimevec_u(uu));
+    
+    data.TEprepare.cfg.predicttime_u = repmat(predicttimevec_u(uu), n_channelcombis, 1);
+    data.TEprepare.u_in_samples      = repmat(predicttimevec_u_samples(uu), n_channelcombis, 1);
+    
+    % update fileidout to include information on u    
+    cfgTESS.fileidout=strcat(fileidout,'_RAG4_TGA_u_',num2str(predicttimevec_u(uu)));
+        
+    % branch here for GPU calculation    
+    if strcmp(data.TEprepare.ensemblemethod,'yes')
+        TGA_results{uu}=TEsurrogatestats_ensemble(cfgTESS,data);
+    else
+        TGA_results{uu}=TEsurrogatestats(cfgTESS,data);
+    end
+    
+    if isfield(data,'groupprepare')
+        TGA_results{uu}.groupprepare = data.groupprepare;
+    end
+
+end
+
+cfgTGAA = [];
+cfgTGAA.select_opt_u = 'max_TE';
+cfgTGAA.select_opt_u_pos = 'shortest';
+TGA = InteractionDelayReconstruction_analyze(cfgTGAA,TGA_results);
+
+opt_u_vec = TGA.TEpermvalues(:,end);
+data.TEprepare.u_in_ms = opt_u_vec;
+data.TEprepare.u_in_samples = round(opt_u_vec/1000*data.fsample);
+data.TEprepare.cfg.predicttime_u = opt_u_vec;
