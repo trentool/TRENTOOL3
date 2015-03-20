@@ -1,0 +1,266 @@
+/*
+You are allowed to do whatever you want with this layout. Though I would be pleased if you placed a link on your site to csseasy.com or to profit42.com (best "blog about hacking" ever). Donations are also welcome: paypal@profit42.com (or follow the donation button on csseasy.com)
+*/
+html {
+	overflow-y: scroll;
+}
+
+body {
+	width:750px;
+	margin:0 auto;
+	margin-top:30px;
+	/*font-family: Arial, Helvetica, Verdana, Sans-serif;*/
+	font-family: Helvetica, Verdana, Arial, Sans-serif;
+	font-size: 13px;
+	color: #5e5e5e;
+	background: #f5f5f5; /*light grey*/
+	/*background: #dcdcdc;*/ /*dark grey*/
+	text-align: left;
+	padding-bottom: 25px;
+}
+
+ol li{
+	padding-bottom: 5px;
+}
+
+ul li{
+	padding-bottom: 5px;
+	line-height: 1.5;
+}
+
+
+/* ----- HEADER ----- */
+
+#header {
+width:750px;
+height:120px;
+background-color:#ffffff;
+border: 2px solid #dcdcdc;
+}
+
+#altnav {
+	width:250px;
+	height:30px;
+	background-color:#ffffff;
+	text-align: right;
+	/*padding-bottom: 5px; 
+	padding-right: 5px; */
+	font-family: Tahoma, Arial, Helvetica, Sans-serif;
+	font-size: 10px;
+	/*border-bottom: 1px solid #dcdcdc;*/
+	padding: 0px;
+	float:right;
+}
+
+#altnav a {
+	color: #5e5e5e;
+	text-decoration: none;
+}
+
+#altnav a:hover {
+	/*color: #db6d16;*/
+	color: #b0c4de;
+	text-decoration: underline;
+}
+
+#altnav p {	
+	padding-right: 20px;
+	padding-top: 5px;
+}
+
+#logo {
+	width:500px;
+	height:100px;
+	background-color:#ffffff;
+	float:left;
+}
+
+
+/* FAUX LAYOUT WRAPPER */
+
+
+/* 
+This div is optional: When you delete it the navigation bar and the content block won't have the same size when one of them has a larger height then the other. I recommend you to leave this faux layout wrapper here.
+
+IMPORTANT: In order to make this work you have to download http://csseasy.com/layouts/fixed/background_3.gif (copy past in your address bar) and place it in the same folder as this html file. DON'T HOTLINK to this file.
+*/
+
+
+#wrapper{
+width:754px;
+background:url(background_3.gif) repeat-y; /* WARNING: IF YOU CHANGE THE COLORS OF THE LAYOUT YOU HAVE TO CHANGE THIS IMAGE! */
+overflow:auto; /* USE FIREFOX GUYS! WE ONLY NEED THIS LINE BECAUSE INTERNET EXPLODER ISN'T READING CODE PROPERLY */
+margin-top:10px;
+}
+
+
+/* ----- NAVIGATION ----- */
+
+
+
+#navigation {
+width:130px;
+min-height:500px; /* for modern browsers */
+height:auto !important; /* for modern browsers */
+height:500px; /* for IE5.x and IE6 */
+background-color:#ffffff;
+float:left;
+border: 2px solid #dcdcdc;
+/* 
+	padding-left: 11px; 
+	padding-top: 1px; 
+	padding-bottom: 1px; 
+	background: #ffffff;
+	border-top: 2px solid #dcdcdc;
+	border-bottom: 2px solid #dcdcdc;*/
+} 
+
+#navigation a {
+	color: #5e5e5e;
+	text-decoration: none;
+}
+
+#navigation a:hover {
+	/*color: #db6d16;*/
+	color: #b0c4de;
+}
+
+#navigation p {	
+}
+
+/*#navigation dt { float: left; }*/
+
+
+/* stack definition titles left to right.*/
+#navigation dt a {
+padding-left: 10px;
+line-height: 2;
+}
+
+body.HOME dt#HOME,
+body.HOME dt#HOME a,
+body.HOME dt#HOME a:hover,
+body.NEWS dt#NEWS,
+body.NEWS dt#NEWS a,
+body.NEWS dt#NEWS a:hover,
+body.DOWNLOAD dt#DOWNLOAD,
+body.DOWNLOAD dt#DOWNLOAD a,
+body.DOWNLOAD dt#DOWNLOAD a:hover,
+body.MANUAL dt#MANUAL,
+body.MANUAL dt#MANUAL a,
+body.MANUAL dt#MANUAL a:hover,
+body.CONTACT dt#CONTACT,
+body.CONTACT dt#CONTACT a,
+body.CONTACT dt#CONTACT a:hover{
+	/*color: #4682b4;
+	text-decoration: underline;*/
+	color: #ffffff;
+	background: #b0c4de;
+} 
+
+#twitter{
+	border-top: 1px solid #dcdcdc;
+	border-bottom: 1px solid #dcdcdc;
+}
+
+#twitter p{
+	padding-left: 5px;
+}
+
+/* ----- MAIN CONTENT ----- */
+
+
+
+#content { 
+margin-left:140px;
+width:610px;
+min-height:500px; /* for modern browsers */
+height:auto !important; /* for modern browsers */
+height:500px; /* for IE5.x and IE6 */
+background-color:#ffffff;
+border: 2px solid #dcdcdc;
+}
+
+#padding{
+width:400px;
+padding-top: 5px;
+padding-left: 15px;
+padding-right: 10px;
+padding-bottom: 20px;
+line-height: 1.7;
+}
+
+#padding a{
+	text-decoration: none;
+	font-weight: bold;
+	color: #5e5e5e;
+}
+
+#padding a:hover {
+	color: #b0c4de;
+}
+
+#padding_wide{
+padding-top: 5px;
+padding-left: 15px;
+padding-right: 40px;
+padding-bottom: 20px;
+line-height: 1.7;
+}
+
+#padding_wide a{
+	text-decoration: none;
+	font-weight: bold;
+	color: #5e5e5e;
+}
+
+#padding_wide a:hover {
+	color: #b0c4de;
+}
+
+/* ----- SIDEBAR ----- */
+
+#sidebar {
+	float: right;
+	width: 150px;
+	line-height: 18px;
+	font-family: Arial, Helvetica, Verdana, Sans-serif;
+	font-size: 11px;
+	/*font-style: italic;
+	border-left: 1px solid #89388b;
+	border-bottom: 1px solid #89388b;*/
+}
+
+#sidebar p {
+	padding: 5px;
+	padding-right: 15px;
+	padding-bottom: 15px;
+}
+
+#sidebar h2 {
+	margin: 0;
+	padding: 0;
+	padding-bottom: 15px;
+}
+
+
+/* ----- FOOTER ----- */
+
+
+
+#footer { 
+	margin-top:10px;
+	width:750px;
+	height:100px;
+	background-color:#ffffff;
+	font-family: Tahoma, Arial, Helvetica, Sans-serif;
+	font-size: 10px;
+	line-height: 2;
+	border: 2px solid #dcdcdc;
+}
+
+#footer p{ 
+	padding-left: 10px;
+	padding-right: 10px;
+	
+}
