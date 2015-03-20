@@ -185,7 +185,7 @@ channelxcoords = xcoord(usedchannels);
 channelycoords = ycoord(usedchannels);
 channelindex   = index(usedchannels);
 channelnames   = layout_labels(usedchannels);
-
+channelnames   = strrep(channelnames,'_',' ');
 
 %% find sigificant link (either corrected or uncorrected)
 
@@ -212,27 +212,27 @@ cmap = colormap;
 switch cfg.linktype
     case 'sign'
         acolor = repmat(cfg.arrowcolor, sum(linkind), 1);
-        minval = 1;
+        minval = 1;       % scaling for color bar axis
         maxval = 1;
     case 'pval'
         linkind = data.TEpermvalues(linkind,1) > cfg.threshold;
         pval    = data.TEpermvalues(linkind,1);
         acolor  = getColorMap(pval,cmap);
-        minval = min(pval);
+        minval = min(pval);       % scaling for color bar axis
         maxval = max(pval);
         stepsize = ceil(length(unique(pval))/5);
     case 'rawdist'
         linkind = data.TEpermvalues(linkind,4) > cfg.threshold;
         rawdist = data.TEpermvalues(linkind,4); 
         acolor = getColorMap(rawdist,cmap);
-        minval = min(rawdist);
+        minval = min(rawdist);       % scaling for color bar axis
         maxval = max(rawdist);
         stepsize = ceil(length(unique(rawdist))/5);
     case 'noccur'       % works for output of TEsurrogate_binomstats only
         if ~isfield(data, 'occurrences')
             error('TRENTOOL ERROR: To use ''noccur'' as linktype, data has to come from TEsurrogate_binomstats.m.')
         end;
-        linkind = data.occurrences(linkind) > cfg.threshold;
+        linkind = data.occurrences .* linkind > cfg.threshold & linkind;    % threshold data if requested
         noccur  = data.occurrences(linkind); 
         acolor  = getColorMap(noccur,cmap);
         minval = min(noccur);       % scaling for color bar axis
@@ -245,7 +245,13 @@ switch cfg.linktype
         acolor(graphres == 2,:) = repmat([1 0 0], sum(graphres == 2), 1); % 2 = cascade effect
         acolor(graphres == 3,:) = repmat([0 1 0], sum(graphres == 3), 1); % 3 = cascade effect triangle
         acolor(graphres == 4,:) = repmat([1 1 0], sum(graphres == 4), 1); % 4 = common drive link triangle
+        minval = 2;
+        maxval = 4;
 end   
+
+if minval == maxval;
+    minval = maxval - stepsize;
+end
 
 nlinks = sum(linkind);
 X = zeros(nlinks,2);
@@ -269,6 +275,9 @@ tip   = rmax*1.15; base = rmax-.004;
 EarX  = [.497 .510 .518 .5299 .5419 .54 .547 .532 .510 .489];
 EarY  = [.0555 .0775 .0783 .0746 .0555 -.0055 -.0932 -.1313 -.1384 -.1199];
 hold on
+
+% set background to white
+% set(gcf, 'Color', 'w');
 
 % plot head, ears, and nose
 if strcmp(cfg.head, 'on');
@@ -318,7 +327,7 @@ set(gca, 'YLim', [-0.5 .6],...
 if cfg.colorbar
     
     if ~strcmp(cfg.linktype,'graphres')
-        cbh = colorbar;
+        cbh = colorbar;        
         caxis([minval maxval]);
         set(cbh, ...
             'YTick',minval:stepsize:maxval, ...
