@@ -142,6 +142,8 @@ function [data_paths,cfg] = TEgraphanalysis(cfg,data);
 %             had no predecessors)
 %
 % 2014-03-21: PW added the list of triangles to the output
+%
+% 2015-03-20: PW changed the output structure if no paths are found
 
 
 % check if a threshold is provided
@@ -329,13 +331,6 @@ ft_progress('close');
 data_paths.graphanalysis = graphanalysis;
 data_paths.graphanalysis.cfg = cfg;
 
-% update TEsteps
-if ~isfield(data,'TEsteps')      %adding structure with changings; added modified by nicu
-    data_paths.TEsteps = 'GA';
-else
-    data_paths.TEsteps = strcat(data.TEsteps,'_GA');
-end
-
 % flag all edges to which alternative paths exist
 if ~isempty(all_paths)
     
@@ -347,8 +342,16 @@ if ~isempty(all_paths)
     data_paths.graphanalysis.triangle_nodes = triangle_nodes;
     
 else
+    data_paths = data;
+    data_paths.graphanalysis = graphanalysis;
     disp('No alternative paths were found!')
 end;
 
+% update TEsteps
+if ~isfield(data,'TEsteps')      %adding structure with changings; added modified by nicu
+    data_paths.TEsteps = 'GA';
+else
+    data_paths.TEsteps = strcat(data.TEsteps,'_GA');
+end
 
 ft_progress('close');
