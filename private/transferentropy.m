@@ -159,7 +159,8 @@ function [TEresult]=transferentropy(cfg, data, varargin)
 % TEC_dsvalues.m, variable 'exec_type' was renamed to 'Theiler_ACT' and now
 % takes values '1' for ACT used for Theiler T or '0' for user defined 
 % TheilerT
-
+% 2015-04-17: PW added a check for scalar delays that lets users call 
+% TEsurrogatestats without calling InteractionDelayReconstruction_calculate
 
 
 %% Remember the working directory
