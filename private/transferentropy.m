@@ -309,6 +309,10 @@ timeindices = data.TEprepare.timeindices;
 dimu = data.TEprepare.u_in_samples;
 %dimu = round(cfg.predicttime_u/1000*data.fsample);
 
+if isscalar(dimu)
+    dimu = repmat(dimu, 1, size(channelcombi,1));
+end
+
 
 % create empty result structure
 TEresult=[];
