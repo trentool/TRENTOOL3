@@ -1,0 +1,7 @@
+- TEPREPARE: What values should I write into the field cfgTEP.
+	o predicttime*: this is the range of the assumed delay u between any two channels in your data. TRENTOOL will estimate TE for each of these assumed values and check for which u the TE becomes maximal - this u will then be used as the reconstructed interaction delay \delat
+	o actthrvalue: This is a threshold value, if the actual ACT is higher for individual trials, these trials will be excluded from the analysis. The value you put here should be based on the filtering of the data prior to TE analysis: if you highpass filtered your data at 10 Hz and have a sampling rate of 1200Hz, you shouldn't find any autocorrelation above 120 samples. Thus, you may use 120 as a threshold here.
+	o maxlag: maximum lag in samples used to calculate the ACT for individual trials, have the number of sample points is a good rule of thumb
+	o minnrtrials: minimum no. trials needed for analysis, if the number of trials falls below this threshold because of trials being rejected due to a high ACT, analysis will abort (should at least be set to 12 to enable premutation statistics over trials)
+	o ragtaurange: 0.2 to 0.5 are recommended values for standard MEEG data sets (this is in units of the ACT, i.e., round(0.3*ACT) is the number of samples used as tau for a trial)
+	o ragdim: 2 to 12 are recommended values for standard MEEG data sets 

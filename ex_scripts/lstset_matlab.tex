@@ -1,0 +1,61 @@
+% layout for MATLAB listings used in the TRENTOOL documentation
+
+% define colors used in listings
+\definecolor{lightgray}{RGB}{230,230,230}
+\definecolor{lightyellow}{RGB}{252,245,224}
+\definecolor{keyblue}{RGB}{20,7,252}
+\definecolor{commentgreen}{RGB}{83,133,50}
+\definecolor{stringpink}{RGB}{197,73,205}
+
+% FONTS:
+%\textrm{..}	 \rmfamily	 Römisch
+%\textit{..}	 \itshape	 Schräger Text (auch \emph{})
+%\textbf{..}	 \bfseries	 Fetter Text
+%\textsc{..}	 \scshape	 Text in Kapitälchen
+%\texttt{..}	 \ttfamily	 Schreibmaschinentext
+%\textnormal{..}	 \normalfont	 Standardfont im Dokument
+
+\lstset{
+basicstyle=\footnotesize\ttfamily, 
+keywordstyle=\bfseries\color{keyblue},
+commentstyle=\color{commentgreen},
+stringstyle=\color{stringpink},
+numbers=left,                   % where to put the line-numbers
+numberstyle=\tiny,      % the size of the fonts that are used for the line-numbers
+stepnumber=1,                   % the step between two line-numbers. If it's 1, each line 
+numbersep=5pt,                  % how far the line-numbers are from the code
+backgroundcolor=\color{lightyellow},  % choose the background color. You must add \usepackage{color}
+showspaces=false,
+breaklines=true,
+}
+
+%\lstset{ %
+%language=Matlab,                % the language of the code
+%basicstyle=\footnotesize       % the size of the fonts that are used for the code
+%basicstyle=\scriptsize\ttfamily,
+
+%keywordstyle=\bfseries,\color{blue},
+%identifierstyle=,
+%commentstyle=\color{lightgray},	
+%stringstyle=\itshape\color{magenta},
+%
+%numbers=left,                   % where to put the line-numbers
+%numberstyle=\tiny,      % the size of the fonts that are used for the line-numbers
+%stepnumber=1,                   % the step between two line-numbers. If it's 1, each line 
+%                                % will be numbered
+%numbersep=5pt,                  % how far the line-numbers are from the code
+%backgroundcolor=\color{lightgray},  % choose the background color. You must add \usepackage{color}
+%showspaces=false,               % show spaces adding particular underscores
+%showstringspaces=false,         % underline spaces within strings
+%showtabs=false,                 % show tabs within strings adding particular underscores
+%%frame=single,                   % adds a frame around the code
+%tabsize=2,                      % sets default tabsize to 2 spaces
+%captionpos=t,                   % sets the caption-position to bottom
+%breaklines=true,                % sets automatic line breaking
+%breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+%%title=\lstname,                 % show the filename of files included with \lstinputlisting;
+%                                % also try caption instead of title
+%escapeinside={\%*}{*)},         % if you want to add a comment within your code
+%morekeywords={*,...},            % if you want to add more keywords to the set
+%float=H,
+%}
