@@ -32,12 +32,6 @@ body {
   width:100%;
 }
 
-p {
-  font-size: 14;
-  font-family: Helvetica Narrow, Verdana, Arial, Sans-serif;
-  line-height: 140%;
-}
-
 a {
   text-decoration: none;
   color: #5e5e5e;
