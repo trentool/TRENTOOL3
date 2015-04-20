@@ -1,64 +1,40 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
+
 <head>
-<link rel="stylesheet" type="text/css" href="css/master.css">
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-<title>TRENTOOL - Home</title>
-<style type="text/css">
-
-</style>
+  <link rel="stylesheet" type="text/css" href="css/master.css">
+  <link rel="shortcut icon" type="image/x-icon" href="images/favicon.png">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <title>TRENTOOL - Home</title>
 </head>
-<body  class="NEWS">
 
-<div id="header">
-	
-	<div id="logo">
+<body class="HOME">
+
+<div class="header">
+
+  <div class="container">
+
+      <div class="logo">
 		<img width="400"  alt="(c)2014 Ute Wibral" title="(c)2014 Ute Wibral" src="images/Logo.png" style="padding-left:20px;padding-top:10px;text-align:center;"/>
-	</div>
-	<div id="altnav">
-			<p>
-			<a href="index.html">Home</a> - 
-			<a href="download.html">Download</a> -
-			<!--<a href="sitemap.html">Sitemap</a> --->
-			<a href="contact.html">Contact</a>
-			</p>
-	</div>
-</div>
-	
-<div id="wrapper">
+      </div>
 
-	<div id="navigation">
-		<!--<p>
-		<a href="index.html">Home</a> <br>
-		<a href="news.html">News</a> <br>
-		<a href="highscore.html">Download</a> <br>
-		<a href="manual.html">Manual</a> <br>
-		<a href="contact.html">Contact</a> <br>
-		</p>-->
-		<p>
-		<dl>
-		    <dt id="HOME"><a href="index.html">Home</a></dt>
-		    <dt id="NEWS"><a href="news.html">News</a></dt>
-		    <dt id="DOWNLOAD"><a href="download.html">Download</a></dt>
-		    <dt id="CONTACT"><a href="contact.html">Contact &amp; Links</a></dt>
-	    </dl>
-		</p>
-		
-		<!--
-		<div id="twitter">
-			<p>
-			TWITTER
-			</p>
-			</div>-->
-		</div>
-		
-		
-	<div id="content">		
-		
-		<div id="padding_wide">
-			<h2>News and Current Status</h2>
-			<p>
-			<ul>
+      <div class="nav">
+	<ul class="navigation">
+	<li><a href="contact.html">Contact</a></li>
+	<li class="highlight"><a href="news.html">News</a></li>
+	<li><a href="download.html">Download</a></li>	
+	<li><a href="index.html">Home</a></li>
+	</ul>
+      </div>
+      
+  </div>
+</div>
+
+<div class="container">
+    <div class="content">
+      <h1>News</h1>
+      <p>
+      	<ul class="newslist">
 			
 			<li> <strong>2015-02-06 Attention MAC users:</strong> At the TRENTOOL workshop at UCL we noticed that TRENTOOL doesn't work for mac because of missing mex files for the maci64 archtitecture. <strong>This is fixed in the latest version of TRENTOOL3 - TRENTOOL now supports 64bit Mac architectures.</strong>
 
@@ -72,25 +48,24 @@
 			<li> <strong>2013-06-21</strong> Thanks to the very hard work of Mario Martinez Zarzuela and Patricia Wollstadt a stable TRENTOOL version for the analysis of non stationary data via the ensemble method of Gomez-Herrero and Vicente (<a href="http://arxiv.org/abs/1008.0539" target="_blank">http://arxiv.org/abs/1008.0539</a>) is available. Note that you will need a larger amount of trials than usual to make this work nicely (at least 150 trials of 100ms at 1.2kHz sampling rate is recommended). Due to the necessary changes in surrogate statistics for the ensemble method, this will  only run with GPU acceleration. The code for the next neighbour search on GPU was written by Mario in CUDA. When 'installing' TRENTOOL you will now have to run a little compiler script in MATLAB to compile the CUDA code for your card (if you want to use this functionality). To use it, you will need a CUDA capable graphics card. There is no need to heavily invest though as a GTX 580 should work (the algorithm uses single precision arithmetics for now, as this is what our EEGs and MEGs deliver in useful resolution anyway). Download the latest version (3.0) <a href="download.html">here</a>.
 
 			<li> <strong>2013-04-02</strong> Analysis of non-stationary time series is now possible: New routines for the ensemble approach suggest by Gomez-Herrero and Raul Vicente (here), have been implemented together with the corresponding statistical tools by Mario Martinez Zarzuela and Patricia Wollstadt. You will need a CUDA-capable GPU (e.g. gtx580 is fine) to run this code. Contact us via email for a beta version of the code.
+			
+			
 
 			</ul>
-			</p>
-			</div>	
-	</div>		
-		
-<div id="footer">
-	<p>
-	Coypright &copy; 2009, Michael Lindner, Raul Vicente and Michael Wibral<br>
-	Coypright &copy; 2012, Michael Lindner, Raul Vicente, Michael Wibral, Nicu Pampu and Patricia Wollstadt<br>
-	Coypright &copy; 2012, Michael Lindner, Raul Vicente, Michael Wibral, Nicu Pampu and Patricia Wollstadt, Mario Martinez-Zarzuela
-	</p>
-</div>
-
+      </p>
+    </div>
+    
+  </div>
+    <div class="footer">
+    Coypright &copy; 2009, Michael Lindner, Raul Vicente and Michael Wibral <br>
+    Coypright &copy; 2012, Michael Lindner, Raul Vicente, Michael Wibral, Nicu Pampu and Patricia Wollstadt <br>
+    Coypright &copy; 2012, Michael Lindner, Raul Vicente, Michael Wibral, Nicu Pampu and Patricia Wollstadt, Mario Martinez-Zarzuela 
+  </div>
 	
-	<!-- This makes a GitHub ribbon and is copied verbatim from 
-	https://github.com/blog/273-github-ribbons
-	<a href="https://github.com/trentool/TRENTOOL3"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/a6677b08c955af8400f44c6298f40e7d19cc5b2d/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png"></a> -->
-	<a href="https://github.com/trentool/TRENTOOL3"><img style="position: absolute; top: 0; left: 0; border: 0;" src="https://camo.githubusercontent.com/c6625ac1f3ee0a12250227cf83ce904423abf351/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f6c6566745f677261795f3664366436642e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_left_gray_6d6d6d.png"></a>
 	
+<!-- This makes a GitHub ribbon and is copied verbatim from 
+     https://github.com/blog/273-github-ribbons
+<a href="https://github.com/trentool/TRENTOOL3"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/a6677b08c955af8400f44c6298f40e7d19cc5b2d/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png"></a> -->
+<a href="https://github.com/trentool/TRENTOOL3"><img style="position: absolute; top: 0; left: 0; border: 0;" src="https://camo.githubusercontent.com/c6625ac1f3ee0a12250227cf83ce904423abf351/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f6c6566745f677261795f3664366436642e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_left_gray_6d6d6d.png"></a>
 </body>
 </html>
