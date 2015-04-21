@@ -61,7 +61,11 @@ function [data_paths,cfg] = TEgraphanalysis(cfg,data);
 %                       original alpha level (0)
 %
 %   data
-%       .sgncmb       = sgncmb used for definition of edges and vertices
+%       .TEprepare.channelcombi = 2xN matrix that defines analyzed channel
+%                                 combinations by indices, indexing the
+%                                 field channellabel
+%       .TEprepare.channellabel = list of strings holding channel labels
+%
 %       .TEpermvalues = matrix with size channelpair x 6
 %                           The second dimension includes (row-wise):
 %                           1 - p_values of the statistic within the
@@ -103,8 +107,8 @@ function [data_paths,cfg] = TEgraphanalysis(cfg,data);
 %                          density    = graph density, defined as
 %                                       dens = E/(V*(V-1))
 %                                       V = n_vertices and E = n_edges
-%                          threshold  = user provided threshold (see INPUT
-%                                       PARAMETERS)
+%                          cfg        = user provided analysis parameters
+%                                       (see INPUT PARAMETERS)
 %
 % PW - 07/09/2012
 %
@@ -187,8 +191,8 @@ n_edges         = length(edges4analysis);
 % generate output structure, graph-related info goes into a seperate substructure
 fprintf(['no of edges: ' num2str(n_edges) ', no of vertices: ' num2str(n_vertices) '\n\n']);
 graphanalysis = [];
-graphanalysis.edges = n_edges;
-graphanalysis.vertices = n_vertices;
+graphanalysis.n_edges = n_edges;
+graphanalysis.n_vertices = n_vertices;
 graphanalysis.density  = getDensity(n_edges,n_vertices);
 graphanalysis.TEpermvalues_old = data.TEpermvalues;
 
@@ -327,17 +331,16 @@ ft_progress('close');
 
 %% prepare output
 
-% add alternative paths and graph info to datastructure
-data_paths.graphanalysis = graphanalysis;
-data_paths.graphanalysis.cfg = cfg;
-
 % flag all edges to which alternative paths exist
 if ~isempty(all_paths)
     
     disp(['Alternative paths were found for ' num2str(size(all_paths,1)) ...
         ' of ' num2str(n_edges) ' edges.']);
-
-    [data_paths, triangle_edges, triangle_nodes] = TEflagedges(data,all_paths,edges4analysis,edges_original);
+    
+    % add alternative paths and graph info to datastructure
+    [data_paths, triangle_edges, triangle_nodes] = TEflagedges(data,all_paths,edges4analysis,edges_original);    
+    data_paths.graphanalysis = graphanalysis;
+    data_paths.graphanalysis.cfg = cfg;
     data_paths.graphanalysis.triangle_edges = triangle_edges;
     data_paths.graphanalysis.triangle_nodes = triangle_nodes;
     
