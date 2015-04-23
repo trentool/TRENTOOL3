@@ -247,6 +247,8 @@ function DataOut=TEprepare(varargin)
 %
 % 2014-10-08: PW changed the checks for the ragtau/ragdim, such that scalar
 % values can now be entered for both parameters
+%
+% 2015-23-04: PW removed the warning about u having to be bigger than half the ACT
 
 %% Remember the working directory
 working_directory = pwd;
@@ -752,11 +754,6 @@ else
             end
         end
     
-        
-        if TEprepare.u_in_samples < 0.5*min(max(ACT(:,targetchannel,:)))
-            fprintf(['\nTRENTOOL WARNING: cfg.predicttime_u is too small! should be bigger than half the autocorrelation time: ', num2str(  .5*min(max(ACT(:,targetchannel,:)))/data.fsample*1000 )]);
-        end
-        
         % create matrices with nans
         optdim = nan(size(channelcombi,1),max(nrtrials(:,targetchannel)));
         opttau = nan(size(channelcombi,1),max(nrtrials(:,targetchannel)));
