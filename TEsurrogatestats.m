@@ -499,7 +499,7 @@ nr2cmc=size(data.TEprepare.channelcombilabel,1);
 if ~isfield(cfg, 'numpermutation'),
     %cfg.numpermutation = 190100; % for p<0.01 with a possible bonferroni correcetion of 100
     cfg.numpermutation = ceil(1/(cfg.alpha/nr2cmc));
-    fprintf('TRENTOOL: You didn'' specify a number of permutations. It was set to %d (1/(alpha/no_channelcombis)).', cfg.numpermutation);
+    fprintf('TRENTOOL: You didn''t specify a number of permutations. It was set to %d (1/(alpha/no_channelcombis)).', cfg.numpermutation);
 end
 
 if strcmp(cfg.numpermutation, 'findDelay');
