@@ -497,27 +497,29 @@ fprintf('\n\nChecking number of permutations');
 nr2cmc=size(data.TEprepare.channelcombilabel,1);
 
 if ~isfield(cfg, 'numpermutation'),
-    cfg.numpermutation = 190100; % for p<0.01 with a possible bonferroni correcetion of 100
-elseif strcmp(cfg.numpermutation, 'findDelay');
+    %cfg.numpermutation = 190100; % for p<0.01 with a possible bonferroni correcetion of 100
+    cfg.numpermutation = ceil(1/(cfg.alpha/nr2cmc));
+    fprintf('TRENTOOL: You didn''t specify a number of permutations. It was set to %d (1/(alpha/no_channelcombis)).', cfg.numpermutation);
+end
+
+if strcmp(cfg.numpermutation, 'findDelay');
     cfg.numpermutation = 0;
-elseif cfg.numpermutation < ceil(1/cfg.alpha)
-    fprintf('\n')
-    error('TRENTOOL ERROR: cfg.numpermutation too small!');
-else
-    if nrtrials>31
-        if cfg.numpermutation > 2^31
-            fprintf('\n')
-            error('TRENTOOL ERROR: cfg.numpermutation too huge!');
-        end
-    else
-        if cfg.numpermutation > 2^min(min(nrtrials)) % nrtrials is now 2-D!
-            fprintf('\n')
-            error('TRENTOOL ERROR: cfg.numpermutation too huge!');
-        end
+
+else 
+
+    if cfg.numpermutation < ceil(1/cfg.alpha)
+    	fprintf('\n')
+    	error('TRENTOOL ERROR: cfg.numpermutation too small (< 1/alpha)!');
+    elseif cfg.numpermutation < ceil(1/(cfg.alpha/nr2cmc))
+       fprintf('\n###############################################\n# WARNING: Nr of permutations not sufficient for correction for multiple comparisons! #\n#######################################################################################\n'); 
+    elseif nrtrials>31 && cfg.numpermutation > 2^31
+        fprintf('\n')
+        error('TRENTOOL ERROR: cfg.numpermutation too huge (> 2^31)!');
+    elseif nrtrials>31 && cfg.numpermutation > 2^min(min(nrtrials)) % nrtrials is now 2-D!
+        fprintf('\n')
+        error('TRENTOOL ERROR: cfg.numpermutation too huge (> 2^n_trials)!');
     end
-    if cfg.numpermutation < ceil(1/(cfg.alpha/nr2cmc))
-       fprintf('\n#######################################################################################\n# WARNING: Nr of permutations not sufficient for correction for multiple comparisons! #\n#######################################################################################\n'); 
-    end
+
 end
 
 fprintf(' - ok\n');
