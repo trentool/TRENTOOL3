@@ -63,7 +63,6 @@ function [ncount] = TEcallGPUsearch_srm(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps
 %                     additionally to TE, 0 if not (faster)
 %       .chunk_ind  = vector with indices encoding the chunk a single
 %                     pointset belongs to
-% 	    .GPUmemsize = size of the GPU's memory in MB
 %       .numthreads = number of threads that can be run in a single block
 %                     on the GPU
 %       .maxgriddim = maximum dimension of the grid of blocks
@@ -127,6 +126,8 @@ function [ncount] = TEcallGPUsearch_srm(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps
 % 2014-04-14 PW: bugfix - ncount.nchunks didn't return the correct value
 % before
 % 2015-05-20 PW/TS included calls to the srm
+% 2015-05-27 PW: function now calls 'srmc max' to determine max. memory on
+% GPU device
 
 %% Get variables from cfg
 % -------------------------------------------------------------------------
@@ -153,7 +154,16 @@ MIcalc    = cfg.MIcalc;
 % generated during the execution of the GPU functions, this is taken into
 % account when determining maximum size of the input.)
 
-mem_free = cfg.GPUmemsize;                % max. memory in MB for data input
+%mem_free = cfg.GPUmemsize;                % max. memory in MB for data input
+command = 'srmc max gpumem';
+[status,cmdout] = system(command);
+if status == 0    
+    gpu_memsize = str2double(cmdout(strfind(cmdout, ' '):end));
+    fprintf('max. GPU memory is %d MB\n', gpu_memsize);
+else
+    error('TRENTOOL ERROR: call to srmc returned non-zero exit!')
+end
+
 max_dim  = cfg.numthreads*cfg.maxgriddim; % max. 1st dimension for data input
 
 
@@ -168,7 +178,7 @@ chunksize    = (chunkelem*4)/(1024*1024);       % get size in memory (in MB)
 % decide how many chunks fit on the card in one run
 max_chunksperrun = min([ ...        
     floor(max_dim/chunkdim) ...
-    floor(mem_free/chunksize) ...
+    floor(gpu_memsize/chunksize) ...
     ]);
 
 % calculate the number of runs and chunks per run
