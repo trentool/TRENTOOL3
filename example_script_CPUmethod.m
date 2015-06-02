@@ -1,13 +1,13 @@
 %% set paths
 
-addpath('TRENTOOL3.3.1')
-addpath('fieldtrip-20120703');
+addpath('TRENTOOL3')
+addpath('fieldtrip-20150205');
 ft_defaults;
 
 %% define data paths
 
-OutputDataPath = 'results/';
-InputDataPath  = '~/TRENTOOL3.3.1/exampledata/Lorenz_2_systems/Lorenz_1-2_45ms.mat';
+OutputDataPath = '~/results/';
+InputDataPath  = '~/TRENTOOL3_exampledata/Lorenz_2_systems/Lorenz_1-2_45ms.mat';
 
 load(InputDataPath);
 

@@ -512,10 +512,10 @@ else
     	error('TRENTOOL ERROR: cfg.numpermutation too small (< 1/alpha)!');
     elseif cfg.numpermutation < ceil(1/(cfg.alpha/nr2cmc))
        fprintf('\n###############################################\n# WARNING: Nr of permutations not sufficient for correction for multiple comparisons! #\n#######################################################################################\n'); 
-    elseif nrtrials>31 && cfg.numpermutation > 2^31
+    elseif max(nrtrials)>31 && cfg.numpermutation > 2^31
         fprintf('\n')
         error('TRENTOOL ERROR: cfg.numpermutation too huge (> 2^31)!');
-    elseif nrtrials>31 && cfg.numpermutation > 2^min(min(nrtrials)) % nrtrials is now 2-D!
+    elseif max(nrtrials)>31 && cfg.numpermutation > 2^min(min(nrtrials)) % nrtrials is now 2-D!
         fprintf('\n')
         error('TRENTOOL ERROR: cfg.numpermutation too huge (> 2^n_trials)!');
     end
