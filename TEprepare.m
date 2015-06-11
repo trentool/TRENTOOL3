@@ -253,10 +253,9 @@ function DataOut=TEprepare(varargin)
 %% Remember the working directory
 working_directory = pwd;
 
-
 %% check data
 % -------------------------------------------------------------------------
-fprintf('\nCheck data and config\n');
+fprintf('\nCheck data and config');
 
 if isfield(varargin{1},'toi') && isstruct(varargin{1}) && isstruct(varargin{2}) && isfield(varargin{2},'trial')
     cfg =  varargin{1};
@@ -576,11 +575,12 @@ elseif strcmp(cfg.trialselect, 'range')
         error('TRENTOOL ERROR: specify cfg.trial_from and cfg.trial_to for setting the range of used trials, see help!');
     end
 end
+fprintf(' - ok\n');
 
 par_state = check_set_parallel(cfg); %check for parallel and set the configuration
-fprintf('par state is %.0f\n\n',par_state);
+fprintf('par state is %.0f',par_state);
 
-fprintf(' - ok');
+
 
 %% check if GPU-computation is requested
 % -------------------------------------------------------------------------
@@ -624,7 +624,7 @@ fprintf(' - ok')
 
 %% read data
 % -------------------------------------------------------------------------
-fprintf('\nRead data\n');
+fprintf('\nRead data');
 
 % create datacell {channelcombi x 2} including the matrix (trial x
 % timepoints) for each channel.
@@ -648,6 +648,8 @@ else
     alltime=data.time;
 end
 
+fprintf(' - ok')
+
 % find correct indices for the samples in alltime/cfg.toi
 % to be used later
 % look in the time dimension of the data
@@ -662,7 +664,7 @@ if timeindices(1) >= timeindices(2)
     error('TRENTOOL: Something seems to be wrong with your time indices: time index 1 >= time index 2!')
 else
     TEprepare.timeindices = timeindices;
-    fprintf('time indices are %.0f and %.0f\n\n',timeindices(1),timeindices(2));
+    fprintf('\nTime indices are %.0f and %.0f',timeindices(1),timeindices(2));
     fprintf(' - ok')
 end
 
@@ -930,7 +932,7 @@ else
 
 % PW 30/05/2014 bugfix:
 %        fprintf(strcat(['\nOptimal tau for this dataset may be: ', num2str(opttaumultiplier),'\n']))
-        fprintf(strcat(['\nOptimal tau for this dataset may be: ', num2str(TEprepare.opttau),'\n']))
+        fprintf(strcat(['\n\tOptimal tau for this dataset may be: ', num2str(TEprepare.opttau),'\n']))
 
         % find max dimension
         % TEprepare.optdimmat includes a vector with the maximum (over trials) dimension for
@@ -941,7 +943,7 @@ else
         % TEprepare.optdim includes a scalar with the maximum dimension for
         % all channel combinations
         TEprepare.optdim = max(max(optdim));
-        fprintf(strcat(['\nOptimal dimension for this dataset may be: ', num2str(max(max(optdim))),'\n']))
+        fprintf(strcat(['\tOptimal dimension for this dataset may be: ', num2str(max(max(optdim))),'\n']))
 
 
 
@@ -1043,7 +1045,6 @@ end
 
 cd(working_directory)
 
-fprintf(' - ok\n');
 
 
 
@@ -1055,7 +1056,7 @@ TEprepare.cfg=cfg;
 varargin{2}.TEprepare = TEprepare;
 DataOut = varargin{2};
 
-fprintf(' - ok\ndone\n');
+fprintf(' - ok\n');
 
 end
 

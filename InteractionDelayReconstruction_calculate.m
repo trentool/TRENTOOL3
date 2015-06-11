@@ -16,8 +16,9 @@ function TGA_results=InteractionDelayReconstruction_calculate(cfgTEP,cfgTESS,dat
 % cfgTSS    -   a configuration structure that has all the fields required
 %           for TEsurrogatestats
 %
-% The OUTPUT TGA_results results is a cell array of TEpermtest results,
-% each cell containing the results for one prediction u 
+% The OUTPUT TGA_results results is a structure containing estimated TE
+% values and results for permutation testing using the optimal interaction
+% delay for each channel combination.
 
 
 % CHANGELOG
@@ -83,16 +84,18 @@ TGA_results = cell(1,max(size(predicttimevec_u)));
 t_total = tic;
 
 %% TEprepare part
+fprintf('\n\n################### PREPARING DATA FOR TE ANALYSIS\n')
 cfgTEP.predicttime_u = cfgTEP.predicttimemax_u;  % fix config
 dataprep = TEprepare(cfgTEP,data);
 clear data;
 
 %% find optimal interaction delays
+fprintf('\n\n################### OPTIMIZING INFORMATION TRANSFER DELAY\n\n')
 dataprep = TEfindDelay(predicttimevec_u,cfgTESS,dataprep);
 cfgTESS.embedsource = 'yes';
 
 %% calulate statistics with optimal u for individual channels
-fprintf('Calling TEsurrogatestats using optimal delays u \n');
+fprintf('\n\n################### ESTIMATING TRANSFER ENTROPY WITH OPTIMIZED PARAMETERS\n\n')
 
 cfgTESS.fileidout=strcat(cfgTESS.fileidout,'_RAG4_TGA_opt_u');
 
@@ -111,6 +114,7 @@ if groupanalysis
 end
 
 t=toc(t_total);
+fprintf('\n\nThank you for using this transfer entropy tool!')
 
 fprintf('\n\n\nCALCULATION ENDED: %s \n', datestr(now));
 fprintf('CALCULATION TOOK %.0f MINUTES (%.0f SECONDS)\n\n', t/60,t);

@@ -2,10 +2,16 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 
 % TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,ps_p21)
 %
-% TECALLGPUSEARCH: This function is wrapper for the GPU functions conducting
-% the k-nearest neighbour and range search on trialwise embedded data. The 
-% function splits up the data according to the capacities (memory and max
-% no. of inputs, see comments in the code).
+% TECALLGPUSEARCH: This function is wrapper for the GPU functions 
+% conducting the k-nearest neighbour and range search on trialwise embedded 
+% data. The function splits up the data according to the capacities (memory 
+% and max no. of inputs, see comments in the code).
+% 
+% NOTES: 
+%   - this version of the code calls the multigpu-functions
+%   - this version doesn't require a GPU ID, the ID is set by the srm
+%   - the code is written for MATLAB Version 7.9 (R2009b) and later (~ is 
+%     used to ignore some function outputs)
 % 
 %
 %
@@ -32,8 +38,9 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 %
 %
 % * DEPENDENCIES
-%     - functions 'range_search_all_gpu.mexa64' and 
-%	'fnearneigh_gpu.mexa64' are used for nearest neighbour and
+%     - running srmd (small resource manager)
+%     - functions 'range_search_all_multigpu.mexa64' and 
+%	'fnearneigh_multigpu.mexa64' are used for nearest neighbour and
 %	range searches (Martinez-Zarzuela, 2012)
 %     - this function is called by TEsurrogatestats_ensemble.m, the data
 %	entered into this function has to be embedded first
@@ -53,10 +60,6 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 %                     additionally to TE, 0 if not (faster)
 %       .chunk_ind  = vector with indices encoding the chunk a single
 %                     pointset belongs to
-%       .GPUid      = if more than one GPU device are installed, this index
-%                     can be used to call the desired device (has to be an
-%                     integer between 1 and no. devices)
-% 	    .GPUmemsize = size of the GPU's memory in MB
 %       .numthreads = number of threads that can be run in a single block
 %                     on the GPU
 %       .maxgriddim = maximum dimension of the grid of blocks
@@ -108,8 +111,8 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 % but WITHOUT ANY WARRANTY;
 % 
 % Version 1.0 by Michael Wibral, Patricia Wollstadt, Mario Martinez-
-% Zarzuela
-% Frankfurt 2013
+% Zarzuela, Thomas Sattler
+% Frankfurt 2015
 
 % CHANGELOG
 %
@@ -119,6 +122,9 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 % using cfg.MIcalc
 % 2014-04-14 PW: bugfix - ncount.nchunks didn't return the correct value
 % before
+% 2015-05-20 PW/TS included calls to the srm
+% 2015-05-27 PW: function now calls 'srmc max' to determine max. memory on
+% GPU device
 
 %% Get variables from cfg
 % -------------------------------------------------------------------------
@@ -128,11 +134,10 @@ TheilerT  = cfg.TheilerT(channelpair);
 chunk_ind = cfg.chunk_ind;
 MIcalc    = cfg.MIcalc;
 
-% get device ID, note: Mario's code uses zero-based indexing (hence -1)!
-if isfield(cfg,'GPUid')
-    gpuid = cfg.GPUid-1;
+if isfield(cfg, 'pause_time')
+    pause_time = cfg.pause_time;
 else
-    gpuid = 0;
+    pause_time = 20;
 end
 
 
@@ -152,63 +157,81 @@ end
 % generated during the execution of the GPU functions, this is taken into
 % account when determining maximum size of the input.)
 
-mem_free = cfg.GPUmemsize;                % max. memory in MB for data input
+switch cfg.site
+    case 'ffm'
+        gpu_memsize = TEsrmc(pause_time, 'maxmem');
+    case 'other'
+        gpu_memsize = cfg.GPUmemsize;
+    otherwise
+        error('TRENTOOL ERROR: unkown site (has to be ''ffm'' or ''other'').')
+end
+
 max_dim  = cfg.numthreads*cfg.maxgriddim; % max. 1st dimension for data input
-fprintf('Free memory: %.0f MB\n', mem_free);
-fprintf('Max. dimension: %.0f\n', max_dim);
 
 
 %% Calculate data partitioning for GPU calls
 % -------------------------------------------------------------------------
 
-chunksize    = numel(ps_p21(chunk_ind==1,:));   % get no. entries in biggest chunk (pointset p21)
-chunk_dim    = size(ps_p21(chunk_ind==1,:),1);  % get size of 1st dimension
-chunksperrun = floor(max_dim/chunk_dim);        % decide how many of these chunks fit on the card in one run
+chunkelem    = numel(ps_p21(chunk_ind==1,:));   % get no. values in biggest chunk (pointset p21)
+chunkdim     = size(ps_p21(chunk_ind==1,:),1);  % get size of 1st dimension, i.e. no. search points
+chunksize    = (chunkelem*4)/(1024*1024);       % get size in memory (in MB)
 
-% check whether the intended chunksperrun exceed the max. memory on the GPU
-% if so, recalculate 'chunksperrun' based on the available memory
 
-mem_run = ((chunksperrun*chunksize*4)/1024)/1024; % memory needed per run (in MB) with current chunks per run
+% decide how many chunks fit on the card in one run
+max_chunksperrun = min([ ...        
+    floor(max_dim/chunkdim) ...
+    floor(gpu_memsize/chunksize) ...
+    ]);
 
-if mem_run*2 >= mem_free;    
-    mem_free = mem_free * 1024 * 1024;                  % convert free memory to Byte
-    mem_free = mem_free/2;
-    mem_free_n_values = mem_free/4;                     % calculate no. single precision values that fit into free memory
-    fprintf('Max. no. values (single precision): %.0f \n', mem_free_n_values);
-    chunksperrun = floor(mem_free_n_values/chunksize);  % overwrite 'chunksperrun' based on memory
+% calculate the number of runs and chunks per run
+n_chunks = chunk_ind(end);
+if n_chunks > max_chunksperrun
+    nrruns = ceil(n_chunks/max_chunksperrun);	
+    chunksperrun = ceil(n_chunks/nrruns);  
+else
+    nrruns = 1;
+    chunksperrun = n_chunks;
+end
+mem_run = 2.5*chunksperrun*chunksize;
+
+fprintf('Chunks in current data set: %.0f (%0.4f MB per chunk, total: %.2f MB)\n', n_chunks, chunksize, chunksize*n_chunks);
+fprintf('Number of runs: %.0f (%0.4f MB per run) \n\n', nrruns, mem_run);
+
+
+switch cfg.site
+    case 'ffm'
+        gpu_id = TEsrmc(pause_time, 'request', sprintf('gpumem:%d', ceil(mem_run)));
+    case 'other'
+        ;
+    otherwise
+        error('TRENTOOL ERROR: unkown site (has to be ''ffm'' or ''other'').')
 end
 
-% calculate no. runs given 'chunksperrun'
-nrruns	     = ceil(chunk_ind(end)/chunksperrun);	
+%% allocate memory for neighbor counts
 
-fprintf('Max. number of chunks per run: %.0f \n',chunksperrun);
-fprintf('Chunks in current data set: %.0f \n',chunk_ind(end));
-fprintf('\nNumber of runs: %.0f \n',nrruns);
+% all arrays are generated, if no MI calculation is requested ncount_12_1 and ncount_12_2 remain empty
+ncount_p21_p2 = zeros(size(ps_p21,1), 1);
+ncount_p21_2 = zeros(size(ps_p21,1), 1);
+ncount_p21_21 = zeros(size(ps_p21,1), 1);
+
+if MIcalc
+	ncount_12_1 = zeros(size(ps_p21,1), 1);
+	ncount_12_2 = zeros(size(ps_p21,1), 1);
+end
 
 %% Call GPU functions: knn search + range search
 % -------------------------------------------------------------------------
-
-% all arrays are generated, if no MI calculation is requested ncount_12_1 and ncount_12_2 remain empty
-ncount_p21_p2 = [];
-ncount_p21_21 = []; 
-ncount_p21_2  = [];
-ncount_12_1   = [];
-ncount_12_2   = [];
 
 cutpoint = chunksperrun;
 nchunks  = chunksperrun;
 
 for ii=1:nrruns
 
-	fprintf('\nRun %.0f of %.0f\n',ii,nrruns);
+	fprintf('\nchannelpair %d (u = %d) - run %.0f of %.0f\n',channelpair,cfg.u_in_ms(channelpair),ii,nrruns);
 	
 	%% get data for this run (i.e. call of GPU functions) by concatenating indiv. chunks
 	
-	fprintf('\t get data ...\n');
-	t = tic;
-	if ii==nrruns
-		
-		% take remaining data if this is the last call        
+	if ii==nrruns  % take remaining data if this is the last run
         
 		% get number and index of first chunk for this run
 		chunk_start = cutpoint-chunksperrun+1;        
@@ -224,6 +247,7 @@ for ii=1:nrruns
 		    pointset_12  = ps_12(ind1:end,:);
 		end    
 		
+		ind2 = size(ps_p21,1);
 		nchunks = (chunk_ind(end)-(chunk_start))+1;		
     
 	else
@@ -245,80 +269,107 @@ for ii=1:nrruns
 		
 		cutpoint = cutpoint+chunksperrun;
 
-	end
-	t = toc(t); 
-	fprintf('\t \t getting the data for this run took %.1f minutes\n',t/60);
-	clear t;
+    end
     
 	%% TE
+    
 	% k nearest neighbors search (fixed mass)
-	fprintf('\t k nearest neighbour search for TE...\n');
+	fprintf('\t knn search for TE ...');
 	t = tic;
-	%[index_p21, distance_p21] = fnearneigh_multigpu(single(pointset_p21),single(pointset_p21),k_th,TheilerT,nchunks,gpuid);	
-	[index_p21, distance_p21] = fnearneigh_gpu(single(pointset_p21),single(pointset_p21),k_th,TheilerT,nchunks);
+    switch cfg.site
+        case 'ffm'
+            [~, distance_p21] = fnearneigh_multigpu(single(pointset_p21),single(pointset_p21),k_th,TheilerT,nchunks,gpu_id);	
+        case 'other'
+            [~, distance_p21] = fnearneigh_gpu(single(pointset_p21),single(pointset_p21),k_th,TheilerT,nchunks);	
+    end
+	clear index_p21;
 	t = toc(t);
-	fprintf('\t \t the GPU knn search took %.1f minutes\n',t/60);
+	fprintf('\t - ok (%.1f minutes)\n',t/60);
 	clear t;
     
-	%% n nearest neighbor range search (fixed radius)
-	
-	fprintf('\t range search ...\n');
-        t = tic;
+	% n nearest neighbor range search (fixed radius)	
+	fprintf('\t range search for TE ...');
+    t = tic;
 	radius_p21 = single(distance_p21(:,k_th));
 	radius_p21 = radius_p21 - eps('single');
-	clear distance_p21 index_p21;
-    	
-	%ncount_p21_p2 = cat(1,ncount_p21_p2,range_search_all_multigpu(single(pointset_p2),single(pointset_p2),radius_p21,TheilerT,nchunks,gpuid));
-	%ncount_p21_21 = cat(1,ncount_p21_21,range_search_all_multigpu(single(pointset_21),single(pointset_21),radius_p21,TheilerT,nchunks,gpuid));
-	%ncount_p21_2  = cat(1,ncount_p21_2,range_search_all_multigpu(single(pointset_2),single(pointset_2),radius_p21,TheilerT,nchunks,gpuid));
-	ncount_p21_p2 = cat(1,ncount_p21_p2,range_search_all_gpu(single(pointset_p2),single(pointset_p2),radius_p21,TheilerT,nchunks));
-	ncount_p21_21 = cat(1,ncount_p21_21,range_search_all_gpu(single(pointset_21),single(pointset_21),radius_p21,TheilerT,nchunks));
-	ncount_p21_2  = cat(1,ncount_p21_2,range_search_all_gpu(single(pointset_2),single(pointset_2),radius_p21,TheilerT,nchunks));
-	t = toc(t); 
+	clear distance_p21;
+    
+    switch cfg.site
+        case 'ffm'
+            ncount_p21_p2(ind1:ind2) = range_search_all_multigpu(single(pointset_p2),single(pointset_p2),radius_p21,TheilerT,nchunks,gpu_id);
+            ncount_p21_21(ind1:ind2) = range_search_all_multigpu(single(pointset_21),single(pointset_21),radius_p21,TheilerT,nchunks,gpu_id);
+            ncount_p21_2(ind1:ind2)  = range_search_all_multigpu(single(pointset_2),single(pointset_2),radius_p21,TheilerT,nchunks,gpu_id);
+        case 'other'
+            ncount_p21_p2(ind1:ind2) = range_search_all_gpu(single(pointset_p2),single(pointset_p2),radius_p21,TheilerT,nchunks);
+            ncount_p21_21(ind1:ind2) = range_search_all_gpu(single(pointset_21),single(pointset_21),radius_p21,TheilerT,nchunks);
+            ncount_p21_2(ind1:ind2)  = range_search_all_gpu(single(pointset_2),single(pointset_2),radius_p21,TheilerT,nchunks);    
+    end
+    t = toc(t);
 	
-	fprintf('\t \t each GPU range search took %.1f minutes (total for three searches: %.1f minutes)\n',(t/3)/60,t/60);
+	fprintf('\t - ok (%.1f minutes)\n\n',t/60);
 	clear t;
 	
 	
-	%% MI
+	%% MI estimation (optional)
 	if MIcalc
 	
 		% k nearest neighbors search (fixed mass)
-		fprintf('\t k nearest neighbour search for MI...\n');
-		t = tic;		
-		%[index_12, distance_12]   = fnearneigh_multigpu(single(pointset_12),single(pointset_12),k_th,TheilerT,nchunks,gpuid);
-		[index_12, distance_12]   = fnearneigh_gpu(single(pointset_12),single(pointset_12),k_th,TheilerT,nchunks);
-		t = toc(t);
-		fprintf('\t \t the GPU knn search took %.1f minutes \n',t/60);
+		fprintf('\t knn search for MI...');
+        t = tic;
+        switch cfg.site
+            case 'ffm'
+                [~, distance_12]   = fnearneigh_multigpu(single(pointset_12),single(pointset_12),k_th,TheilerT,nchunks,gpu_id);
+            case 'other'
+                [~, distance_12]   = fnearneigh_gpu(single(pointset_12),single(pointset_12),k_th,TheilerT,nchunks);
+        end
+        t = toc(t);
+		fprintf('\t - ok (%.1f minutes)\n',t/60);
 		clear t;	
 		
-		%% n nearest neighbor range search (fixed radius)	
-		fprintf('\t range search ...\n');
+		% n nearest neighbor range search (fixed radius)	
+		fprintf('\t range search for MI ...');
 		t = tic;
 		radius_12  = single(distance_12(:,k_th));
 		radius_12  = radius_12 - eps('single');
 		clear distance_12 index_12;
 		
-		%ncount_12_1 = cat(1,ncount_12_1,range_search_all_multigpu(single(pointset_1),single(pointset_1),radius_12,TheilerT,nchunks,gpuid));
-		%ncount_12_2 = cat(1,ncount_12_2,range_search_all_multigpu(single(pointset_2),single(pointset_2),radius_12,TheilerT,nchunks,gpuid));	
-		ncount_12_1 = cat(1,ncount_12_1,range_search_all_gpu(single(pointset_1),single(pointset_1),radius_12,TheilerT,nchunks));
-		ncount_12_2 = cat(1,ncount_12_2,range_search_all_gpu(single(pointset_2),single(pointset_2),radius_12,TheilerT,nchunks));	
-		t = toc(t); 
+        switch cfg.site
+            case 'ffm'                
+                ncount_12_1(ind1:ind2) = range_search_all_multigpu(single(pointset_1),single(pointset_1),radius_12,TheilerT,nchunks,gpu_id);
+                ncount_12_2(ind1:ind2) = range_search_all_multigpu(single(pointset_2),single(pointset_2),radius_12,TheilerT,nchunks,gpu_id);	
+            case 'other'
+                ncount_12_1(ind1:ind2) = range_search_all_gpu(single(pointset_1),single(pointset_1),radius_12,TheilerT,nchunks);
+                ncount_12_2(ind1:ind2) = range_search_all_gpu(single(pointset_2),single(pointset_2),radius_12,TheilerT,nchunks);	
+        end
+        t = toc(t); 
 		
-		fprintf('\t \t each GPU range search took %.1f minutes (total for two searches: %.1f minutes)\n',(t/2)/60,t/60);
+		fprintf('\t - ok (%.1f minutes)\n',t/60);
 		clear t;
 	end	
 	
 end
 
-fprintf('\nNeighbour count - ok \n');
+%fprintf('\nNeighbour count - ok \n');
+
+switch cfg.site
+    case 'ffm'
+        resource = sprintf('gpumem:%d', ceil(mem_run));
+        unit     = sprintf('/dev/nvidia%d', gpu_id);
+        TEsrmc(pause_time, 'return', resource, unit);
+    case 'other'
+        ;
+    otherwise
+        error('TRENTOOL ERROR: unkown site (has to be ''ffm'' or ''other'').')
+end
 
 % build output structure
 ncount.ncount_p21_p2 = ncount_p21_p2;
 ncount.ncount_p21_21 = ncount_p21_21;
 ncount.ncount_p21_2  = ncount_p21_2;
-ncount.ncount_12_1   = ncount_12_1;
-ncount.ncount_12_2   = ncount_12_2;
+if MIcalc
+    ncount.ncount_12_1   = ncount_12_1;
+    ncount.ncount_12_2   = ncount_12_2;
+end
 ncount.nchunks	     = cfg.chunk_ind(end);
 
 return;

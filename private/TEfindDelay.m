@@ -24,7 +24,6 @@ function data = TEfindDelay(predicttimevec_u,cfgTESS,data)
 %
 % PW 27/11/2014
 
-fprintf('Finding optimal information transfer delay ...\n\n');
 
 cfgTESS.numpermutation = 'findDelay';
 TGA_results = cell(1, length(predicttimevec_u));
@@ -34,10 +33,11 @@ n_channelcombis = size(data.TEprepare.channelcombilabel,1);
 
 for uu=1:max(size(predicttimevec_u))
     
-    fprintf('Calling TEsurrogatestats with u = %.0f ms\n', predicttimevec_u(uu));
+    fprintf('Estimating TE for u = %.0f ms\n', predicttimevec_u(uu));
     
     data.TEprepare.cfg.predicttime_u = repmat(predicttimevec_u(uu), n_channelcombis, 1);
     data.TEprepare.u_in_samples      = repmat(predicttimevec_u_samples(uu), n_channelcombis, 1);
+    data.TEprepare.u_in_ms           = repmat(predicttimevec_u(uu), n_channelcombis, 1);
     
     % update fileidout to include information on u    
     cfgTESS.fileidout=strcat(fileidout,'_RAG4_TGA_u_',num2str(predicttimevec_u(uu)));

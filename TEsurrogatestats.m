@@ -491,7 +491,7 @@ cfg.permtest.nrtrials=nrtrials;
 
 %% check nr of permutations
 % -------------------------------------------------------------------------
-fprintf('\n\nChecking number of permutations');
+fprintf('\nChecking number of permutations');
 
 %nr2cmc=size(data.TEprepare.channelcombilabel,1)*size(cfg.predicttime_u,2);
 nr2cmc=size(data.TEprepare.channelcombilabel,1);
@@ -502,9 +502,12 @@ if ~isfield(cfg, 'numpermutation'),
     fprintf('TRENTOOL: You didn''t specify a number of permutations. It was set to %d (1/(alpha/no_channelcombis)).', cfg.numpermutation);
 end
 
+findDelay = 0;
+
 if strcmp(cfg.numpermutation, 'findDelay');
     cfg.numpermutation = 0;
-
+    findDelay = 1;
+    cfg.shifttest = 0;
 else 
 
     if cfg.numpermutation < ceil(1/cfg.alpha)
@@ -633,6 +636,7 @@ if cfg.numpermutation > 0
     cfg.shuffle = 'yes';
     [TEshuffle] = transferentropy(cfg,data);
     cfg = rmfield(cfg, 'shuffle');
+    fprintf('\nStart permutation tests');
     TEpermtest = TEperm(cfg,TEresult,TEshuffle);
 else
     TEpermtest = [];
@@ -646,11 +650,6 @@ cfg = rmfield(cfg, 'calctime');
 
 %% permutation tests
 % -------------------------------------------------------------------------
-fprintf('\nStart permutation tests');
-
-%TEpermtest=[];
-
-
 
 TEpermtest.dimord = 'chanpair_value';
 TEpermtest.cfg = cfg;
@@ -660,25 +659,24 @@ TEpermtest.numpermutation = cfg.numpermutation;
 TEpermtest.TEprepare = data.TEprepare;
 TEpermtest.nr2cmc = nr2cmc;
 TEpermtest.TEmat = TEresult.TEmat;
-fprintf('\nCalculation ready\n')
 
 
 %% save results
 % -------------------------------------------------------------------------
-fprintf('\nSaving ...')
-fprintf('\nResults of TE')
-save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TE_output.mat'), 'TEresult','-v7.3');
-fprintf(' - ok');
-fprintf('\nResults of permutation test')
-save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TEpermtest_output.mat'), 'TEpermtest','-v7.3');
-fprintf(' - ok');
 
+if ~findDelay
+    fprintf('\nSaving ...')
+    fprintf('\n\tresults of TE estimation')
+    save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TE_output.mat'), 'TEresult','-v7.3');
+    fprintf(' - ok');
+    fprintf('\n\tresults of permutation test')
+    save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TEpermtest_output.mat'), 'TEpermtest','-v7.3');
+    fprintf(' - ok');
+end
 
 %% Returning to the working directory
 cd(working_directory1)
 
-
-fprintf('\n\nThank you for using this transfer entropy tool!\n')
 
 return;
 

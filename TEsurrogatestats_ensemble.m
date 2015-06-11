@@ -97,14 +97,17 @@ function TEpermtest=TEsurrogatestats_ensemble(cfg,data)
 %		      (MI) for the current data set if set to 1. If set to
 %		      0, MI will not be calculated, this makes the 
 %		      calculation faster and requires less memory 
-%		      (default = 1).	
+%		      (default = 1).
+%   cfg.site        = can be set to 'ffm' if TRENTOOL is executed on the
+%                     cluster in the MEG Lab Frankfurt (default = 'other')
 %
 %  hardware specifications of your GPU device:
 %   cfg.GPUmemsize  = the memory of the GPU in MB (e.g. cfg.GPUmemsize =
-%                     4200), this information is mandatory
+%                     4200), this information is mandatory if cfg.site is
+%                     not set to 'ffm'.
 %   cfg.numthreads  = max. number of threads that can be run in one block
-%                     on the GPU
-%   cfg.maxgriddim  = max. grid dimension of the GPU
+%                     on the GPU (default = 512)
+%   cfg.maxgriddim  = max. grid dimension of the GPU (default = 65535)
 %   cfg.GPUid       = tells TRENTOOL which GPU device to use if multiple
 %                     devices are installed, set to 1 if only one device is
 %                     installed (default = 1)
@@ -241,7 +244,7 @@ working_directory1 = pwd;
 
 %% check data
 % -------------------------------------------------------------------------
-fprintf('\nCheck data and config');
+fprintf('Check data and config');
 
 % check if TEprepare was performed
 if ~isfield(data, 'TEprepare'),
@@ -305,6 +308,7 @@ for ii = 1:nr1
     eval(strcat('cfg.',names1{ii},' = getfield(data.TEprepare.cfg, {1}, names1{ii});'))
 end
 
+cfg.u_in_ms = data.TEprepare.u_in_ms;
 
 %% check general and GPU configuration and set defaults
 % -------------------------------------------------------------------------
@@ -325,20 +329,23 @@ if ~isfield(cfg, 'fileidout'),
     error('TRENTOOL ERROR: cfg.fileidout must be defined, see help!');
 end;
 
+% check if Frankfurt specific options are requested
+if ~isfield(cfg, 'site')
+    cfg.site = 'other';
+elseif ~(strcmp(cfg.site, 'ffm') || strcmp(cfg.site, 'other'))
+    error('TRENTOOL ERROR: Unkown site.')
+end
+
 % check if the user provided the GPU's memory
-if ~isfield(cfg,'GPUmemsize');
+if ~strcmp(cfg.site, 'ffm') && ~isfield(cfg,'GPUmemsize');
     error('TRENTOOL ERROR: You requested ensemble method with GPU calculation. Please provide your GPUs memory in "cfg.GPUmemsize". See help!');
 end;
 
 % check if the user provided the GPU's no. threads and grid dimension
 % this info limits the maximum size of the input array to the knn- and
 % range-search
-if ~isfield(cfg,'numthreads');
-    error('TRENTOOL ERROR: You requested ensemble method with GPU calculation. Please provide your GPUs no. threads in a block in "cfg.numthreads". See help!');
-end;    
-if ~isfield(cfg,'maxgriddim');
-    error('TRENTOOL ERROR: You requested ensemble method with GPU calculation. Please provide your GPUs grid dimension in "cfg.maxgriddim". See help!');
-end;
+if ~isfield(cfg,'numthreads'); cfg.numthreads = 512; end;    
+if ~isfield(cfg,'maxgriddim'); cfg.maxgriddim = 65535; end;
 
 % check if the user provided faes method or explicitly set 'extracond'
 % to 'no' -> 'Faes_Method' has to be used when using the ensemble method
@@ -502,34 +509,37 @@ fprintf(' - ok');
 
 %% check nr of permutations 
 % -------------------------------------------------------------------------
-fprintf('\n\nChecking number of permutations');
+fprintf('\nChecking number of permutations');
 
 %nr2cmc=size(data.TEprepare.channelcombilabel,1)*size(cfg.predicttime_u,2);
 nr2cmc=size(data.TEprepare.channelcombilabel,1);
 
-if ~isfield(cfg, 'numpermutation') && ~isfield(data,'groupprepare'),
-    cfg.numpermutation = 500; % for p<0.01 with a possible bonferroni correcetion of 100 
-    fprintf('\n\tno. permutations is set do default value (500)\n');
-elseif strcmp(cfg.numpermutation, 'findDelay');
-    cfg.numpermutation = 0;    
-elseif cfg.numpermutation < ceil(1/cfg.alpha) && ~isfield(data,'groupprepare')
-    fprintf('\n')
-    error('TRENTOOL ERROR: cfg.numpermutation too small!');
-else
-    if nrtrials>31
-        if cfg.numpermutation > 2^31
-            fprintf('\n')
-            error('TRENTOOL ERROR: cfg.numpermutation too huge!');
-        end
-    else
-        if cfg.numpermutation > 2^min(min(nrtrials)) % nrtrials is now 2-D!
-            fprintf('\n')
-            error('TRENTOOL ERROR: cfg.numpermutation too huge!');
-        end
+findDelay = 0;
+
+if ~isfield(cfg, 'numpermutation'),
+    %cfg.numpermutation = 190100; % for p<0.01 with a possible bonferroni correcetion of 100
+    cfg.numpermutation = ceil(1/(cfg.alpha/nr2cmc));
+    fprintf('TRENTOOL: You didn''t specify a number of permutations. It was set to %d (1/(alpha/no_channelcombis)).', cfg.numpermutation);
+end
+
+if strcmp(cfg.numpermutation, 'findDelay');
+    cfg.numpermutation = 0;
+    findDelay = 1;
+else 
+
+    if cfg.numpermutation < ceil(1/cfg.alpha)
+    	fprintf('\n')
+    	error('TRENTOOL ERROR: cfg.numpermutation too small (< 1/alpha)!');
+    elseif cfg.numpermutation < ceil(1/(cfg.alpha/nr2cmc))
+       fprintf('\n###############################################\n# WARNING: Nr of permutations not sufficient for correction for multiple comparisons! #\n#######################################################################################\n'); 
+    elseif max(nrtrials)>31 && cfg.numpermutation > 2^31
+        fprintf('\n')
+        error('TRENTOOL ERROR: cfg.numpermutation too huge (> 2^31)!');
+    elseif max(nrtrials)>31 && cfg.numpermutation > 2^min(min(nrtrials)) % nrtrials is now 2-D!
+        fprintf('\n')
+        error('TRENTOOL ERROR: cfg.numpermutation too huge (> 2^n_trials)!');
     end
-    if cfg.numpermutation < ceil(1/(cfg.alpha/nr2cmc))
-       fprintf('\n#######################################################################################\n# WARNING: Nr of permutations not sufficient for correction for multiple comparisons! #\n#######################################################################################\n'); 
-    end
+
 end
 
 fprintf(' - ok\n');
@@ -549,7 +559,7 @@ TEpreparestruct   = data.TEprepare;
 
 %% read data
 % -------------------------------------------------------------------------
-fprintf('\nRead data');
+fprintf('Read data');
 
 % read data in to a cell {channelcombi x 2} including data matrices
 % (trial x time)
@@ -598,7 +608,7 @@ else
     mindatapoints = (timeindices(2)+1-timeindices(1))-(max(cfg.dim)-1)*max(cfg.tau)*max(max(ACT(:,2,:)))-max(dimu);
 end
 
-fprintf('There are %.0f sample points left in each trial after embedding.\n',mindatapoints);
+fprintf('Min. sample points left after embedding: %.0f ',mindatapoints);
 
 if isfield(data, 'datatype')
     if strcmp(data.datatype, 'fMRI')
@@ -612,14 +622,14 @@ else
     minsamples = 150/min(min(nrtrials)); 
 end
 
-fprintf('You need a minimum of %.0f sample points per trial for TE analysis.\n',ceil(minsamples));
+fprintf('(min. required: %.0f.)',ceil(minsamples));
 
 % compare samples in analysis window against minimum feasible no. sample points
 if mindatapoints <= minsamples    
     error('\nTRENTOOL ERROR: not enough data points left after embedding.');
 end
 
-fprintf(' - ok\n\n');
+fprintf(' - ok');
 
 %% clear input data to save memory
 % -------------------------------------------------------------------------
@@ -634,7 +644,7 @@ clear data;
 % -------------------------------------------------------------------------
 timeindices = TEpreparestruct.timeindices; 
 
-fprintf('\nStart embedding original and surrogate data for individual channelpairs');
+%fprintf('\nStart embedding original and surrogate data for individual channelpairs');
 
 % prepare output structures
 TEpermvalues = zeros(size(channelcombi,1),5);
@@ -651,8 +661,8 @@ TEsetRandStream;
 
 for channelpair = 1:size(channelcombi,1)
 	
-    fprintf('\nChannelpair %.0f of %.0f\n',channelpair,size(channelcombi,1));		
-    fprintf('\n\tEmbedding orginal data');
+    fprintf('\nEmbedding original data for channelpair %.0f of %.0f',channelpair,size(channelcombi,1));		
+    %fprintf('\n\tEmbedding orginal data');
 	
     % prepare data strucuters for embedding	
 	
@@ -722,12 +732,15 @@ for channelpair = 1:size(channelcombi,1)
     chunk_ind(1:chunksize) = 1;
     cutpoint = chunksize*2;
     
-    fprintf(' - ok\n\n');
+    fprintf('\t - ok\n');
 	
-	% shuffle orig data and embed shuffled data per trial    
-    ft_progress('init', 'text','Generation and embedding of surrogate data for current channelpair ...')
+	% shuffle orig data and embed shuffled data per trial  
+    if numpermutation > 0
+        ft_progress('init', 'text','Generating surrogate data sets ...')
+    end
+    
     for ii = 1:numpermutation
-        ft_progress(ii/numpermutation, '\tGenerating surrogate data set %d of %d', ii, numpermutation);
+        ft_progress(ii/numpermutation, '\tdata set %d of %d', ii, numpermutation);
         
         % get permutation for trials in second/target channel
         channel2_shuffle = randperm(nrtrials(channelpair,2)); %\\ TODO check randstream
@@ -796,8 +809,9 @@ for channelpair = 1:size(channelcombi,1)
         
     end
     ft_progress('close');
-        
-    fprintf(' - ok\n');
+    
+    if numpermutation > 0; fprintf('\t - ok\n'); end;
+    
     fprintf('\nStarting GPU neighbour count ...\n');
     
     % remember indices of individual chunks
@@ -819,8 +833,9 @@ for channelpair = 1:size(channelcombi,1)
     TEmat_sur(channelpair,:) = te(2:end);
 	if cfg.TELcalc
 		TELmat{channelpair} = tel;
-	end	
+    end	
     
+    fprintf('\nCalculating Transfer Entropy')
 	[p TE_diff] = TEpvalue(te,numpermutation);
     
 	% do statistical comparison (is TE_orig an extreme value with respect to the TE values of the surrogate data?)
@@ -836,21 +851,23 @@ for channelpair = 1:size(channelcombi,1)
     % TEpermvalues(channelpair,3) is set below (significance after cmc)
 	TEpermvalues(channelpair,4) = TE_diff;                                   % difference between empirical TE and median of surrogate distribution
 	TEpermvalues(channelpair,5) = 0;                                         % Faes method is mandatory for ensemble method, takes care of volume conduction    
+    fprintf(' - ok\n')
 end
-fprintf('\nFinished calculation of Transfer Entropy \n')
+
 
 
 %% correct for multiple comparisons
 % -------------------------------------------------------------------------
 
-fprintf('\nCorrection for multiple comparison...')
-pvalues                 = TEpermvalues(:,1);
-nrinstmix               = 0; % instanteneous mixing is not tested when ensemble method is used
-[significance,correctm] = TEcmc(pvalues, cfg.correctm, cfg.alpha, nrinstmix);
-TEpermvalues(:,3)       = significance;
-cfg.correctm            = correctm;    % the correction method might change, if only a small no. channels is analyzed, this should be updated
-fprintf(' - ok\n');
-
+if ~findDelay
+    fprintf('\nCorrection for multiple comparison...')
+    pvalues                 = TEpermvalues(:,1);
+    nrinstmix               = 0; % instanteneous mixing is not tested when ensemble method is used
+    [significance,correctm] = TEcmc(pvalues, cfg.correctm, cfg.alpha, nrinstmix);
+    TEpermvalues(:,3)       = significance;
+    cfg.correctm            = correctm;    % the correction method might change, if only a small no. channels is analyzed, this should be updated
+    fprintf(' - ok\n');
+end
 
 %% prepare output structure
 % -------------------------------------------------------------------------
@@ -881,20 +898,19 @@ TEresult.TEprepare = TEpreparestruct; clear TEpreparestruct;
 
 %% save results
 % -------------------------------------------------------------------------
-fprintf('\nSaving ...')
-fprintf('\nResults of TE')
-save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TE_output.mat'), 'TEresult','-v7.3');
-fprintf(' - ok');
-fprintf('\nResults of permutation test')
-save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TEpermtest_output.mat'), 'TEpermtest','-v7.3');
-fprintf(' - ok');
 
+if ~findDelay
+    fprintf('\nSaving ...')
+    fprintf('\n\tresults of TE estimation')
+    save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TE_output.mat'), 'TEresult','-v7.3');
+    fprintf(' - ok');
+    fprintf('\n\tresults of permutation test')
+    save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TEpermtest_output.mat'), 'TEpermtest','-v7.3');
+    fprintf(' - ok');
+end
 
 %% Returning to the working directory
 cd(working_directory1)
-
-
-fprintf('\n\nThank you for using this transfer entropy tool!\n')
 
 return;
 
