@@ -1,4 +1,4 @@
-function data = TEfindDelay(predicttimevec_u,cfgTESS,data)
+function [data, TEmat]= TEfindDelay(predicttimevec_u,cfgTESS,data)
 
 % FUNCTION TEFINDDELAY
 %
@@ -21,6 +21,8 @@ function data = TEfindDelay(predicttimevec_u,cfgTESS,data)
 %		data.TEprepare.u_in_ms
 %		data.TEprepare.u_in_samples
 %		data.TEprepare.cfg.predicttime_u
+%   TEmat - array with size [n_sgncmb x u] raw TE values for each signal 
+%      combination and assumed delay u, returned by TEfindmaxte.m
 %
 % PW 27/11/2014
 
@@ -55,7 +57,7 @@ for uu=1:max(size(predicttimevec_u))
 
 end
 
-opt_u_vec = TEfindmaxte(TGA_results);
+[opt_u_vec TEmat]= TEfindmaxte(TGA_results);
 
 data.TEprepare.u_in_ms = opt_u_vec;
 data.TEprepare.u_in_samples = round(opt_u_vec/1000*data.fsample);

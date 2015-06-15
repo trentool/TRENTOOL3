@@ -90,7 +90,7 @@ clear data;
 
 %% find optimal interaction delays
 fprintf('\n\n################### OPTIMIZING INFORMATION TRANSFER DELAY\n\n')
-dataprep = TEfindDelay(predicttimevec_u,cfgTESS,dataprep);
+[dataprep, TEmat] = TEfindDelay(predicttimevec_u,cfgTESS,dataprep);
 cfgTESS.embedsource = 'yes';
 
 %% calulate statistics with optimal u for individual channels
@@ -107,6 +107,7 @@ end
 
 % add opt u vector to TEpermvalues matrix
 TEpermtest.TEpermvalues = [TEpermtest.TEpermvalues TEpermtest.TEprepare.u_in_ms];
+TEpermtest.TEbyU        = TEmat;
 
 if groupanalysis
     TEpermtest.groupprepare = groupprepare;

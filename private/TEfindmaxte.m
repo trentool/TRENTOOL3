@@ -1,4 +1,4 @@
-function opt_u  = TEfindmaxte(data)
+function [opt_u, TEmat_all] = TEfindmaxte(data)
 
 % FUNCTION TEFINDMAXTE
 % Finds the optimal delay by searching for the maximum TE value over various 
@@ -13,16 +13,14 @@ function opt_u  = TEfindmaxte(data)
 % You can call this function directly as follows:
 %         opt_u = TEfindmaxte(data)
 %
-% * DEPENDENCIES
 %
 % * INPUT PARAMETERS
 %
-%   data = Cell array with as many  cells as assumed delays u's that were 
+%   data = Cell array with as many cells as assumed delays u's that were 
 %          scanned within TEfindDelay. Each cell contains the output of a 
-%          call to TEsurrogatestats (TEpermtest and TEresult)
-%          (see below for details)
+%          call to TEsurrogatestats (TEpermtest) with the following fields:
 %
-%             TEpermtest
+%   TEpermtest
 %            .TEpermvalues  = matrix with size:
 %                             (channelpair,value)
 %                           The last dimension "value" includes:
@@ -42,39 +40,19 @@ function opt_u  = TEfindmaxte(data)
 %                             TE estimation on CPU or channelcombi x 1 for
 %                             TE estimation using the ensemble method/GPU
 %                             estimation)
-%            .dimord        = dimensions of TEpermvalues
-%            .cfg           = configuration file used to calculate TE and
-%                             permtest
-%            .sgncmb        = labels of channel combinations (source ->
-%                             target)
-%            .numpermutation = number of permutations
-%            .ACT           = structure including
-%                .act       = ACT matrix (channelcombi x 2 x trial)
-%            .nr2cmc        = number of tests to correct for multiple
-%                             comparisons
-%            .TEprepare     = results of the function TEprepare from the
-%                             data
 %
-%            AND
-%
-%           TEresult             (= Output structure of the function tranferentropy)
-%          .TEmat       = resultmatrix including transfer entropy(TE)
-%                         values (channelpairs x u x trial)
-%          .MImat       = resultmatrix including mutual information (MI)
-%                         values (channelpairs x u x trial)
-%          .dimord      = 'channelpair_u_trial'; the dimensions of TEmat
-%                         and MImat
-%          .cfg         = configuration file used to calculate TE
-%          .trials      = trial numbers selected from raw dataset
-%          .act         = ACT matrix (channelcombi x 2 x trial)
-%          .sgncmb      = labels of channel combinations (source -> target)
-%          .TEprepare   = results of the function TEprepare from the
-%                         data
 %   if instantaneous mixing is found in the data, then another field will
 %   be added:
 %          .instantaneousmixing = matrix (channel x u) which indicates were
 %          the instantaneous mixings were found (1) or not (0).%
 %
+%
+% * OUTPUT
+%       opt_u       = vector with size [n_sgncmb x 1] with the optimal
+%                     delay u for each signal combination
+%       TEmat_all   = array with size [n_sgncmb x u] raw TE values for each 
+%                     signal combination and assumed delay u
+%   
 %
 %
 % This program is free software; you can redistribute it and/or modify
@@ -132,3 +110,4 @@ if ~strcmp(data{1}.cfg.ensemblemethod,'yes')
     opt_u            = (opt_u).*VolCondIndicator;
 end;
 
+TEmat_all = TERawmat;
