@@ -371,6 +371,7 @@ if ~isfield(cfg, 'trialselect'),      cfg.trialselect = 'ACT';         end;
 if ~isfield(cfg, 'maxlag'),           cfg.maxlag = 1000;               end;
 if ~isfield(cfg, 'TEcalctype'),       cfg.TEcalctype = 'VW_ds';        end;
 if ~isfield(cfg, 'ensemblemethod'),   cfg.ensemblemethod = 'no';       end;
+if ~isfield(cfg, 'minnrtrials'),      cfg.minnrtrials = 12;            end;
 
 
 %% check optimizemethod 
