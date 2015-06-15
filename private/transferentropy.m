@@ -507,48 +507,54 @@ if ~par_state  % non-parallel part
             trial1 =t4t;
 
             if strcmp(cfg.shuffle, 'no')
+                
                 trial2 = trial1;
                 timespan = timeindices(1):timeindices(2);
+                
             elseif strcmp(cfg.shuffle, 'yes')
-                if strcmp(cfg.surrogatetype, 'trialshuffling')
-                    if mod(t4t,nrtrials(channelpair,2)) == 0
-                        trial2 = 1;
-                    else
-                        trial2 = t4t+1;
-                    end
-                    timespan = timeindices(1):timeindices(2);
+                
+                switch cfg.surrogatetype, 
+                    case 'trialshuffling'
+                        if mod(t4t,nrtrials(channelpair,2)) == 0
+                            trial2 = 1;
+                        else
+                            trial2 = t4t+1;
+                        end
+                        timespan = timeindices(1):timeindices(2);
 
-                elseif strcmp(cfg.surrogatetype, 'blockresampling')
-                    trial2 = t4t;
-                    cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
-                    timespan =[cutpoint:timeindices(2),timeindices(1):cutpoint-1];
+                    case 'blockresampling'
+                        trial2 = t4t;
+                        cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
+                        timespan =[cutpoint:timeindices(2),timeindices(1):cutpoint-1];
 
-                elseif strcmp(cfg.surrogatetype, 'trialreverse')
-                    trial2 = t4t;
-                    timespan = timeindices(1):timeindices(2);
-                    flipdim(timespan,2)
+                    case 'trialreverse'
+                        trial2 = t4t;
+                        timespan = timeindices(1):timeindices(2);
+                        flipdim(timespan,2)
 
-                elseif strcmp(cfg.surrogatetype, 'blockreverse1')
-                    trial2 = t4t;
-                    cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
-                    timespan =flipdim([cutpoint:timeindices(2),timeindices(1):cutpoint-1],2);
+                    case 'blockreverse1'
+                        trial2 = t4t;
+                        cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
+                        timespan =flipdim([cutpoint:timeindices(2),timeindices(1):cutpoint-1],2);
 
-                elseif strcmp(cfg.surrogatetype, 'blockreverse2')
-                    trial2 = t4t;
-                    cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
-                    timespan =[flipdim(cutpoint:timeindices(2),2),timeindices(1):cutpoint-1];
+                    case 'blockreverse2'
+                        trial2 = t4t;
+                        cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
+                        timespan =[flipdim(cutpoint:timeindices(2),2),timeindices(1):cutpoint-1];
 
-                elseif strcmp(cfg.surrogatetype, 'blockreverse3')
-                    trial2 = t4t;
-                    cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
-                    timespan =[cutpoint:timeindices(2),flipdim(timeindices(1):cutpoint-1,2)];
-                elseif strcmp(cfg.surrogatetype, 'swapneighbors')
-                    if mod(t4t,2)==0
-                        trial2 = t4t-1;
-                    else
-                        trial2 = t4t+1;
-                    end
-                    timespan = timeindices(1):timeindices(2);
+                    case 'blockreverse3'
+                        trial2 = t4t;
+                        cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
+                        timespan =[cutpoint:timeindices(2),flipdim(timeindices(1):cutpoint-1,2)];
+                    case 'swapneighbors'
+                        if mod(t4t,2)==0
+                            trial2 = t4t-1;
+                        else
+                            trial2 = t4t+1;
+                        end
+                        timespan = timeindices(1):timeindices(2);
+                    otherwise
+                        error('TRENTOOL ERROR: Unknown surrogate type!')
                 end
 
             end

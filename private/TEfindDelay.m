@@ -55,12 +55,8 @@ for uu=1:max(size(predicttimevec_u))
 
 end
 
-cfgTGAA = [];
-cfgTGAA.select_opt_u = 'max_TE';
-cfgTGAA.select_opt_u_pos = 'shortest';
-TGA = InteractionDelayReconstruction_analyze(cfgTGAA,TGA_results);
+opt_u_vec = TEfindmaxte(TGA_results);
 
-opt_u_vec = TGA.TEpermvalues(:,end);
 data.TEprepare.u_in_ms = opt_u_vec;
 data.TEprepare.u_in_samples = round(opt_u_vec/1000*data.fsample);
 data.TEprepare.cfg.predicttime_u = opt_u_vec;

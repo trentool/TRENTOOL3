@@ -247,6 +247,7 @@ function TEpermtest=TEsurrogatestats(cfg,data)
 % 2014-11-27 PW: made predicttime_u a vector
 % 2014-11-27 PW: bugfix - nr2cmc is the number of channel combinations, not
 % the no. channel combinations times number of u values to be scanned
+% 2014-06-15 PW: bugfix - no. permutations was not checked correctly
 
 %% Remember the working directory
 working_directory1 = pwd;
@@ -497,9 +498,10 @@ fprintf('\nChecking number of permutations');
 nr2cmc=size(data.TEprepare.channelcombilabel,1);
 
 if ~isfield(cfg, 'numpermutation'),
-    %cfg.numpermutation = 190100; % for p<0.01 with a possible bonferroni correcetion of 100
-    cfg.numpermutation = ceil(1/(cfg.alpha/nr2cmc));
-    fprintf('TRENTOOL: You didn''t specify a number of permutations. It was set to %d (1/(alpha/no_channelcombis)).', cfg.numpermutation);
+    cfg.numpermutation = 190100; % for p<0.01 with a possible bonferroni correcetion of 100
+    fprintf('\nTRENTOOL: You didn''t specify a number of permutations. It was set to %d (for p<0.01 with a possible bonferroni correcetion of 100).', cfg.numpermutation);
+    %cfg.numpermutation = ceil(1/(cfg.alpha/nr2cmc));
+    %fprintf('\nTRENTOOL: You didn''t specify a number of permutations. It was set to %d (1/(alpha/no_channelcombis)).', cfg.numpermutation);
 end
 
 findDelay = 0;
@@ -514,11 +516,13 @@ else
     	fprintf('\n')
     	error('TRENTOOL ERROR: cfg.numpermutation too small (< 1/alpha)!');
     elseif cfg.numpermutation < ceil(1/(cfg.alpha/nr2cmc))
-       fprintf('\n###############################################\n# WARNING: Nr of permutations not sufficient for correction for multiple comparisons! #\n#######################################################################################\n'); 
-    elseif max(nrtrials)>31 && cfg.numpermutation > 2^31
+       fprintf('\n#######################################################################################\n');
+       fprintf('# WARNING: Nr of permutations not sufficient for correction for multiple comparisons! #\n');
+       fprintf('#######################################################################################'); 
+    elseif max(nrtrials(:,2))>31 && cfg.numpermutation > 2^31
         fprintf('\n')
         error('TRENTOOL ERROR: cfg.numpermutation too huge (> 2^31)!');
-    elseif max(nrtrials)>31 && cfg.numpermutation > 2^min(min(nrtrials)) % nrtrials is now 2-D!
+    elseif max(nrtrials(:,2))>31 && cfg.numpermutation > 2^min(nrtrials(:,2)) % nrtrials is now 2-D!
         fprintf('\n')
         error('TRENTOOL ERROR: cfg.numpermutation too huge (> 2^n_trials)!');
     end
@@ -638,6 +642,7 @@ if cfg.numpermutation > 0
     cfg = rmfield(cfg, 'shuffle');
     fprintf('\nStart permutation tests');
     TEpermtest = TEperm(cfg,TEresult,TEshuffle);
+    TEpermtest.TEmat_sur = TEshuffle.TEmat;
 else
     TEpermtest = [];
 end
@@ -659,20 +664,19 @@ TEpermtest.numpermutation = cfg.numpermutation;
 TEpermtest.TEprepare = data.TEprepare;
 TEpermtest.nr2cmc = nr2cmc;
 TEpermtest.TEmat = TEresult.TEmat;
-
+TEpermtest.MImat = TEresult.MImat;
 
 %% save results
 % -------------------------------------------------------------------------
 
-if ~findDelay
-    fprintf('\nSaving ...')
-    fprintf('\n\tresults of TE estimation')
-    save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TE_output.mat'), 'TEresult','-v7.3');
-    fprintf(' - ok');
-    fprintf('\n\tresults of permutation test')
-    save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TEpermtest_output.mat'), 'TEpermtest','-v7.3');
-    fprintf(' - ok');
-end
+
+% fprintf('\nSaving ...')
+% fprintf('\n\tresults of TE estimation')
+% save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TE_output.mat'), 'TEresult','-v7.3');
+% fprintf(' - ok');
+% fprintf('\n\tresults of permutation test')
+% save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TEpermtest_output.mat'), 'TEpermtest','-v7.3');
+% fprintf(' - ok');
 
 %% Returning to the working directory
 cd(working_directory1)

@@ -113,14 +113,14 @@ function TEpermtest=TEsurrogatestats_ensemble(cfg,data)
 %                     installed (default = 1)
 %
 %   cfg.surrogatetype = If ensemble method is chosen for TE calculation, 
-%                       'trialperm' is the only possible option for the 
-%                       creation of surrogate data. Parameter will be set 
-%                       to 'trialperm' if no other option is chosen and 
-%                       will throw an error if any different option is 
-%                       provided.
-%                       'trialperm' will lead to a permutation of trials 
-%                       times the number of permutations provided for the 
-%                       permutation test, i.e.:
+%                       'trialshuffling' is the only possible option for  
+%                       the creation of surrogate data. Parameter will be  
+%                       set to 'trialshuffling' if no other option is 
+%                       chosen and will throw an error if any different 
+%                       option is provided.
+%                       'trialshuffling' will lead to a permutation of  
+%                       trials times the number of permutations provided 
+%                       for the permutation test, i.e.:
 %
 %                       original trial:    1 2 3 4 5 6
 %                       permtrial1:        2 4 1 3 6 5
@@ -238,6 +238,9 @@ function TEpermtest=TEsurrogatestats_ensemble(cfg,data)
 % 2014-04-14 PW: function now uses TEsetRandStream.m
 % 2014-04-14 PW: it is now checked, if tau is zero after multiplication with
 % the ACT and rounding -> if yes, set to 1 manually
+% 2014-04-14 PW: changed surrogate type from trialperm to trialshuffling to
+% beconsistent with the CPU method
+
 
 %% Remember the working directory
 working_directory1 = pwd;
@@ -316,7 +319,7 @@ cfg.u_in_ms = data.TEprepare.u_in_ms;
 % if not defined set defaults
 if ~isfield(cfg, 'alpha'),          cfg.alpha = 0.05;                end;
 if ~isfield(cfg, 'correctm'),       cfg.correctm = 'FDR';            end;
-if ~isfield(cfg, 'surrogatetype'),  cfg.surrogatetype = 'trialperm'; end;
+if ~isfield(cfg, 'surrogatetype'),  cfg.surrogatetype = 'trialshuffling'; end;
 if ~isfield(cfg, 'embedsource'),    cfg.embedsource = 'yes';         end;
 
 if isfield(cfg, 'tail') && cfg.tail ~= 1
@@ -364,8 +367,8 @@ end
 
 % check if the correct permutation method for surrogate generation is
 % chosen
-if ~isfield (cfg,'surrogatetype') || ~strcmp(cfg.surrogatetype,'trialperm')
-    error('TRENTOOL ERROR:  If ensemble method is used, "cfg.surrogatetype" has to be set to "trialperm", see help.');
+if ~isfield (cfg,'surrogatetype') || ~strcmp(cfg.surrogatetype,'trialshuffling')
+    error('TRENTOOL ERROR:  If ensemble method is used, "cfg.surrogatetype" has to be set to "trialshuffling", see help.');
 end
 
 % check optimizemethod
@@ -808,9 +811,11 @@ for channelpair = 1:size(channelcombi,1)
         clear *_aux;
         
     end
-    ft_progress('close');
-    
-    if numpermutation > 0; fprintf('\t - ok\n'); end;
+        
+    if numpermutation > 0; 
+        ft_progress('close');
+        fprintf('\t - ok\n'); 
+    end;
     
     fprintf('\nStarting GPU neighbour count ...\n');
     
@@ -883,6 +888,8 @@ TEpermtest.numpermutation = cfg.numpermutation;
 TEpermtest.TEprepare      = TEpreparestruct;
 TEpermtest.nr2cmc         = nr2cmc;
 TEpermtest.TEmat          = TEmat;
+TEpermtest.MImat          = MImat; clear MImat;
+TEpermtest.TEmat_sur      = TEmat_sur; clear TEmat_sur;
 TEpermtest.TELmat         = TELmat;
 
 % add results to TEresult
@@ -899,15 +906,15 @@ TEresult.TEprepare = TEpreparestruct; clear TEpreparestruct;
 %% save results
 % -------------------------------------------------------------------------
 
-if ~findDelay
-    fprintf('\nSaving ...')
-    fprintf('\n\tresults of TE estimation')
-    save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TE_output.mat'), 'TEresult','-v7.3');
-    fprintf(' - ok');
-    fprintf('\n\tresults of permutation test')
-    save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TEpermtest_output.mat'), 'TEpermtest','-v7.3');
-    fprintf(' - ok');
-end
+
+% fprintf('\nSaving ...')
+% fprintf('\n\tresults of TE estimation')
+% save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TE_output.mat'), 'TEresult','-v7.3');
+% fprintf(' - ok');
+% fprintf('\n\tresults of permutation test')
+% save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TEpermtest_output.mat'), 'TEpermtest','-v7.3');
+% fprintf(' - ok');
+
 
 %% Returning to the working directory
 cd(working_directory1)

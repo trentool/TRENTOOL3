@@ -1,4 +1,4 @@
-function TGA_results=InteractionDelayReconstruction_calculate(cfgTEP,cfgTESS,data)
+function TEpermtest = InteractionDelayReconstruction_calculate(cfgTEP,cfgTESS,data)
 
 % InteractionDelayReconstruction_calculate
 % Graph Timing calculation based on TE with scanned prediction times u
@@ -16,9 +16,9 @@ function TGA_results=InteractionDelayReconstruction_calculate(cfgTEP,cfgTESS,dat
 % cfgTSS    -   a configuration structure that has all the fields required
 %           for TEsurrogatestats
 %
-% The OUTPUT TGA_results results is a structure containing estimated TE
-% values and results for permutation testing using the optimal interaction
-% delay for each channel combination.
+% The OUTPUT TEpermtest is a structure containing estimated TE values and 
+% results for permutation testing using the optimal interaction delay for 
+% each channel combination.
 
 
 % CHANGELOG
@@ -27,6 +27,7 @@ function TGA_results=InteractionDelayReconstruction_calculate(cfgTEP,cfgTESS,dat
 % 2014-27-11 PW: changed interaction delay reconstruction: u is now optimized w/o surrogate
 %		 testing, surrogate testing is done in a second step using the reconstructed
 %		 interaction delay
+% 2013-27-06 PW: TEpermtest is saved to disk by this function
 
 %%%
 if nargin ~= 3
@@ -61,7 +62,7 @@ else
     
     % cfg.predicttimevec_u supplied ?
     if ~isfield(cfgTEP,'predicttimemax_u')
-    error(' No cfgTEP.predicttimemax_u specified - see HELP InteractionDelayReconstruction_calculate for more information');
+        error(' No cfgTEP.predicttimemax_u specified - see HELP InteractionDelayReconstruction_calculate for more information');
     end
     if ~isfield(cfgTEP,'predicttimemin_u')
         error(' No cfgTEP.predicttimemin_u specified - see HELP InteractionDelayReconstruction_calculate for more information');
@@ -78,8 +79,6 @@ else
     % all other checks are left to the subsidiary functions
 end
 
-% construct output datastructure
-TGA_results = cell(1,max(size(predicttimevec_u)));
 
 t_total = tic;
 
@@ -101,17 +100,26 @@ cfgTESS.fileidout=strcat(cfgTESS.fileidout,'_RAG4_TGA_opt_u');
 
 % branch here for GPU calculation
 if strcmp(dataprep.TEprepare.ensemblemethod,'yes')
-    TGA_results=TEsurrogatestats_ensemble(cfgTESS,dataprep);
+    TEpermtest=TEsurrogatestats_ensemble(cfgTESS,dataprep);
 else
-    TGA_results=TEsurrogatestats(cfgTESS,dataprep);
+    TEpermtest=TEsurrogatestats(cfgTESS,dataprep);
 end
 
 % add opt u vector to TEpermvalues matrix
-TGA_results.TEpermvalues = [TGA_results.TEpermvalues TGA_results.TEprepare.u_in_ms];
+TEpermtest.TEpermvalues = [TEpermtest.TEpermvalues TEpermtest.TEprepare.u_in_ms];
 
 if groupanalysis
-    TGA_results.groupprepare = groupprepare;
+    TEpermtest.groupprepare = groupprepare;
 end
+
+%% save results
+
+fprintf('\nSaving results of TE estimation and surrogate testing')
+save(strcat(cfgTESS.fileidout,'_time',num2str(cfgTEP.toi(1)),'-',num2str(cfgTEP.toi(2)),'s_TEpermtest_output.mat'), ...
+    'TEpermtest','-v7.3');
+fprintf(' - ok');
+
+%%
 
 t=toc(t_total);
 fprintf('\n\nThank you for using this transfer entropy tool!')

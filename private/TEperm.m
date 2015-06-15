@@ -74,8 +74,6 @@ working_directory = pwd;
 TEsetRandStream;
 
 
-fprintf('\nPerform permutation tests');
-
 datax = TEresult1.TEmat;
 datay = TEresult2.TEmat;
 
@@ -215,14 +213,14 @@ end
 fprintf(' - ok');
 
 % Evaluating the quantiles of the true results in the permdistribution
-fprintf('\nStart permutation tests');
+fprintf('\nStart permutation test');
 
 z = sort(TEpermdist,2);
 
 TEpermvalues = NaN(size(datax,1),5);
 
 % prepare text waitbar
-fprintf('\nPlease wait...\n\n');
+fprintf('\nPlease wait...\n');
 for ii = 1:size(datax, 1)
     fprintf('-')
 end

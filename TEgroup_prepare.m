@@ -10,7 +10,7 @@ function TEgroup_prepare(cfg,fileCell)
 % TEgroup_prepare furthermore checks the data for equality with respect to
 % no. channels, channel combination and time of interest (toi). If any of
 % these parameters are not equal over subjects, the function will give an
-% error message. // TODO What about trial numbers?
+% error message.
 %
 % Note, other than most TRENTOOL functions, TEgroup_prepare takes file
 % names (not paths!) instead of data structures as inputs ('fileCell'),
