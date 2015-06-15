@@ -811,9 +811,11 @@ for channelpair = 1:size(channelcombi,1)
         clear *_aux;
         
     end
-    ft_progress('close');
-    
-    if numpermutation > 0; fprintf('\t - ok\n'); end;
+        
+    if numpermutation > 0; 
+        ft_progress('close');
+        fprintf('\t - ok\n'); 
+    end;
     
     fprintf('\nStarting GPU neighbour count ...\n');
     
@@ -886,6 +888,8 @@ TEpermtest.numpermutation = cfg.numpermutation;
 TEpermtest.TEprepare      = TEpreparestruct;
 TEpermtest.nr2cmc         = nr2cmc;
 TEpermtest.TEmat          = TEmat;
+TEpermtest.MImat          = MImat; clear MImat;
+TEpermtest.TEmat_sur      = TEmat_sur; clear TEmat_sur;
 TEpermtest.TELmat         = TELmat;
 
 % add results to TEresult
@@ -902,15 +906,15 @@ TEresult.TEprepare = TEpreparestruct; clear TEpreparestruct;
 %% save results
 % -------------------------------------------------------------------------
 
-if ~findDelay
-    fprintf('\nSaving ...')
-    fprintf('\n\tresults of TE estimation')
-    save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TE_output.mat'), 'TEresult','-v7.3');
-    fprintf(' - ok');
-    fprintf('\n\tresults of permutation test')
-    save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TEpermtest_output.mat'), 'TEpermtest','-v7.3');
-    fprintf(' - ok');
-end
+
+% fprintf('\nSaving ...')
+% fprintf('\n\tresults of TE estimation')
+% save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TE_output.mat'), 'TEresult','-v7.3');
+% fprintf(' - ok');
+% fprintf('\n\tresults of permutation test')
+% save(strcat(cfg.fileidout,'_time',num2str(cfg.toi(1)),'-',num2str(cfg.toi(2)),'s_TEpermtest_output.mat'), 'TEpermtest','-v7.3');
+% fprintf(' - ok');
+
 
 %% Returning to the working directory
 cd(working_directory1)

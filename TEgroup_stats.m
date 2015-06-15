@@ -204,7 +204,7 @@ end;
 
 %% check nr of permutations
 % -------------------------------------------------------------------------
-fprintf('\n\nChecking number of permutations\n');
+fprintf('\n\nChecking number of permutations');
 
 
 % cfg.permtest.channelcombi = channelcombi;
@@ -255,9 +255,12 @@ nrunits  = length(unittype);
 condindex1 = find(conds == condtype(1));
 condindex2 = find(conds == condtype(2));
 
-fprintf(strcat(['Nr of different datasets: ' num2str(nrunits) '\n']))
-fprintf(strcat(['Condition 1 -> Datasets: ' num2str(condindex1) '\n' ]))
-fprintf(strcat(['Condition 2 -> Datasets: ' num2str(condindex2) '\n' ]))
+fprintf('Total no. datasets: %d\n', nrunits)
+fprintf('\tCondition 1 -> ')
+fprintf('%d ', condindex1 )
+fprintf('\n\tCondition 2 -> ')
+fprintf('%d ', condindex2)
+fprintf('\n')
 
 u_mean1 = mean(u_values(:,condindex1),2);
 u_mean2 = mean(u_values(:,condindex2),2);
@@ -293,6 +296,8 @@ TEresult1.TEmat = TEresultmean.TEmat(:,condindex1);
 TEresult2.TEmat = TEresultmean.TEmat(:,condindex2);
 %TEresult2.MImat = TEresultmean.MImat(:,condindex2);
 
+fprintf(' - ok');
+
 % perform permutation test
 TEpermtestgroup = TEperm(cfg,TEresult1,TEresult2);
 
@@ -319,7 +324,7 @@ TEpermtestgroup.TEgroupprepare.channellabel      = allTEpermtest{1}.TEprepare.ch
 TEpermtestgroup.TEgroupprepare.timeindices       = allTEpermtest{1}.TEprepare.timeindices;
 TEpermtestgroup.TEgroupprepare.optdim            = allTEpermtest{1}.TEprepare.optdim;
 
-fprintf('\nCalculation ready\n')
+fprintf('\nCalculation finished\n')
 
 
 %% save results
@@ -329,13 +334,13 @@ toi = allTEpermtest{1}.cfg.toi;
 fprintf('\nSaving ...')
 
 % this saves data for each group, that enters the group statistics
-fprintf('\nResults of TE')
+fprintf('\n\tdata used in permutation test')
 savename1 = strcat(cfg.fileidout,'_time',num2str(toi(1)),'-',num2str(toi(2)),'s_TEpermtestgroup_data.mat');  
 save(savename1, 'TEresultmean','TEresult1','TEresult2','-v7.3');
 fprintf(' - ok');
 
 % this saves the output of the group statistics
-fprintf('\nResults of permutation test')
+fprintf('\n\tresults of permutation test')
 save(strcat(cfg.fileidout,'_time',num2str(toi(1)),'-',num2str(toi(2)),'s_TEpermtestgroup_output.mat'), 'TEpermtestgroup','-v7.3');
 fprintf(' - ok\n\n');
 

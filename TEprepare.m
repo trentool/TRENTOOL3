@@ -140,8 +140,9 @@ function DataOut=TEprepare(varargin)
 %                    (default = 'ACT'; for fMRI default = 'no')
 %      if you chose 'ACT' (or nothing):
 %      cfg.actthrvalue = max threshold for ACT; min threshold
-%      cfg.minnrtrials = minimum Nr of trials with ACT < actthrest used to
-%                    calculate transfer entropy
+%      cfg.minnrtrials = minimum no. trials required for TE estimation after
+%                        exclusion of trials due to an ACT higher than 
+%                        actthrvalue
 %      if you chose 'range':
 %      cfg.trial_from  = Inferior limit for the trials to be considered
 %      cfg.trial_to    = Superior limit for the trials to be considered
@@ -249,6 +250,8 @@ function DataOut=TEprepare(varargin)
 % values can now be entered for both parameters
 %
 % 2015-23-04: PW removed the warning about u having to be bigger than half the ACT
+%
+% 2015-15-06: PW added a default for minnrtrials
 
 %% Remember the working directory
 working_directory = pwd;
