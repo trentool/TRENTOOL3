@@ -1,5 +1,13 @@
 function TGA=InteractionDelayReconstruction_analyze(cfg,data)
 
+% FUNCTION InteractionDelayReconstruction_analyze
+%
+% !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+% WARNING: THIS FUNCTION IS DEPRECATED, SEE NEW WORK FLOW FOR TE ESTIMATION WITH
+% 	   OPTIMIZED INFORMATION TRANSFER DELAY!!!
+% !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+%
+%
 % analyzes and compacts the output of InteractionDelayReconstruction_calculate
 %
 % the output of InteractionDelayReconstruction_calculate which serves as an input here
