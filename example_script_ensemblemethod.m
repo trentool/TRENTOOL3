@@ -56,7 +56,7 @@ cfgTESS.optdimusage = 'indivdim';
 
 % surrogate testing
 cfgTESS.tail           = 1;
-cfgTESS.surrogatetype  = 'trialperm';
+cfgTESS.surrogatetype  = 'trialshuffling';
 cfgTESS.numpermutation = 100;
 
 % GPU specifications
