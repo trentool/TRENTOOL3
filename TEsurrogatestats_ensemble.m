@@ -888,8 +888,8 @@ TEpermtest.numpermutation = cfg.numpermutation;
 TEpermtest.TEprepare      = TEpreparestruct;
 TEpermtest.nr2cmc         = nr2cmc;
 TEpermtest.TEmat          = TEmat;
-TEpermtest.MImat          = MImat; clear MImat;
-TEpermtest.TEmat_sur      = TEmat_sur; clear TEmat_sur;
+TEpermtest.MImat          = MImat; 
+TEpermtest.TEmat_sur      = TEmat_sur; 
 TEpermtest.TELmat         = TELmat;
 
 % add results to TEresult
