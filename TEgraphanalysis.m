@@ -193,7 +193,7 @@ fprintf(['no of edges: ' num2str(n_edges) ', no of vertices: ' num2str(n_vertice
 graphanalysis = [];
 graphanalysis.n_edges = n_edges;
 graphanalysis.n_vertices = n_vertices;
-graphanalysis.density  = getDensity(n_edges,n_vertices);
+graphanalysis.density  = getDensity(n_vertices, n_edges);
 graphanalysis.TEpermvalues_old = data.TEpermvalues;
 
 % collects all alternative paths within the reconstruction interval 
