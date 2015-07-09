@@ -1,4 +1,4 @@
-function TEplot2D_new(cfg,data)
+function TEplot2D_beta(cfg,data)
 
 % TEPLOT2D: Plots a 2D representation of the data returned by
 %
@@ -212,8 +212,9 @@ cmap = colormap;
 switch cfg.linktype
     case 'sign'
         acolor = repmat(cfg.arrowcolor, sum(linkind), 1);
-        minval = 1;       % scaling for color bar axis
+        minval = 0;       % scaling for color bar axis
         maxval = 1;
+        stepsize = 0.5;
     case 'pval'
         linkind = data.TEpermvalues(linkind,1) > cfg.threshold;
         pval    = data.TEpermvalues(linkind,1);

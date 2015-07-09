@@ -1,11 +1,11 @@
-function dens = getDensity(N,E)
+function dens = getDensity(V,E)
 % GETDENSITY: Calculates the density of a graph as the ratio of the
 % existing and potential edges in a directed graph (weighting is not taken 
 % into account).
 %
 % * INPUT
 %    EITHER
-%       N = no. vertices AND 
+%       V = no. vertices AND 
 %       E = no. edges
 %   OR
 %       adjacency matrix = matrix that represents the TE graph, where the
@@ -33,8 +33,8 @@ function dens = getDensity(N,E)
 % Frankfurt 2012
 
 if nargin == 1;   
-    E = sum(sum(N>0)); 
-    N = size(N,1);
+    E = sum(sum(V>0)); 
+    V = size(V,1);
 end;
 
-dens = E/(N*(N-1));
+dens = E/(V*(V-1));
