@@ -247,6 +247,8 @@ switch cfg.linktype
         acolor(graphres == 4,:) = repmat([1 1 0], sum(graphres == 4), 1); % 4 = common drive link triangle
         minval = 2;
         maxval = 4;
+    otherwise 
+        error('TRENTOOL ERROR: Please specify ''.linktype''.');
 end   
 
 if minval == maxval;
@@ -263,7 +265,7 @@ Y(:,1)=ycoord(channelcombi(linkind,1));
 Y(:,2)=ycoord(channelcombi(linkind,2));
 
 if nlinks == 0
-    error('TRENTOOL ERROR: No significant links were found.')
+    warning('TRENTOOL ERROR: No significant links were found.')
 end
 
 %% plotting
