@@ -1,4 +1,4 @@
-function [significance correctm] = TEcmc(data, correctm, alpha, nrinstmix)
+function [significance, correctm] = TEcmc(data, correctm, alpha, nrinstmix)
 
 % TEcmc: This function implements the correction for multiple comparisons
 % with false discovery rate or the more conservative Bonferroni correction.
@@ -6,9 +6,12 @@ function [significance correctm] = TEcmc(data, correctm, alpha, nrinstmix)
 % This function is called by the functions TEperm
 %
 % * REFERENCE INFORMATION
-%   Genovese, C.R., Lazar, N.A., & Nichols, T. (2002). Thresholding of
+%   Genovese, C.R., Lazar, N.A., & T. Nichols (2002). Thresholding of
 %   statistical maps in functional neuroimaging using the false discovery
 %   rate. Neuroimage, 15(4), 870-878.
+%   Y. Benjamini & Y Hochberg (1995). Controlling the False Discovery Rate:
+%   A Practical and Powerful Approach to Multiple Testing. J R Stat Soc B,
+%   57(1), 289-300.
 %
 %
 % * OUTPUT PARAMETERS
@@ -32,6 +35,8 @@ function [significance correctm] = TEcmc(data, correctm, alpha, nrinstmix)
 % was not effective before (changed cfg.correctm instead of correctm)
 % 01/19/2015: PW fixed a bug in the calculation of the individual
 % thresholds (missing brackets)
+% 01/19/2015: PW fixed a bug in the FDR algorithm, thresholds and P-Values
+% have to be compared iteratively, starting with the smallest p
 
 % if number of multiple comparisons are smaller than 10 Bonferroni correction
 % will be used automatically
@@ -65,7 +70,11 @@ if strcmp(correctm, 'FDR')
     % compare data to threshold and prepare output 
     significancecor = sorteddatacor <= thresh;
     significance = zeros(1,nrdata);
-    significance(1:end-nrinstmix) = significancecor;   
+    ind = 1;
+    while significancecor(ind)        
+        significance(ind) = 1;
+        ind = ind + 1;
+    end
     [dummy, unsorteddata] = sort(index);
     significance = significance(unsorteddata);        
     significance = reshape(significance, dim);
