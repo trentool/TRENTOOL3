@@ -95,14 +95,14 @@ dataprep = TEprepare(cfgTEP,data);
 clear data;
 
 %% find optimal interaction delays
-msg = '################### OPTIMIZING INFORMATION TRANSFER DELAY';
+msg = '\n################### OPTIMIZING INFORMATION TRANSFER DELAY\n\n';
 TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MAJOR);
 
 [dataprep, TEmat] = TEfindDelay(predicttimevec_u,cfgTESS,dataprep);
 cfgTESS.embedsource = 'yes';
 
 %% calulate statistics with optimal u for individual channels
-msg = '################### ESTIMATING TRANSFER ENTROPY WITH OPTIMIZED PARAMETERS';
+msg = '\n################### ESTIMATING TRANSFER ENTROPY WITH OPTIMIZED PARAMETERS\n\n';
 TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MAJOR);
 
 cfgTESS.fileidout=strcat(cfgTESS.fileidout,'_RAG4_TGA_opt_u');
@@ -134,5 +134,5 @@ save(strcat(cfgTESS.fileidout,'_time',num2str(cfgTEP.toi(1)),'-',num2str(cfgTEP.
 t=toc(t_total);
 fprintf('\n\nThank you for using this transfer entropy tool!')
 
-fprintf('\n\n\nTRANSFER ENTROPY CALCULATION ENDED: %s \n', datestr(now));
+fprintf('\n\n\nCALCULATION ENDED: %s \n', datestr(now));
 fprintf('CALCULATION TOOK %.0f MINUTES (%.0f SECONDS)\n\n', t/60,t);

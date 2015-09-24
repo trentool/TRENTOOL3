@@ -43,7 +43,8 @@ function [significance, correctm] = TEcmc(data, correctm, alpha, nrinstmix)
 if numel(data) <=10 && strcmp(correctm, 'FDR');
     %cfg.correctm = 'BONF';             % PW this doesn't lead to the use of BONF below, because it changes cfg.correctm not correctm
     correctm = 'BONF';
-    fprintf('\nTRENTOOL WARNING: Number of Data to small for FDR -> Bonf was used instead');
+    fprintf('\n')
+    warning('\nTRENTOOL WARNING: Number of Data to small for FDR -> Bonf was used instead');
 end
 
 

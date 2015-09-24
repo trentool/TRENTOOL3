@@ -19,6 +19,8 @@ function [TEpermtest] = TEperm(cfg,TEresult1,TEresult2)
 %   cfg.numpermutation = nr of permutations
 %   cfg.correctm       = for cmc
 %   cfg.permstatstype  = 'mean', 'indepsamplesT' or 'depsamplesT'
+%   cfg.verbosity      = level of verbosity of output printed to the
+%                        command line
 %
 % * OUTPUT PARAMETERS
 %
@@ -67,6 +69,10 @@ function [TEpermtest] = TEperm(cfg,TEresult1,TEresult2)
 
 %% Remember the working directory
 working_directory = pwd;
+
+%% define logging levels
+LOG_INFO_MAJOR = 1;
+LOG_INFO_MINOR = 2;
 
 %% set new stream for random numbers
 
@@ -129,12 +135,16 @@ if strcmp(cfg.permstatstype, 'mean')
     dist_y=zeros(size(datay,1),cfg.numpermutation);
 end
 
-fprintf('\nGenerate permutations\n');
 
-for kk = 1:20
-    fprintf('-')
+TEconsoleoutput(cfg.verbosity, 'Generating permutations', dbstack, LOG_INFO_MINOR);
+
+if ~strcmp(cfg.verbosity, 'none')
+    fprintf('\n')
+    for kk = 1:20
+        fprintf('-')
+    end
+    fprintf('\n')
 end
-fprintf('\n')
 
 for pp = 1:cfg.numpermutation
     
@@ -210,21 +220,22 @@ if strcmp(cfg.permstatstype, 'mean')
 end
 
 
-fprintf(' - ok');
 
 % Evaluating the quantiles of the true results in the permdistribution
-fprintf('\nStart permutation test');
+TEconsoleoutput(cfg.verbosity, 'Starting permutation test. Please wait...', dbstack, LOG_INFO_MINOR);
 
 z = sort(TEpermdist,2);
 
 TEpermvalues = NaN(size(datax,1),5);
 
-% prepare text waitbar
-fprintf('\nPlease wait...\n');
-for ii = 1:size(datax, 1)
-    fprintf('-')
+if ~strcmp(cfg.verbosity, 'none')
+    % prepare text waitbar
+    fprintf('\n')
+    for ii = 1:size(datax, 1)
+        fprintf('-')
+    end
+    fprintf('\n')
 end
-fprintf('\n')
 
 for channelpair = 1:size(datax,1) % loop over singalcombinations
     fprintf('-');
@@ -278,10 +289,9 @@ for channelpair = 1:size(datax,1) % loop over singalcombinations
 end
 
 
-fprintf(' - ok');
 
 %% Correction for multiple comparisons
-fprintf('\nCorrection for multiple comparison...')
+TEconsoleoutput(cfg.verbosity, 'Correction for multiple comparisons ...', dbstack, LOG_INFO_MINOR);
 pvalues = TEpermvalues(:,1);
 
 % correct only for all passing instantaneous mixing test
@@ -304,7 +314,6 @@ nrinstmix =  size(pvalues,1) - length(find(mixmask==0));
 
 significance = TEcmc(pvalues, cfg.correctm, cfg.alpha, nrinstmix);
 TEpermvalues(:,3)=significance;
-fprintf(' - ok\n');
 
 %TEpermtest.TEpermdist=TEpermdist;
 TEpermtest.TEpermvalues=TEpermvalues;

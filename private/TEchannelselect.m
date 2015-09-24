@@ -29,7 +29,6 @@ working_directory = pwd;
 
 % Select Channels
 % -----------------------------------------------
-fprintf('\nSelect channels');
 
 %read channel labels from data
 if size(data.label,1)==1

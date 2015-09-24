@@ -256,9 +256,8 @@ function DataOut=TEprepare(varargin)
 %% Remember the working directory
 working_directory = pwd;
 
-%% check data
+%% parse input
 % -------------------------------------------------------------------------
-fprintf('\nCheck data and config');
 
 if isfield(varargin{1},'toi') && isstruct(varargin{1}) && isstruct(varargin{2}) && isfield(varargin{2},'trial')
     cfg =  varargin{1};
@@ -267,6 +266,19 @@ else
     error('\nTRENTOOL ERROR: incorrect input values, see help!');
 end
 
+%% define logging levels
+% -------------------------------------------------------------------------
+
+LOG_INFO_MAJOR = 1;
+LOG_INFO_MINOR = 2;
+LOG_DEBUG_COARSE = 3;
+LOG_DEBUG_FINE = 4;
+
+%% check data
+% -------------------------------------------------------------------------
+
+msg = 'Checking data and config';
+TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 
 % check data using checkdata from Fieldtrip
 [data] = ft_checkdata(data, 'datatype','raw');
@@ -579,10 +591,11 @@ elseif strcmp(cfg.trialselect, 'range')
         error('TRENTOOL ERROR: specify cfg.trial_from and cfg.trial_to for setting the range of used trials, see help!');
     end
 end
-fprintf(' - ok\n');
 
 par_state = check_set_parallel(cfg); %check for parallel and set the configuration
-fprintf('par state is %.0f',par_state);
+%fprintf('par state is %.0f',par_state);
+msg = sprintf('par state is %.0f',par_state);
+TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 
 
 
@@ -608,7 +621,8 @@ end
 
 %% building channelpairs
 % -------------------------------------------------------------------------
-fprintf('\nBuilding channelpairs');
+msg = 'Building channelpairs';
+TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 
 % OUTPUT:   channelcombi      = nx2 matrix of indices of the channel
 %                               combinations.
@@ -624,11 +638,10 @@ TEprepare.channelcombilabel=channelcombilabel;
 % remember individual channel label for group statistics
 TEprepare.channellabel = data.label;
 
-fprintf(' - ok')
-
 %% read data
 % -------------------------------------------------------------------------
-fprintf('\nRead data');
+msg = 'Reading data';
+TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 
 % create datacell {channelcombi x 2} including the matrix (trial x
 % timepoints) for each channel.
@@ -652,8 +665,6 @@ else
     alltime=data.time;
 end
 
-fprintf(' - ok')
-
 % find correct indices for the samples in alltime/cfg.toi
 % to be used later
 % look in the time dimension of the data
@@ -668,12 +679,15 @@ if timeindices(1) >= timeindices(2)
     error('TRENTOOL: Something seems to be wrong with your time indices: time index 1 >= time index 2!')
 else
     TEprepare.timeindices = timeindices;
-    fprintf('\nTime indices are %.0f and %.0f',timeindices(1),timeindices(2));
-    fprintf(' - ok')
+    msg = sprintf('Time indices are %.0f and %.0f',timeindices(1),timeindices(2));    
+    TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 end
 
 %% define ACT and trials
 % ------------------------------------------------------------------------
+
+msg = 'Calculating ACT';
+TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 
 % calculate ACT
 % calculate ACT matrix (channelcombi x 2 x trial)  of           
@@ -682,7 +696,8 @@ end
 if isfield(data, 'datatype')
     if strcmp(data.datatype, 'fMRI') && strcmp(cfg.embedding_delay_unit, 'Volumes')
         ACT(:,:,:) = 1;
-        fprintf('TRENTOOL WARNING: In case of using fMRI data using with cao and cfg.embedding_delay_unit=''Volumes'' the ACT values are set to 1!')
+        msg = 'TRENTOOL WARNING: In case of using fMRI data using with cao and cfg.embedding_delay_unit=''Volumes'' the ACT values are set to 1!';
+        TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
     end
 end
 TEprepare.ACT=ACT;
@@ -695,7 +710,9 @@ TEprepare.ACT=ACT;
 %         (channelcombi x 2)
 % trials: cell containing the indices of these trials
 %           {channelcombi x 2}(nrtrials)
-fprintf('\nSelect trials');
+msg = 'Selecting trials';
+TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+
 [trials,nrtrials]=TEtrialselect(cfg,datacell,ACT,channelcombi);
 TEprepare.trials=trials;
 TEprepare.nrtrials=nrtrials;
@@ -703,8 +720,6 @@ TEprepare.maxact = 0;
 for i=1:size(channelcombi,1)
     TEprepare.maxact=max(TEprepare.maxact,max(max(squeeze(ACT(i,2,trials{i,2})))));
 end
-
-fprintf(' - ok')
 
 % convert u value from ms to sampling points
 dimu=round(cfg.predicttime_u/1000*data.fsample);
@@ -737,7 +752,8 @@ else
 
     if strcmp(cfg.optimizemethod, 'ragwitz') == 1
 
-        fprintf('\nCalculate optimization with Ragwitz criterion');
+        msg = 'Calculating optimization with Ragwitz criterion';
+        TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
         
         % define channel on which ragwitz is performed
         targetchannel = 2; % this is index of the target channel in the matrices
@@ -770,14 +786,19 @@ else
         %     T=length(toi);
 
         % create comand line waitbar
-        fprintf('\n')
-        for ii=1:size(channelcombi,1)
-            fprintf('-')
+        if ~strcmp(cfg.verbosity, 'none')
+            fprintf('\n')
+            for ii=1:size(channelcombi,1)
+                fprintf('-')
+            end
+            fprintf('\n')
         end
-        fprintf('\n')
 %-------------------------------------------------------------------------------
-        for channel = 1:size(channelcombi,1) % loop over used channels            
-            fprintf('-')
+        for channel = 1:size(channelcombi,1) % loop over used channels     
+            
+            if ~strcmp(cfg.verbosity, 'none')
+                fprintf('-')                
+            end
             
             if ~par_state 
                for nt = 1:nrtrials(channel,targetchannel) % loop over trials
@@ -936,7 +957,8 @@ else
 
 % PW 30/05/2014 bugfix:
 %        fprintf(strcat(['\nOptimal tau for this dataset may be: ', num2str(opttaumultiplier),'\n']))
-        fprintf(strcat(['\n\tOptimal tau for this dataset may be: ', num2str(TEprepare.opttau),'\n']))
+        msg = sprintf('\tOptimal tau for this dataset was found to be: %.2f', TEprepare.opttau);
+        TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 
         % find max dimension
         % TEprepare.optdimmat includes a vector with the maximum (over trials) dimension for
@@ -947,8 +969,8 @@ else
         % TEprepare.optdim includes a scalar with the maximum dimension for
         % all channel combinations
         TEprepare.optdim = max(max(optdim));
-        fprintf(strcat(['\tOptimal dimension for this dataset may be: ', num2str(max(max(optdim))),'\n']))
-
+        msg = sprintf('\tOptimal dimension for this dataset was found to be: %d', max(max(optdim)));
+        TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 
 
 
@@ -956,12 +978,13 @@ else
     % --------------
     elseif strcmp(cfg.optimizemethod, 'cao') == 1
 
-        fprintf('\nCalculate optimization with cao criteria\n');
+        msg = '\nOptimization using cao criteria\n';
+        TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
         
         % Change to directory containing mex files for the nearest neighbors search
         %[dir_mex] = TEarch(cfg);
         %cd(dir_mex);
-	TEarch;
+        TEarch;
 
 
         % scan dimensions for each channel and trial
@@ -1029,8 +1052,9 @@ else
         if max(max(optdim)) == max(cfg.caodim)
             fprintf('\n')
             error(strcat('TRENTOOL ERROR: Optimal dimension found: ', num2str(max(max(optdim))),' is the highest in cfg.caodim. Rerun the data with higher values for cfg.caodim!'))
-        else
-            fprintf(strcat(['Optimal dimension for this dataset may be: ', num2str(max(max(optdim))),'\n']))
+        else            
+            sprintf('Optimal dimension for this dataset may be: %d', max(max(optdim)));
+            TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
         end
 
         TEprepare.cao.E1=E1;
@@ -1054,13 +1078,13 @@ cd(working_directory)
 
 %% add TEprepare structure to the data
 % -------------------------------------------------------------------------
-fprintf('\nadd TEprepare structure to original data structure ')
+msg = 'Adding TEprepare structure to original data structure';
+TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 
 TEprepare.cfg=cfg;
 varargin{2}.TEprepare = TEprepare;
 DataOut = varargin{2};
 
-fprintf(' - ok\n');
 
 end
 

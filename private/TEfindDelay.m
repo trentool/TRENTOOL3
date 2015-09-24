@@ -26,7 +26,13 @@ function [data, TEmat]= TEfindDelay(predicttimevec_u,cfgTESS,data)
 %
 % PW 27/11/2014
 
+%% define logging levels
+LOG_INFO_MAJOR = 1;
+LOG_INFO_MINOR = 2;
 
+verbosity = data.TEprepare.cfg.verbosity;
+
+%%
 cfgTESS.numpermutation = 'findDelay';
 TGA_results = cell(1, length(predicttimevec_u));
 predicttimevec_u_samples = round(predicttimevec_u/1000*data.fsample);
@@ -35,7 +41,8 @@ n_channelcombis = size(data.TEprepare.channelcombilabel,1);
 
 for uu=1:max(size(predicttimevec_u))
     
-    fprintf('Estimating TE for u = %.0f ms\n', predicttimevec_u(uu));
+    msg = sprintf('Estimating TE for u = %.0f ms\n', predicttimevec_u(uu));
+    TEconsoleoutput(data.TEprepare.cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
     
     data.TEprepare.cfg.predicttime_u = repmat(predicttimevec_u(uu), n_channelcombis, 1);
     data.TEprepare.u_in_samples      = repmat(predicttimevec_u_samples(uu), n_channelcombis, 1);
@@ -44,18 +51,21 @@ for uu=1:max(size(predicttimevec_u))
     % update fileidout to include information on u    
     cfgTESS.fileidout=strcat(fileidout,'_RAG4_TGA_u_',num2str(predicttimevec_u(uu)));
         
-    % branch here for GPU calculation    
+    % branch here for GPU calculation   
+    data.TEprepare.cfg.verbosity = 'none';
     if strcmp(data.TEprepare.ensemblemethod,'yes')
         TGA_results{uu}=TEsurrogatestats_ensemble(cfgTESS,data);
     else
         TGA_results{uu}=TEsurrogatestats(cfgTESS,data);
     end
+    data.TEprepare.cfg.verbosity = verbosity;
     
     if isfield(data,'groupprepare')
         TGA_results{uu}.groupprepare = data.groupprepare;
     end
 
 end
+
 
 [opt_u_vec TEmat]= TEfindmaxte(TGA_results);
 

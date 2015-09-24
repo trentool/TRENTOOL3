@@ -162,13 +162,14 @@ function [TEresult]=transferentropy(cfg, data, varargin)
 % 2015-04-17: PW added a check for scalar delays that lets users call 
 % TEsurrogatestats without calling InteractionDelayReconstruction_calculate
 
+LOG_INFO_MINOR = 2;
 
 %% Remember the working directory
 working_directory = pwd;
 
 % check data
 % -------------------------------------------------------------------------
-fprintf('\nCheck data and config');
+TEconsoleoutput(cfg.verbosity, 'Checking data and config', dbstack, LOG_INFO_MINOR);
 
 [data] = ft_checkdata(data, 'datatype','raw');
 
@@ -203,7 +204,7 @@ if ~isfield(cfg, 'embedsource') || strcmp(cfg.embedsource, 'yes')
     noSourceEmb = false;
 else
     noSourceEmb = true;
-    fprintf('\nNo embedding for source time series.\n')
+    TEconsoleoutput(cfg.verbosity, 'No embedding for source time series is used', dbstack, LOG_INFO_MINOR);
 end
 
 % check if channel or channelcombinations are defined
@@ -250,9 +251,6 @@ elseif nargin == 3 && strcmp(varargin{1}, 'shifttest') ;
 end
 
 
-fprintf(' - ok');
-
-
 
 % get values from cfg
 % -------------------------------------------------------------------------
@@ -268,7 +266,7 @@ nrtrials=data.TEprepare.nrtrials;
 
 % read data
 % -------------------------------------------------------------------------
-fprintf('\nRead data');
+TEconsoleoutput(cfg.verbosity, 'Reading data', dbstack, LOG_INFO_MINOR);
 
 % read data in to a cell {channelcombi x 2} including data matrices
 % (trial x time)
@@ -318,7 +316,6 @@ end
 % create empty result structure
 TEresult=[];
 
-fprintf(' - ok');
 
 
 
@@ -366,7 +363,7 @@ if strcmp(cfg.calctime, 'yes')
     if isfield(data, 'Data4Embedding') && strcmp(data.TEprepare.cfg.datatype, 'fMRI')
         %fprintf('\ncalculation of time is not implementend for fMRI data.\n')
     else
-        fprintf(strcat('\nCheck calculation time of TE. Please wait...'))
+        TEconsoleoutput(cfg.verbosity, 'Checking calculation time of TE', dbstack, LOG_INFO_MINOR);
         
         %get time of single TE calculation (pessimistic case)
         timetest = 0;
@@ -437,24 +434,27 @@ if strcmp(cfg.calctime, 'yes')
         timehh = floor(timeappr/60^2);                      %hours
         if timehh<1
             timemm = floor(mod((timeappr/60), 60));         %minutes
-            fprintf(strcat('\n!!! The calculation of TE takes appr. : ~',num2str(timemm),' minutes  !!!\n'));
+            msg = sprintf('Calculation of TE takes appr. : %d minutes!', timemm);
+            TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
         else
-            fprintf(strcat('\n!!! The calculation of TE takes appr. : ~',num2str(timehh),' hours (',num2str(timehh/24),' days) !!!\n'));
+            msg = sprintf('Calculation of TE takes appr. : %d hours (%d days)!', timehh, timehh/24);
+            TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
         end
     end
 end
 
 % Start calculation of TE
 % -------------------------------------------------------------------------
-fprintf('\nCalculating transfer entropy');
+TEconsoleoutput(cfg.verbosity, 'Calculating transfer entropy. Please wait ...', dbstack, LOG_INFO_MINOR);
 
-
-% prepare text waitbar
-fprintf('\nPlease wait...\n');
-for ii = 1:size(channelcombi,1)
-    fprintf('-')
+if ~strcmp(cfg.verbosity, 'none')
+    % prepare text waitbar
+    fprintf('\n')
+    for ii = 1:size(channelcombi,1)
+        fprintf('-')
+    end
+    fprintf('\n')
 end
-fprintf('\n')
 
 % create zeros result matrices
 
@@ -494,8 +494,9 @@ end
 % loops for scanning channels with different parameter values for TE
 if ~par_state  % non-parallel part 
     for channelpair = 1:size(channelcombi,1)
-        fprintf('-');
-
+        if ~strcmp(cfg.verbosity, 'none')
+            fprintf('-');
+        end
 
         for t4t = 1:nrtrials(channelpair,2)
 
@@ -800,8 +801,7 @@ else % parallel part
 end
 
 %--------------------------------------------------------------------------
-fprintf('\nCalculation finished')
-
+TEconsoleoutput(cfg.verbosity, 'Calculation finished', dbstack, LOG_INFO_MINOR);
 
 
 % results of unshuffled data
@@ -827,7 +827,6 @@ if strcmp(cfg.shuffle, 'no')
     
 end
 
-fprintf('\n')
 
 %% Returning to the working directory
 %cd(working_directory)

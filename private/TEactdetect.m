@@ -26,19 +26,17 @@ function [ACT]= TEactdetect(datacell, maxlag, timeindices)
 %% Remember the working directory
 working_directory = pwd;
 
-fprintf('\nCalculate ACT ');
 ACT=zeros(size(datacell,1),size(datacell,2),size(datacell{1,1},1));
 
 
 thresh = exp(-1);
 counter = 1;
 
-
-
+fprintf('\t');
 for cc = 1:size(datacell,1) % the number of channel combinations
     for pp = 1:size(datacell,2)  %%%% ML: TODO; MW note: number of channels in a combination (??)
         for trial = 1:size(datacell{cc,pp},1) % the number of trials in a particular combination
-            TEwait(counter)
+            TEwait(counter);            
             % correct data for mean
             data_cut = squeeze(datacell{cc,pp}(trial,timeindices(1):timeindices(2)));
             data_corr = data_cut-mean(data_cut);
@@ -63,8 +61,6 @@ for cc = 1:size(datacell,1) % the number of channel combinations
         end
     end
 end
-
-fprintf(' - ok');
 
 %% Returning to the working directory
 cd(working_directory)
