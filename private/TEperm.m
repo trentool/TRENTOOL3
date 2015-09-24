@@ -137,20 +137,13 @@ end
 
 
 TEconsoleoutput(cfg.verbosity, 'Generating permutations', dbstack, LOG_INFO_MINOR);
-
-if ~strcmp(cfg.verbosity, 'none')
-    fprintf('\n')
-    for kk = 1:20
-        fprintf('-')
-    end
-    fprintf('\n')
-end
+TEwaitbar('init', 20, cfg.verbosity)
 
 for pp = 1:cfg.numpermutation
     
     %   text waitbar
-    if mod(pp,floor(cfg.numpermutation/20))==0
-        fprintf('-')
+    if mod(pp,floor(cfg.numpermutation/20))==0 || pp == 1
+        TEwaitbar('update', pp, cfg.verbosity);
     end
     
     if strcmp(cfg.permstatstype, 'mean')
@@ -228,17 +221,11 @@ z = sort(TEpermdist,2);
 
 TEpermvalues = NaN(size(datax,1),5);
 
-if ~strcmp(cfg.verbosity, 'none')
-    % prepare text waitbar
-    fprintf('\n')
-    for ii = 1:size(datax, 1)
-        fprintf('-')
-    end
-    fprintf('\n')
-end
+TEwaitbar('init', size(datax, 1), cfg.verbosity);
 
 for channelpair = 1:size(datax,1) % loop over singalcombinations
-    fprintf('-');
+
+    TEwaitbar('update', channelpair, cfg.verbosity);
     
     if isnan(TEstatistic(channelpair)) == 1 % check if a preceeding shiftest has indicated inst. mixing
         TEpermvalues(channelpair,1) = 1;

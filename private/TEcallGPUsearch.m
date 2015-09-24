@@ -126,6 +126,11 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 % 2015-05-27 PW: function now calls 'srmc max' to determine max. memory on
 % GPU device
 
+%% define logging levels
+LOG_INFO_MAJOR = 1;
+LOG_INFO_MINOR = 2;
+DEBUG_COARSE = 3;
+
 %% Get variables from cfg
 % -------------------------------------------------------------------------
 
@@ -194,9 +199,10 @@ else
 end
 mem_run = 2.5*chunksperrun*chunksize;
 
-fprintf('Chunks in current data set: %.0f (%0.4f MB per chunk, total: %.2f MB)\n', n_chunks, chunksize, chunksize*n_chunks);
-fprintf('Number of runs: %.0f (%0.4f MB per run) \n\n', nrruns, mem_run);
-
+msg = sprintf('Chunks in current data set: %.0f (%0.4f MB per chunk, total: %.2f MB)\n', n_chunks, chunksize, chunksize*n_chunks);
+TEconsoleoutput(cfg.verbosity, msg, dbstack, DEBUG_COARSE);
+msg = sprintf('Number of runs: %.0f (%0.4f MB per run) \n\n', nrruns, mem_run);
+TEconsoleoutput(cfg.verbosity, msg, dbstack, DEBUG_COARSE);
 
 switch cfg.site
     case 'ffm'
@@ -227,7 +233,8 @@ nchunks  = chunksperrun;
 
 for ii=1:nrruns
 
-	fprintf('\nchannelpair %d (u = %d) - run %.0f of %.0f\n',channelpair,cfg.u_in_ms(channelpair),ii,nrruns);
+	msg = sprintf('\nchannelpair %d (u = %d) - run %.0f of %.0f\n',channelpair,cfg.u_in_ms(channelpair),ii,nrruns);
+    TEconsoleoutput(cfg.verbosity, msg, dbstack, DEBUG_COARSE);
 	
 	%% get data for this run (i.e. call of GPU functions) by concatenating indiv. chunks
 	
@@ -274,7 +281,6 @@ for ii=1:nrruns
 	%% TE
     
 	% k nearest neighbors search (fixed mass)
-	fprintf('\t knn search for TE ...');
 	t = tic;
     switch cfg.site
         case 'ffm'
@@ -284,11 +290,12 @@ for ii=1:nrruns
     end
 	clear index_p21;
 	t = toc(t);
-	fprintf('\t - ok (%.1f minutes)\n',t/60);
+	msg = sprintf('  knn search for TE ... - %.1f minutes',t/60);    
+    TEconsoleoutput(cfg.verbosity, msg, dbstack, DEBUG_COARSE);
 	clear t;
     
 	% n nearest neighbor range search (fixed radius)	
-	fprintf('\t range search for TE ...');
+	fprintf('\t');
     t = tic;
 	radius_p21 = single(distance_p21(:,k_th));
 	radius_p21 = radius_p21 - eps('single');
@@ -306,7 +313,8 @@ for ii=1:nrruns
     end
     t = toc(t);
 	
-	fprintf('\t - ok (%.1f minutes)\n\n',t/60);
+	msg = sprintf('  range search for TE ... - %.1f minutes',t/60);    
+    TEconsoleoutput(cfg.verbosity, msg, dbstack, DEBUG_COARSE);
 	clear t;
 	
 	
@@ -314,7 +322,6 @@ for ii=1:nrruns
 	if MIcalc
 	
 		% k nearest neighbors search (fixed mass)
-		fprintf('\t knn search for MI...');
         t = tic;
         switch cfg.site
             case 'ffm'
@@ -323,11 +330,11 @@ for ii=1:nrruns
                 [~, distance_12]   = fnearneigh_gpu(single(pointset_12),single(pointset_12),k_th,TheilerT,nchunks);
         end
         t = toc(t);
-		fprintf('\t - ok (%.1f minutes)\n',t/60);
+		msg = sprintf('  knn search for MI... - %.1f minutes',t/60);
+        TEconsoleoutput(cfg.verbosity, msg, dbstack, DEBUG_COARSE);
 		clear t;	
 		
 		% n nearest neighbor range search (fixed radius)	
-		fprintf('\t range search for MI ...');
 		t = tic;
 		radius_12  = single(distance_12(:,k_th));
 		radius_12  = radius_12 - eps('single');
@@ -343,7 +350,8 @@ for ii=1:nrruns
         end
         t = toc(t); 
 		
-		fprintf('\t - ok (%.1f minutes)\n',t/60);
+		msg = sprintf('  range search for MI ... - %.1f minutes',t/60);
+        TEconsoleoutput(cfg.verbosity, msg, dbstack, DEBUG_COARSE);
 		clear t;
 	end	
 	

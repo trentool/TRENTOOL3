@@ -245,9 +245,18 @@ function TEpermtest=TEsurrogatestats_ensemble(cfg,data)
 %% Remember the working directory
 working_directory1 = pwd;
 
+%% define logging levels
+% -------------------------------------------------------------------------
+
+LOG_INFO_MAJOR = 1;
+LOG_INFO_MINOR = 2;
+LOG_DEBUG_COARSE = 3;
+LOG_DEBUG_FINE = 4;
+verbosity = data.TEprepare.cfg.verbosity;
+
 %% check data
 % -------------------------------------------------------------------------
-fprintf('Check data and config');
+TEconsoleoutput(verbosity, 'Checking data and config', dbstack, LOG_INFO_MINOR);
 
 % check if TEprepare was performed
 if ~isfield(data, 'TEprepare'),
@@ -311,6 +320,7 @@ for ii = 1:nr1
     eval(strcat('cfg.',names1{ii},' = getfield(data.TEprepare.cfg, {1}, names1{ii});'))
 end
 
+cfg.verbosity = verbosity;
 cfg.u_in_ms = data.TEprepare.u_in_ms;
 
 %% check general and GPU configuration and set defaults
@@ -508,11 +518,10 @@ elseif size(cfg.kth_neighbors,1)>1 || size(cfg.kth_neighbors,2)>1
 end
 
 
-fprintf(' - ok');
 
 %% check nr of permutations 
 % -------------------------------------------------------------------------
-fprintf('\nChecking number of permutations');
+TEconsoleoutput(verbosity, 'Checking number of permutations', dbstack, LOG_INFO_MINOR);
 
 %nr2cmc=size(data.TEprepare.channelcombilabel,1)*size(cfg.predicttime_u,2);
 nr2cmc=size(data.TEprepare.channelcombilabel,1);
@@ -522,7 +531,8 @@ findDelay = 0;
 if ~isfield(cfg, 'numpermutation'),
     %cfg.numpermutation = 190100; % for p<0.01 with a possible bonferroni correcetion of 100
     cfg.numpermutation = ceil(1/(cfg.alpha/nr2cmc));
-    fprintf('TRENTOOL: You didn''t specify a number of permutations. It was set to %d (1/(alpha/no_channelcombis)).', cfg.numpermutation);
+    msg = sprintf('TRENTOOL: You didn''t specify a number of permutations. It was set to %d (1/(alpha/no_channelcombis)).', cfg.numpermutation);    
+    TEconsoleoutput(verbosity, msg, dbstack, LOG_INFO_MINOR);
 end
 
 if strcmp(cfg.numpermutation, 'findDelay');
@@ -545,7 +555,6 @@ else
 
 end
 
-fprintf(' - ok\n');
 
 %% get channels, ACT and trials for TEperm and embedding
 % ------------------------------------------------------------------------
@@ -562,7 +571,7 @@ TEpreparestruct   = data.TEprepare;
 
 %% read data
 % -------------------------------------------------------------------------
-fprintf('Read data');
+TEconsoleoutput(verbosity, 'Read data', dbstack, LOG_INFO_MINOR);
 
 % read data in to a cell {channelcombi x 2} including data matrices
 % (trial x time)
@@ -596,7 +605,6 @@ if isfield(data, 'Data4Embedding')
     end
 end
 
-fprintf(' - ok\n');
 
 %% check no. samples
 % -------------------------------------------------------------------------
@@ -611,8 +619,6 @@ else
     mindatapoints = (timeindices(2)+1-timeindices(1))-(max(cfg.dim)-1)*max(cfg.tau)*max(max(ACT(:,2,:)))-max(dimu);
 end
 
-fprintf('Min. sample points left after embedding: %.0f ',mindatapoints);
-
 if isfield(data, 'datatype')
     if strcmp(data.datatype, 'fMRI')
         minsamples = 50/min(min(nrtrials));
@@ -625,14 +631,14 @@ else
     minsamples = 150/min(min(nrtrials)); 
 end
 
-fprintf('(min. required: %.0f.)',ceil(minsamples));
+msg = sprintf('Min. sample points left after embedding: %d (min. required: %d)', mindatapoints, ceil(minsamples));
+TEconsoleoutput(verbosity, msg, dbstack, LOG_INFO_MINOR);
 
 % compare samples in analysis window against minimum feasible no. sample points
 if mindatapoints <= minsamples    
     error('\nTRENTOOL ERROR: not enough data points left after embedding.');
 end
 
-fprintf(' - ok');
 
 %% clear input data to save memory
 % -------------------------------------------------------------------------
@@ -664,7 +670,8 @@ TEsetRandStream;
 
 for channelpair = 1:size(channelcombi,1)
 	
-    fprintf('\nEmbedding original data for channelpair %.0f of %.0f',channelpair,size(channelcombi,1));		
+    msg = sprintf('Embedding original data for channelpair %d of %d',channelpair,size(channelcombi,1));		
+    TEconsoleoutput(verbosity, msg, dbstack, LOG_INFO_MINOR);    
     %fprintf('\n\tEmbedding orginal data');
 	
     % prepare data strucuters for embedding	
@@ -735,15 +742,24 @@ for channelpair = 1:size(channelcombi,1)
     chunk_ind(1:chunksize) = 1;
     cutpoint = chunksize*2;
     
-    fprintf('\t - ok\n');
 	
 	% shuffle orig data and embed shuffled data per trial  
-    if numpermutation > 0
-        ft_progress('init', 'text','Generating surrogate data sets ...')
+    if numpermutation > 0 && ~strcmp(cfg.verbosity, 'none')
+        fprintf('\n')
+        stack = dbstack;
+        msg = [ ...
+            repmat('   ', 1, length(stack)-1) ...
+            stack(1).file ...
+            ' - line ' ...
+            num2str(stack(1).line) ...
+            ': Generating surrogate data sets ...'];
+        ft_progress('init', 'text', msg)
     end
     
     for ii = 1:numpermutation
-        ft_progress(ii/numpermutation, '\tdata set %d of %d', ii, numpermutation);
+        if  ~strcmp(cfg.verbosity, 'none')
+            ft_progress(ii/numpermutation, [repmat('   ', 1, length(dbstack)-1) '   data set %d of %d'], ii, numpermutation);
+        end
         
         % get permutation for trials in second/target channel
         channel2_shuffle = randperm(nrtrials(channelpair,2)); %\\ TODO check randstream
@@ -812,12 +828,11 @@ for channelpair = 1:size(channelcombi,1)
         
     end
         
-    if numpermutation > 0; 
+    if numpermutation > 0 && ~strcmp(cfg.verbosity, 'none'); 
         ft_progress('close');
-        fprintf('\t - ok\n'); 
     end;
     
-    fprintf('\nStarting GPU neighbour count ...\n');
+    TEconsoleoutput(verbosity, 'Starting GPU neighbour count ...', dbstack, LOG_INFO_MINOR);    
     
     % remember indices of individual chunks
     cfg.chunk_ind = chunk_ind;    
@@ -840,7 +855,7 @@ for channelpair = 1:size(channelcombi,1)
 		TELmat{channelpair} = tel;
     end	
     
-    fprintf('\nCalculating Transfer Entropy')
+    TEconsoleoutput(verbosity, 'Calculating Transfer Entropy', dbstack, LOG_INFO_MINOR);
 	[p TE_diff] = TEpvalue(te,numpermutation);
     
 	% do statistical comparison (is TE_orig an extreme value with respect to the TE values of the surrogate data?)
@@ -856,7 +871,6 @@ for channelpair = 1:size(channelcombi,1)
     % TEpermvalues(channelpair,3) is set below (significance after cmc)
 	TEpermvalues(channelpair,4) = TE_diff;                                   % difference between empirical TE and median of surrogate distribution
 	TEpermvalues(channelpair,5) = 0;                                         % Faes method is mandatory for ensemble method, takes care of volume conduction    
-    fprintf(' - ok\n')
 end
 
 
@@ -865,13 +879,12 @@ end
 % -------------------------------------------------------------------------
 
 if ~findDelay
-    fprintf('\nCorrection for multiple comparison...')
+    TEconsoleoutput(verbosity, 'Correcting for multiple comparisons', dbstack, LOG_INFO_MINOR);
     pvalues                 = TEpermvalues(:,1);
     nrinstmix               = 0; % instanteneous mixing is not tested when ensemble method is used
     [significance,correctm] = TEcmc(pvalues, cfg.correctm, cfg.alpha, nrinstmix);
     TEpermvalues(:,3)       = significance;
     cfg.correctm            = correctm;    % the correction method might change, if only a small no. channels is analyzed, this should be updated
-    fprintf(' - ok\n');
 end
 
 %% prepare output structure

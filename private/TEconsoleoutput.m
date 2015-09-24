@@ -34,7 +34,11 @@ if loglevel == 1
     fprintf('\n\n%s\n', message);
         
 elseif loglevel == 2 || loglevel == 3
-    fprintf('\n%s - line %d: %s', stack(1).file, stack(1).line, message);
+    fprintf('\n')
+    for i=1:length(stack)-1;
+        fprintf('   ')
+    end
+    fprintf('%s - line %d: %s', stack(1).file, stack(1).line, message);
     
 elseif loglevel == 4
     for i=1:length(stack)

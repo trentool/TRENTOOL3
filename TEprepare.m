@@ -786,19 +786,12 @@ else
         %     T=length(toi);
 
         % create comand line waitbar
-        if ~strcmp(cfg.verbosity, 'none')
-            fprintf('\n')
-            for ii=1:size(channelcombi,1)
-                fprintf('-')
-            end
-            fprintf('\n')
-        end
+        TEwaitbar('init', size(channelcombi,1), cfg.verbosity);
+        
 %-------------------------------------------------------------------------------
         for channel = 1:size(channelcombi,1) % loop over used channels     
-            
-            if ~strcmp(cfg.verbosity, 'none')
-                fprintf('-')                
-            end
+                        
+            TEwaitbar('update', channel, cfg.verbosity);
             
             if ~par_state 
                for nt = 1:nrtrials(channel,targetchannel) % loop over trials
@@ -957,7 +950,7 @@ else
 
 % PW 30/05/2014 bugfix:
 %        fprintf(strcat(['\nOptimal tau for this dataset may be: ', num2str(opttaumultiplier),'\n']))
-        msg = sprintf('\tOptimal tau for this dataset was found to be: %.2f', TEprepare.opttau);
+        msg = sprintf('Optimal tau for this dataset was found to be: %.2f', TEprepare.opttau);
         TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 
         % find max dimension
@@ -969,7 +962,7 @@ else
         % TEprepare.optdim includes a scalar with the maximum dimension for
         % all channel combinations
         TEprepare.optdim = max(max(optdim));
-        msg = sprintf('\tOptimal dimension for this dataset was found to be: %d', max(max(optdim)));
+        msg = sprintf('Optimal dimension for this dataset was found to be: %d', max(max(optdim)));
         TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 
 

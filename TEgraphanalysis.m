@@ -153,11 +153,13 @@ function [data_paths,cfg] = TEgraphanalysis(cfg,data);
 LOG_INFO_MAJOR = 1;
 LOG_INFO_MINOR = 2;
 
-
 % check if a threshold is provided
 if ~isfield(cfg,'verbosity')
     cfg.verbosity = 'info_minor';
 end;
+
+msg = '################### CORRECTING FOR POTENTIALLY SPURIOUS EDGES';
+TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MAJOR);
 
 
 % check if a threshold is provided

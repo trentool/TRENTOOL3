@@ -163,13 +163,14 @@ function [TEresult]=transferentropy(cfg, data, varargin)
 % TEsurrogatestats without calling InteractionDelayReconstruction_calculate
 
 LOG_INFO_MINOR = 2;
+LOG_DEBUG_COARSE = 2;
 
 %% Remember the working directory
 working_directory = pwd;
 
 % check data
 % -------------------------------------------------------------------------
-TEconsoleoutput(cfg.verbosity, 'Checking data and config', dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, 'Checking data and config', dbstack, LOG_DEBUG_COARSE);
 
 [data] = ft_checkdata(data, 'datatype','raw');
 
@@ -266,7 +267,7 @@ nrtrials=data.TEprepare.nrtrials;
 
 % read data
 % -------------------------------------------------------------------------
-TEconsoleoutput(cfg.verbosity, 'Reading data', dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, 'Reading data', dbstack, LOG_DEBUG_COARSE);
 
 % read data in to a cell {channelcombi x 2} including data matrices
 % (trial x time)
@@ -446,15 +447,7 @@ end
 % Start calculation of TE
 % -------------------------------------------------------------------------
 TEconsoleoutput(cfg.verbosity, 'Calculating transfer entropy. Please wait ...', dbstack, LOG_INFO_MINOR);
-
-if ~strcmp(cfg.verbosity, 'none')
-    % prepare text waitbar
-    fprintf('\n')
-    for ii = 1:size(channelcombi,1)
-        fprintf('-')
-    end
-    fprintf('\n')
-end
+TEwaitbar('init', size(channelcombi,1), cfg.verbosity);
 
 % create zeros result matrices
 
@@ -494,9 +487,7 @@ end
 % loops for scanning channels with different parameter values for TE
 if ~par_state  % non-parallel part 
     for channelpair = 1:size(channelcombi,1)
-        if ~strcmp(cfg.verbosity, 'none')
-            fprintf('-');
-        end
+        TEwaitbar('update', channelpair, cfg.verbosity);
 
         for t4t = 1:nrtrials(channelpair,2)
 
