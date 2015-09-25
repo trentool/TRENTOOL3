@@ -52,6 +52,7 @@ if groupanalysis
     msg = 'Data was prepared for group statistics; the embedding dimension will be set to a common value for all datasets!';
     TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MINOR);
     if isfield(cfgTEP,'predicttimemax_u') || isfield(cfgTEP,'predicttimemin_u') || isfield(cfgTEP,'predicttimestepsize')
+        fprintf('\n')
         warning('Any parameter regarding the prediction time u, provided in cfgTEP will be overwritten by parameters from TEgroup_prepare.')
     end
     
@@ -62,7 +63,7 @@ if groupanalysis
     warning('Any parameter regarding the ragwitz dimension, provided in cfgTEP and cfgTESS will be overwritten by parameters from TEgroup_prepare.')
     msg = sprintf('Setting ''cfgTEP.ragdim'' to maximum over all subjects (dim = %.0f)',data.groupprepare.max_dim);
     TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MINOR);
-    msg = fprintf('Setting ''cfgTESS.optdimusage'' to ''maxdim''');
+    msg = 'Setting ''cfgTESS.optdimusage'' to ''maxdim'' ';
     TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MINOR);
     cfgTEP.ragdim        = data.groupprepare.max_dim;
     cfgTESS.optdimusage  = 'maxdim';

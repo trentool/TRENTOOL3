@@ -222,6 +222,16 @@ function TEgroup_prepare(cfg,fileCell)
 %% Remember the working directory
 working_directory = pwd;
 
+%% define logging levels
+% -------------------------------------------------------------------------
+
+LOG_INFO_MAJOR = 1;
+LOG_INFO_MINOR = 2;
+LOG_DEBUG_COARSE = 3;
+LOG_DEBUG_FINE = 4;
+
+if ~isfield(cfg, 'verbosity'), cfg.verbosity = 'info_minor'; end;
+
 %% check input
 % -------------------------------------------------------------------------
 
@@ -247,7 +257,8 @@ end
 
 max_dim_scan =  max(cfg.ragdim);
 N = length(fileCell);
-fprintf('You provided %.0f data sets\n', N);
+msg = sprintf('You provided %d data sets', N);
+TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 
 %% create output structures
 % -------------------------------------------------------------------------
@@ -276,7 +287,8 @@ for currentSubject = 1:N
     clear x y varinfile
     
     
-    fprintf('\tPreparing data for subject %d ...\n', currentSubject);        
+    msg = sprintf('Preparing data for subject %d ', currentSubject);    
+    TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
     dataprepared      = TEprepare(cfg,data);
     
     % get relevant data from TEprepare
@@ -317,8 +329,10 @@ end
 
 % find maximum dimension over all u and subjects
 max_dim = max(dim_all);
-fprintf('The maximum embedding dimension was %.0f\n\n', max_dim);
-fprintf('Appending group prepare information to data sets ...\n');
+msg = sprintf('The maximum embedding dimension is %d', max_dim);
+TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+msg = 'Appending group prepare information to data sets';
+TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 
 % create code to check whether data sets went through TEprepare_group
 % within the same run

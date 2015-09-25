@@ -598,8 +598,8 @@ elseif strcmp(cfg.trialselect, 'range')
 end
 
 par_state = check_set_parallel(cfg); %check for parallel and set the configuration
-msg = sprintf('par state is %.0f',par_state);
-TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+%msg = sprintf('par state is %.0f',par_state);
+%TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 
 
 
@@ -1088,40 +1088,32 @@ DataOut = varargin{2};
 end
 
 function par_state = check_set_parallel(cfg)
+
+if isfield(cfg,'TEparallel') && ft_hastoolbox('DCT') && isfield(cfg.TEparallel,'parON') && strcmp(cfg.TEparallel.parON,'yes')
+    
+    par_state = 1;
+    parallelConfig = findResource('scheduler','configuration',defaultParallelConfig);
+    %parallelConfig = parcluster(parallel.defaultClusterProfile);
+    max_workers = parallelConfig.ClusterSize;
+    if ~isfield(cfg.TEparallel,'workers')
+        cfg.TEparallel.workers = max_workers;
+    end
+    
+    if  matlabpool('size')== 0
         
-        
-        if isfield(cfg,'TEparallel') && ft_hastoolbox('DCT');
-            if isfield(cfg.TEparallel,'parON')
-                if strcmp(cfg.TEparallel.parON,'yes')
-                    
-                    par_state = 1;
-                    parallelConfig = findResource('scheduler','configuration',defaultParallelConfig);
-                    max_workers = parallelConfig.ClusterSize;
-                    if ~isfield(cfg.TEparallel,'workers')
-                        cfg.TEparallel.workers = max_workers;
-                    end
-                    
-                    if  matlabpool('size')== 0                    
-                        
-                        if cfg.TEparallel.workers <= max_workers
-                           matlabpool(cfg.TEparallel.workers)
-                        else
-                            matlabpool(max_workers)
-                        end
-                        
-                    else if matlabpool('size') > cfg.TEparallel.workers
-                            matlabpool close;
-                            matlabpool(cfg.TEparallel.workers)
-                        end
-                    end
-                else
-                    par_state = 0;
-                end
-            else 
-                par_state = 0;
-            end
+        if cfg.TEparallel.workers <= max_workers
+            matlabpool(cfg.TEparallel.workers)
         else
-            par_state = 0;
+            matlabpool(max_workers)
         end
-  
+        
+    else if matlabpool('size') > cfg.TEparallel.workers
+            matlabpool close;
+            matlabpool(cfg.TEparallel.workers)
+        end
+    end
+else
+    par_state = 0;
+end
+
 end
