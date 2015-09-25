@@ -129,7 +129,7 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 %% define logging levels
 LOG_INFO_MAJOR = 1;
 LOG_INFO_MINOR = 2;
-DEBUG_COARSE = 3;
+LOG_DEBUG_COARSE = 3;
 
 %% Get variables from cfg
 % -------------------------------------------------------------------------
@@ -164,7 +164,7 @@ end
 
 switch cfg.site
     case 'ffm'
-        gpu_memsize = TEsrmc(pause_time, 'maxmem');
+        gpu_memsize = TEsrmc(pause_time, 'maxmem', cfg.verbosity);
     case 'other'
         gpu_memsize = cfg.GPUmemsize;
     otherwise
@@ -199,14 +199,14 @@ else
 end
 mem_run = 2.5*chunksperrun*chunksize;
 
-msg = sprintf('Chunks in current data set: %.0f (%0.4f MB per chunk, total: %.2f MB)\n', n_chunks, chunksize, chunksize*n_chunks);
-TEconsoleoutput(cfg.verbosity, msg, dbstack, DEBUG_COARSE);
-msg = sprintf('Number of runs: %.0f (%0.4f MB per run) \n\n', nrruns, mem_run);
-TEconsoleoutput(cfg.verbosity, msg, dbstack, DEBUG_COARSE);
+msg = sprintf('Chunks in current data set: %.0f (%0.4f MB per chunk, total: %.2f MB)', n_chunks, chunksize, chunksize*n_chunks);
+TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+msg = sprintf('Number of runs: %.0f (%0.4f MB per run)', nrruns, mem_run);
+TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 
 switch cfg.site
     case 'ffm'
-        gpu_id = TEsrmc(pause_time, 'request', sprintf('gpumem:%d', ceil(mem_run)));
+        gpu_id = TEsrmc(pause_time, 'request', cfg.verbosity, sprintf('gpumem:%d', ceil(mem_run)));
     case 'other'
         ;
     otherwise
@@ -233,8 +233,8 @@ nchunks  = chunksperrun;
 
 for ii=1:nrruns
 
-	msg = sprintf('\nchannelpair %d (u = %d) - run %.0f of %.0f\n',channelpair,cfg.u_in_ms(channelpair),ii,nrruns);
-    TEconsoleoutput(cfg.verbosity, msg, dbstack, DEBUG_COARSE);
+	msg = sprintf('\nchannelpair %d (u = %d) - run %d of %d',channelpair,cfg.u_in_ms(channelpair),ii,nrruns);
+    TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 	
 	%% get data for this run (i.e. call of GPU functions) by concatenating indiv. chunks
 	
@@ -290,12 +290,11 @@ for ii=1:nrruns
     end
 	clear index_p21;
 	t = toc(t);
-	msg = sprintf('  knn search for TE ... - %.1f minutes',t/60);    
-    TEconsoleoutput(cfg.verbosity, msg, dbstack, DEBUG_COARSE);
+	msg = sprintf('knn search for TE - %.1f minutes',t/60);    
+    TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 	clear t;
     
-	% n nearest neighbor range search (fixed radius)	
-	fprintf('\t');
+	% n nearest neighbor range search (fixed radius)		
     t = tic;
 	radius_p21 = single(distance_p21(:,k_th));
 	radius_p21 = radius_p21 - eps('single');
@@ -313,8 +312,8 @@ for ii=1:nrruns
     end
     t = toc(t);
 	
-	msg = sprintf('  range search for TE ... - %.1f minutes',t/60);    
-    TEconsoleoutput(cfg.verbosity, msg, dbstack, DEBUG_COARSE);
+	msg = sprintf('range search for TE - %.1f minutes',t/60);    
+    TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 	clear t;
 	
 	
@@ -330,8 +329,8 @@ for ii=1:nrruns
                 [~, distance_12]   = fnearneigh_gpu(single(pointset_12),single(pointset_12),k_th,TheilerT,nchunks);
         end
         t = toc(t);
-		msg = sprintf('  knn search for MI... - %.1f minutes',t/60);
-        TEconsoleoutput(cfg.verbosity, msg, dbstack, DEBUG_COARSE);
+		msg = sprintf('knn search for MI - %.1f minutes',t/60);
+        TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 		clear t;	
 		
 		% n nearest neighbor range search (fixed radius)	
@@ -350,8 +349,8 @@ for ii=1:nrruns
         end
         t = toc(t); 
 		
-		msg = sprintf('  range search for MI ... - %.1f minutes',t/60);
-        TEconsoleoutput(cfg.verbosity, msg, dbstack, DEBUG_COARSE);
+		msg = sprintf('range search for MI - %.1f minutes',t/60);
+        TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 		clear t;
 	end	
 	
@@ -363,7 +362,7 @@ switch cfg.site
     case 'ffm'
         resource = sprintf('gpumem:%d', ceil(mem_run));
         unit     = sprintf('/dev/nvidia%d', gpu_id);
-        TEsrmc(pause_time, 'return', resource, unit);
+        TEsrmc(pause_time, 'return', cfg.verbosity, resource, unit);
     case 'other'
         ;
     otherwise

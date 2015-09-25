@@ -402,10 +402,10 @@ else
         end
         if cfg.dim < data.TEprepare.optdim
             fprintf('\n')
-            fprintf('TRENTOOL WARNING: specified embedding dimension (cfg.dim) is smaller then the optimal dimension from TEprepare.')
+            warning('TRENTOOL WARNING: specified embedding dimension (cfg.dim) is smaller then the optimal dimension from TEprepare.')
         elseif cfg.dim > data.TEprepare.optdim
             fprintf('\n')
-            fprintf('TRENTOOL WARNING: specified embedding dimension (cfg.dim) is bigger then the optimal dimension from TEprepare.')
+            warning('TRENTOOL WARNING: specified embedding dimension (cfg.dim) is bigger then the optimal dimension from TEprepare.')
         end
     end
 end;
@@ -519,9 +519,8 @@ else
     	fprintf('\n')
     	error('TRENTOOL ERROR: cfg.numpermutation too small (< 1/alpha)!');
     elseif cfg.numpermutation < ceil(1/(cfg.alpha/nr2cmc))
-       fprintf('\n#######################################################################################\n');
-       fprintf('# WARNING: Nr of permutations not sufficient for correction for multiple comparisons! #\n');
-       fprintf('#######################################################################################'); 
+       fprintf('\n'); 
+       warning('########################################################################## Nr of permutations not sufficient for correction for multiple comparisons!'); 
     elseif max(nrtrials(:,2))>31 && cfg.numpermutation > 2^31
         fprintf('\n')
         error('TRENTOOL ERROR: cfg.numpermutation too huge (> 2^31)!');

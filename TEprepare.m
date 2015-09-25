@@ -276,6 +276,8 @@ LOG_INFO_MINOR = 2;
 LOG_DEBUG_COARSE = 3;
 LOG_DEBUG_FINE = 4;
 
+if ~isfield(cfg, 'verbosity'), cfg.verbosity = 'info_minor'; end;
+
 %% check data
 % -------------------------------------------------------------------------
 
@@ -389,7 +391,7 @@ if ~isfield(cfg, 'maxlag'),           cfg.maxlag = 1000;               end;
 if ~isfield(cfg, 'TEcalctype'),       cfg.TEcalctype = 'VW_ds';        end;
 if ~isfield(cfg, 'ensemblemethod'),   cfg.ensemblemethod = 'no';       end;
 if ~isfield(cfg, 'minnrtrials'),      cfg.minnrtrials = 12;            end;
-if ~isfield(cfg, 'verbosity'),        cfg.verbosity = 'info_minor';    end;
+
 
 
 %% check optimizemethod 
@@ -573,7 +575,7 @@ end;
 % check the format of input vectors
 if size(cfg.toi,1)>2 || size(cfg.toi,2) >2
     fprintf('\n')
-    error('\nTRENTOOL ERROR: cfg.toi has more than two entries');
+    error('TRENTOOL ERROR: cfg.toi has more than two entries');
 end
 
 if size(cfg.toi,1)>size(cfg.toi,2)
@@ -596,7 +598,6 @@ elseif strcmp(cfg.trialselect, 'range')
 end
 
 par_state = check_set_parallel(cfg); %check for parallel and set the configuration
-%fprintf('par state is %.0f',par_state);
 msg = sprintf('par state is %.0f',par_state);
 TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 

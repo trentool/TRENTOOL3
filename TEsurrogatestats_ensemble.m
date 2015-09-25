@@ -395,8 +395,7 @@ end;
 % check if MI calculation is requested
 if ~isfield(cfg,'MIcalc')
     % by default, switch MI calculation on 
-    fprintf('\n')
-    fprintf('TRENTOOL will also calculate mutual information (MI).')
+    TEconsoleoutput(verbosity, 'TRENTOOL will also calculate mutual information (MI)', dbstack, LOG_INFO_MINOR);
     MIcalc = 1;
     cfg.MIcalc = 1;
 else
@@ -442,10 +441,10 @@ else
         end
         if cfg.dim < data.TEprepare.optdim
             fprintf('\n')
-            fprintf('TRENTOOL WARNING: specified embedding dimension (cfg.dim) is smaller then the optimal dimension from TEprepare.')
+            warning('TRENTOOL WARNING: specified embedding dimension (cfg.dim) is smaller then the optimal dimension from TEprepare.')
         elseif cfg.dim > data.TEprepare.optdim
             fprintf('\n')
-            fprintf('TRENTOOL WARNING: specified embedding dimension (cfg.dim) is bigger then the optimal dimension from TEprepare.')
+            warning('TRENTOOL WARNING: specified embedding dimension (cfg.dim) is bigger then the optimal dimension from TEprepare.')
         end
     end
 end;
@@ -544,7 +543,8 @@ else
     	fprintf('\n')
     	error('TRENTOOL ERROR: cfg.numpermutation too small (< 1/alpha)!');
     elseif cfg.numpermutation < ceil(1/(cfg.alpha/nr2cmc))
-       fprintf('\n###############################################\n# WARNING: Nr of permutations not sufficient for correction for multiple comparisons! #\n#######################################################################################\n'); 
+       fprintf('\n')
+       warning('########################################################################## Nr of permutations not sufficient for correction for multiple comparisons!'); 
     elseif max(nrtrials)>31 && cfg.numpermutation > 2^31
         fprintf('\n')
         error('TRENTOOL ERROR: cfg.numpermutation too huge (> 2^31)!');
@@ -653,7 +653,6 @@ clear data;
 % -------------------------------------------------------------------------
 timeindices = TEpreparestruct.timeindices; 
 
-%fprintf('\nStart embedding original and surrogate data for individual channelpairs');
 
 % prepare output structures
 TEpermvalues = zeros(size(channelcombi,1),5);
@@ -672,10 +671,8 @@ for channelpair = 1:size(channelcombi,1)
 	
     msg = sprintf('Embedding original data for channelpair %d of %d',channelpair,size(channelcombi,1));		
     TEconsoleoutput(verbosity, msg, dbstack, LOG_INFO_MINOR);    
-    %fprintf('\n\tEmbedding orginal data');
 	
-    % prepare data strucuters for embedding	
-	
+    % prepare data strucuters for embedding		
 	pointsets_concat_2   = [];
 	pointsets_concat_p2  = [];
 	pointsets_concat_21  = [];	
@@ -838,7 +835,8 @@ for channelpair = 1:size(channelcombi,1)
     cfg.chunk_ind = chunk_ind;    
        
 	% get point counts from GPU functions
-	[ncount] =  TEcallGPUsearch(cfg,channelpair,pointsets_concat_1,pointsets_concat_2, ...
+
+    [ncount] =  TEcallGPUsearch(cfg,channelpair,pointsets_concat_1,pointsets_concat_2, ...
         pointsets_concat_p2, pointsets_concat_21,pointsets_concat_12,pointsets_concat_p21);
 
     clear pointsets*; cfg = rmfield(cfg,'chunk_ind');

@@ -39,6 +39,8 @@ end
 LOG_INFO_MAJOR = 1;
 LOG_INFO_MINOR = 2;
 
+if ~isfield(cfgTEP, 'verbosity'), cfgTEP.verbosity = 'info_minor'; end;
+
 %% checks and parameter preparations
 
 % check if data was prepared for later group statistics
@@ -47,8 +49,8 @@ if groupanalysis
     
     groupprepare = data.groupprepare;
     
-    fprintf('\n\nData was prepared for group statistics!\n')
-    fprintf('The embedding dimension will be set to a common value for all datasets!\n\n')
+    msg = 'Data was prepared for group statistics; the embedding dimension will be set to a common value for all datasets!';
+    TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MINOR);
     if isfield(cfgTEP,'predicttimemax_u') || isfield(cfgTEP,'predicttimemin_u') || isfield(cfgTEP,'predicttimestepsize')
         warning('Any parameter regarding the prediction time u, provided in cfgTEP will be overwritten by parameters from TEgroup_prepare.')
     end
@@ -58,8 +60,10 @@ if groupanalysis
     
     % set ragwitz dimension
     warning('Any parameter regarding the ragwitz dimension, provided in cfgTEP and cfgTESS will be overwritten by parameters from TEgroup_prepare.')
-    fprintf('\tSetting ''cfgTEP.ragdim'' to maximum over all subjects (dim = %.0f)...\n',data.groupprepare.max_dim);
-    fprintf('\tSetting ''cfgTESS.optdimusage'' to ''maxdim''...\n\n');
+    msg = sprintf('Setting ''cfgTEP.ragdim'' to maximum over all subjects (dim = %.0f)',data.groupprepare.max_dim);
+    TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MINOR);
+    msg = fprintf('Setting ''cfgTESS.optdimusage'' to ''maxdim''');
+    TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MINOR);
     cfgTEP.ragdim        = data.groupprepare.max_dim;
     cfgTESS.optdimusage  = 'maxdim';
 else
@@ -133,6 +137,6 @@ save(strcat(cfgTESS.fileidout,'_time',num2str(cfgTEP.toi(1)),'-',num2str(cfgTEP.
 
 t=toc(t_total);
 msg = sprintf( ...
-    '\nThank you for using this transfer entropy tool!\n\nTRANSFER ENTROPY CALCULATION ENDED: %s \nCALCULATION TOOK %.0f MINUTES (%.0f SECONDS)', ...
+    'Thank you for using this transfer entropy tool!\n\nTRANSFER ENTROPY CALCULATION ENDED: %s \nCALCULATION TOOK %.0f MINUTES (%.0f SECONDS)', ...
     datestr(now), t/60, t);
 TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MAJOR);
