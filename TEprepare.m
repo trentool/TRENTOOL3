@@ -252,6 +252,8 @@ function DataOut=TEprepare(varargin)
 % 2015-23-04: PW removed the warning about u having to be bigger than half the ACT
 %
 % 2015-15-06: PW added a default for minnrtrials
+%
+% 2015-25-09: PW added new output to console 
 
 %% Remember the working directory
 working_directory = pwd;
@@ -387,6 +389,7 @@ if ~isfield(cfg, 'maxlag'),           cfg.maxlag = 1000;               end;
 if ~isfield(cfg, 'TEcalctype'),       cfg.TEcalctype = 'VW_ds';        end;
 if ~isfield(cfg, 'ensemblemethod'),   cfg.ensemblemethod = 'no';       end;
 if ~isfield(cfg, 'minnrtrials'),      cfg.minnrtrials = 12;            end;
+if ~isfield(cfg, 'verbosity'),        cfg.verbosity = 'info_minor';    end;
 
 
 %% check optimizemethod 
