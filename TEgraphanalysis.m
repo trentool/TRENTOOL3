@@ -241,7 +241,15 @@ end;
 %% find alternative paths for all neighbours
 % init progress bar
 if ~strcmp(cfg.verbosity, 'none')
-    ft_progress('init', 'text',    'Starting graph analysis...')
+    fprintf('\n')
+    stack = dbstack;
+    msg = [ ...
+            repmat('   ', 1, length(stack)-1) ...
+            stack(1).file ...
+            ' - line ' ...
+            num2str(stack(1).line) ...
+            ': Starting graph analysis ...'];
+    ft_progress('init', 'text', msg)
 end
 
 % count number of cases were either method doesn't return an alternative path
@@ -250,7 +258,7 @@ n_nopath_TEbacktracking = 0;
 
 for i=1:n_edges;
     if ~strcmp(cfg.verbosity, 'none')
-        ft_progress(i/n_edges, 'Processing edge %d of %d ...', i, n_edges)
+        ft_progress(i/n_edges, [repmat('   ', 1, length(dbstack)-1) '   Processing edge %d of %d ...'], i, n_edges);
     end
     
     % define current source, target and upper limit k
@@ -353,7 +361,7 @@ end
 % flag all edges to which alternative paths exist
 if ~isempty(all_paths)
     
-    msg = sprintf('Alternative paths were found for %d of %d edges.', size(all_paths,1), n_edges);
+    msg = sprintf('Alternative paths were found for %d of %d edges', size(all_paths,1), n_edges);
     TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
     
     % add alternative paths and graph info to datastructure
@@ -362,6 +370,9 @@ if ~isempty(all_paths)
     data_paths.graphanalysis.cfg = cfg;
     data_paths.graphanalysis.triangle_edges = triangle_edges;
     data_paths.graphanalysis.triangle_nodes = triangle_nodes;
+    
+    msg = sprintf('%d triangle(s) were found by TEflagedges', size(triangle_edges, 1));
+    TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
     
 else
     data_paths = data;

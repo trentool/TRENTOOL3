@@ -41,7 +41,7 @@ n_channelcombis = size(data.TEprepare.channelcombilabel,1);
 
 for uu=1:max(size(predicttimevec_u))
     
-    msg = sprintf('Estimating TE for u = %.0f ms\n', predicttimevec_u(uu));
+    msg = sprintf('Estimating TE for u = %.0f ms', predicttimevec_u(uu));
     TEconsoleoutput(data.TEprepare.cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
     
     data.TEprepare.cfg.predicttime_u = repmat(predicttimevec_u(uu), n_channelcombis, 1);

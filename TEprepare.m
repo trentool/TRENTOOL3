@@ -638,6 +638,8 @@ TEprepare.channelcombilabel=channelcombilabel;
 % remember individual channel label for group statistics
 TEprepare.channellabel = data.label;
 
+TEconsoleoutput(cfg.verbosity, channelcombilabel, dbstack, LOG_INFO_MINOR, 'Channelcombinations:');
+
 %% read data
 % -------------------------------------------------------------------------
 msg = 'Reading data';
@@ -752,7 +754,7 @@ else
 
     if strcmp(cfg.optimizemethod, 'ragwitz') == 1
 
-        msg = 'Calculating optimization with Ragwitz criterion';
+        msg = 'Optimizing embedding parameters using Ragwitz'' criterion';
         TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
         
         % define channel on which ragwitz is performed
@@ -950,7 +952,7 @@ else
 
 % PW 30/05/2014 bugfix:
 %        fprintf(strcat(['\nOptimal tau for this dataset may be: ', num2str(opttaumultiplier),'\n']))
-        msg = sprintf('Optimal tau for this dataset was found to be: %.2f', TEprepare.opttau);
+        msg = sprintf('Optimal tau for this dataset is: %.2f', TEprepare.opttau);
         TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 
         % find max dimension
@@ -962,7 +964,7 @@ else
         % TEprepare.optdim includes a scalar with the maximum dimension for
         % all channel combinations
         TEprepare.optdim = max(max(optdim));
-        msg = sprintf('Optimal dimension for this dataset was found to be: %d', max(max(optdim)));
+        msg = sprintf('Optimal dimension for this dataset is: %d', max(max(optdim)));
         TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
 
 

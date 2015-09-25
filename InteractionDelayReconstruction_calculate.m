@@ -132,7 +132,7 @@ save(strcat(cfgTESS.fileidout,'_time',num2str(cfgTEP.toi(1)),'-',num2str(cfgTEP.
 %%
 
 t=toc(t_total);
-fprintf('\n\nThank you for using this transfer entropy tool!')
-
-fprintf('\n\nTRANSFER ENTROPY CALCULATION ENDED: %s \n', datestr(now));
-fprintf('CALCULATION TOOK %.0f MINUTES (%.0f SECONDS)\n\n', t/60,t);
+msg = sprintf( ...
+    '\nThank you for using this transfer entropy tool!\n\nTRANSFER ENTROPY CALCULATION ENDED: %s \nCALCULATION TOOK %.0f MINUTES (%.0f SECONDS)', ...
+    datestr(now), t/60, t);
+TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MAJOR);

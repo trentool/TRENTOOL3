@@ -534,7 +534,7 @@ end
 
 %% start calculating TE
 % -------------------------------------------------------------------------
-
+warning('off','all')        % otherwise parfor loops throw warnings
 cfg.calctime = 'yes';
 
 % for unshuffled data
@@ -644,7 +644,7 @@ end
 % TEresult without certain fields. TEshuffle is never written to disk/file
 % to avoid later confusion. Please save TEshuffle yourself if necessary.
 if cfg.numpermutation > 0    
-    msg = 'Starting calculation of transfer entropy for shuffled data';
+    msg = 'Calculating transfer entropy for shuffled data';
     TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);    
     cfg.shuffle = 'yes';
     [TEshuffle] = transferentropy(cfg,data);
@@ -661,7 +661,7 @@ cfg = rmfield(cfg, 'calctime');
 %     %$ML
 %    save(strcat(cfg.fileidout,'_TEshuffle'), 'TEshuffle','-v7.3');
 
-
+warning('on','all')
 
 %% permutation tests
 % -------------------------------------------------------------------------

@@ -1,15 +1,48 @@
-function TEconsoleoutput(verbosity, message, stack, loglevel)
+function TEconsoleoutput(verbosity, message, stack, loglevel, varargin)
 
-% Suggestions for logging levels:
+% TECONSOLEOUTPUT prints information on program execution to the command 
+% line depending on the level of detail requested by the user (verbosity).
+% Each output consists of a message and loglevel (level of detail the
+% message is considered to have). If the level of verbosity requested by
+% the user corresponds to the loglevel, the message is printed.
+%
+% Input may be a string or cell array of strings, which is assumed to be a
+% table.
+% 
+% Messages are indented according to the depth of the call stack and are 
+% printed with corresponding function and line number.
+%
+%
 % http://stackoverflow.com/questions/312378/debug-levels-when-writing-an-application
 %
-% log levels:
-%   1 - major program execution steps (e.g. data preprocessing, interaction
-%       delay reconstruction, TE estimation)
-%   2 - minor program execution steps (e.g. call to subroutines like
-%       TEchannelselect)
-%   3 - coarse debug information
-%   4 - fine debug information
+% * INPUT
+% verbosity - verbosity (string) of command line outputs requested by the 
+%             user (see below)
+% message   - message to be printed - may be a string or a cell array of
+%             strings; if a cell array is provided it is assumed to be a
+%             table and printed as such, in this case an optinal heading 
+%             (string) can be passed as a varargin
+% stack     - execution stack as returned by the MATLAB function dbstack
+% loglevel  - level of detail (int 0-4) of the message, defined by the
+%             program logic (see below)
+% varargin  - optional arguments:
+%             heading (string) if message is a cell array of strings, i.e.,
+%             a table
+%
+% Verbosity and corresponding logging levels:
+%   'none'         - 0 - no output at all
+%   'info_major'   - 1 - major program execution steps (e.g. data 
+%                        preprocessing, interaction delay reconstruction, 
+%                        TE estimation)
+%   'info_minor'   - 2 - minor program execution steps (e.g. call to 
+%                        subroutines like TEchannelselect)
+%   'debug_coarse' - 3 - coarse debug information
+%   'debug_fine'   - 4 - very detailed debug information
+%
+% 
+% Version 1.0 by Patricia Wollstadt
+% Frankfurt 2015
+%
 
 switch verbosity
     case 'none'
@@ -30,15 +63,25 @@ if loglevel > verbosity
     return
 end
 
+
+if iscell(message)
+    message = cell2txt(message, length(stack));
+    
+    if ~isempty(varargin)
+        message = [varargin{1} message];
+    end
+end
+
+
 if loglevel == 1
-    fprintf('\n\n%s\n', message);
+    fprintf(['\n\n%s - line %d: \n' message '\n'], stack(1).file, stack(1).line);         % concatenation instead of %s is needed to make MATLAB do a new line 
         
 elseif loglevel == 2 || loglevel == 3
     fprintf('\n')
     for i=1:length(stack)-1;
         fprintf('   ')
     end
-    fprintf('%s - line %d: %s', stack(1).file, stack(1).line, message);
+    fprintf(['%s - line %d: ' message], stack(1).file, stack(1).line);
     
 elseif loglevel == 4
     for i=1:length(stack)
@@ -47,6 +90,32 @@ elseif loglevel == 4
             fprintf('\t')
         end
     end
-    fprintf('msg: %s\n', message);
+    fprintf(['msg: ' message '\n']);
     
 end
+
+
+function txt = cell2txt(msg, indent)
+
+[rows, cols] = size(msg);
+txt = ['\n'];
+
+for r = 1:rows
+    
+    % add indent for wach row
+    for i=1:indent
+        txt = [txt '   '];
+    end
+    
+    % add content in each column
+    for c = 1:cols
+        txt = [txt '\t' msg{r,c}];
+    end
+    
+    % new line for next column
+    txt = [txt '\n'];
+end
+
+% remove last newline
+txt = txt(1:end-2);
+

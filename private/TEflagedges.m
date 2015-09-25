@@ -111,7 +111,6 @@ for i=1:n_altpaths
     end;
 end;
 
-disp([num2str(no_triangles) ' triangle(s) were found by TEflagedges.']);
 
 %% flag all spurious edges (cascade and common drive effects)
 
