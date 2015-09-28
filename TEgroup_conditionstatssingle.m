@@ -36,6 +36,7 @@ function TEgroup_conditionstatssingle(cfg, data1, data2)
 %         - statistic toolbox
 %     - The functions
 %         - TEperm
+%         - TEconsoleoutput
 %
 %
 % * INPUT PARAMETERS
