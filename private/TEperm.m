@@ -1,13 +1,15 @@
 function [TEpermtest] = TEperm(cfg,TEresult1,TEresult2)
 
 % TEPERM: This function performs a permutation test on two sets of data and
-% is called from the functions TEsurrogatestats, TEconditionstastssingle
-% and TEgroup_stats.
+% is called from the functions TEsurrogatestats, 
+% TEgroup_conditionstastssingle and TEgroup_stats.
 %
 % * INPUT PARAMETERS
 %
 %   TEresult1 and TEresult2 = result structures of the function
-%                             transferentropy
+%                             transferentropy, i.e., a structure with a
+%                             field TEmat containing multiple TE values
+%                             (e.g. repetitions over subjects or trials)
 %
 % AND
 %
