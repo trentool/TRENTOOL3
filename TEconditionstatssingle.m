@@ -1,7 +1,7 @@
 function TEconditionstatssingle(cfg,varargin)
 
-% TECONDITIONSTATS: This function calculates the transferentropy values and
-% performs a permutation test on two transfer entropy data sets of two
+% TECONDITIONSTATS: This function calculates the transfer entropy values 
+% and performs a permutation test on two transfer entropy data sets of two
 % conditions.
 %
 % !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
