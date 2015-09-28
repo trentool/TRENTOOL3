@@ -118,11 +118,17 @@ function TEgroup_conditionstatssingle(cfg, data1, data2)
 % Frankfurt 2015
 %
 
+%% define logging levels
+LOG_INFO_MAJOR = 1;
+LOG_INFO_MINOR = 2;
+
+%% define logging levels
+LOG_INFO_MAJOR = 1;
+LOG_INFO_MINOR = 2;
+
 
 %% check data
 % -------------------------------------------------------------------------
-fprintf('\nCheck data and config');
-
 
 % check data for TEprepare/TEproupprepare structure
 if ~isfield(data1, 'groupprepare') || ~isfield(data2, 'groupprepare')
@@ -179,22 +185,19 @@ if ~isfield(cfg, 'tail'),           cfg.tail = 2;               end;
 
 if ~isfield(cfg, 'permstatstype'),  cfg.permstatstype = 'mean'; end;
 if ~strcmp(cfg.permstatstype , 'mean') && ~strcmp(cfg.permstatstype , 'indepsamplesT') && ~strcmp(cfg.permstatstype , 'depsamplesT')
-    error('\nTRENTOOL ERROR: wrong cfg.permstatstype - use ''mean'' ''depsamplesT'' or ''indepsamplesT'', see help!');
+    fprintf('\n')
+    error('TRENTOOL ERROR: wrong cfg.permstatstype - use ''mean'' ''depsamplesT'' or ''indepsamplesT'', see help!');
 end
 
 if ~isfield(cfg, 'fileidout'),
-    error('\nTRENTOOL ERROR: cfg.fileidout must be defined, see help!');
+    fprintf('\n')
+    error('TRENTOOL ERROR: cfg.fileidout must be defined, see help!');
 end;
 
 
 %% check nr of permutations
 % -------------------------------------------------------------------------
-fprintf('\n\nChecking number of permutations');
-
-
-% cfg.permtest.channelcombi = channelcombi;
-% cfg.permtest.channelcombilabel = data.TEprepare.channelcombilabel ;
-
+TEconsoleoutput(cfg.verbosity, 'Checking number of permutations', dbstack, LOG_INFO_MINOR);
 
 nr2cmc = size(data1.TEpermvalues,1);
 
@@ -216,8 +219,6 @@ else
        fprintf('\n#######################################################################################\n# WARNING: Nr of permutations not sufficient for correction for multiple comparisons! #\n#######################################################################################\n'); 
     end
 end
-
-fprintf(' - ok\n');
 
 
 %% calculate statistics
@@ -250,19 +251,17 @@ TEpermtestcondsingle.TEgroupprepare.channellabel      = data1.TEprepare.channell
 TEpermtestcondsingle.TEgroupprepare.timeindices       = data1.TEprepare.timeindices;
 TEpermtestcondsingle.TEgroupprepare.optdim            = data1.TEprepare.optdim;
 
-fprintf('\nCalculation finished\n')
 
 
 %% save results (output of TEperm)
 % -------------------------------------------------------------------------
 toi = data1.cfg.toi;
 
-fprintf('\nSaving ...')
-fprintf('\n\tresults of permutation test')
+TEconsoleoutput(cfg.verbosity, 'Saving results\n', dbstack, LOG_INFO_MINOR);
+
 save(...
     strcat(cfg.fileidout,'_time',num2str(toi(1)),'-',num2str(toi(2)),'s_TEpermtestcondsingle_output.mat'), ...
     'TEpermtestcondsingle','-v7.3');
-fprintf(' - ok\n\n');
 
 
 
