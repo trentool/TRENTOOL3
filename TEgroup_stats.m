@@ -1,10 +1,10 @@
 function TEgroup_stats(cfg,filesTEpermtest)
 
 % TEGROUP_STATS: The function uses a permutation test to compare TE values
-% between two groups of subjects or between two conditions. Data have to be
-% prepared by TEgroup_prepare and have to be analyzed using
-% InteractionDelayReconstruction_calculate and 
-% InteractionDelayReconstruction_analyze. 
+% between two groups of subjects or between two conditions. TEgroup_prepare 
+% has to be run on all data sets and TE values have to be estimated using 
+% InteractionDelayReconstruction_calculate (or
+% TEsurrogatestats/_ensemble.m).
 %
 % !!!!!!!! DATA HAS TO BE PREPARED AND ANALYZED FOR GROUP STATICIS !!!!!!!!
 %
@@ -102,7 +102,7 @@ function TEgroup_stats(cfg,filesTEpermtest)
 %                          target)
 %            .numpermutation = number of permutations
 %            .nrdatasets     = number of datasets that entered the analysis
-%            .TEgroupprepare = results of the function TEgroup_prepare 
+%            .groupprepare   = results of the function TEgroup_prepare 
 %                              from the data
 %
 %  Raw data used for statistical testing (saved in file '*TE_output.mat')
