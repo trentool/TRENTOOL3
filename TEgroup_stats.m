@@ -38,6 +38,7 @@ function TEgroup_stats(cfg,filesTEpermtest)
 %         - TEperm
 %         - TEvalues
 %         - TEwait
+%         - TEconsoleoutput
 %
 %
 % * INPUT PARAMETERS
@@ -72,7 +73,9 @@ function TEgroup_stats(cfg,filesTEpermtest)
 %                     values used in the statistical test) and
 %                     'TEpermtestgroup_output.mat' (containing the output
 %                     of the statistical test).
-%   cfg.verbosity   = level of detail 
+%   cfg.verbosity   = set the verbosity of console output (see 'help
+%                     TEconsoleoutput', default: setting used in group 
+%                     preparation)
 %
 %
 % * OUTPUT PARAMETERS (ouput is saved to the location specified in
@@ -185,6 +188,10 @@ cfg.verbosity = TEpermtest.TEprepare.cfg.verbosity;
 if ~isfield(cfg, 'alpha'),          cfg.alpha = 0.05;           end;
 if ~isfield(cfg, 'correctm'),       cfg.correctm = 'FDR';       end;
 if ~isfield(cfg, 'tail'),           cfg.tail = 2;               end;
+
+if ~isfield(cfg, 'verbosity')
+    cfg.verbosity = TEpermtest.TEprepare.cfg.verbosity;
+end
 
 if ~isfield(cfg, 'design'),
     error('TRENTOOL ERROR: cfg.design must be defined, see help!');

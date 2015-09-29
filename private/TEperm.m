@@ -21,8 +21,8 @@ function [TEpermtest] = TEperm(cfg,TEresult1,TEresult2)
 %   cfg.numpermutation = nr of permutations
 %   cfg.correctm       = for cmc
 %   cfg.permstatstype  = 'mean', 'indepsamplesT' or 'depsamplesT'
-%   cfg.verbosity      = level of verbosity of output printed to the
-%                        command line
+%   cfg.verbosity      = set the verbosity of console output (see 'help
+%                        TEconsoleoutput', default: 'info_minor')
 %
 % * OUTPUT PARAMETERS
 %
@@ -75,6 +75,8 @@ working_directory = pwd;
 %% define logging levels
 LOG_INFO_MAJOR = 1;
 LOG_INFO_MINOR = 2;
+
+if ~isfield(cfg, 'verbosity'), cfg.verbosity = 'info_minor'; end;
 
 %% set new stream for random numbers
 

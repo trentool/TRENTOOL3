@@ -23,7 +23,7 @@ function DataOut=TEprepare(varargin)
 %         - TEchannelselect
 %         - TEtrialselect
 %         - TEwait
-%         - TEprepareview
+%         - TEconsoleoutput
 %
 %
 % * INPUT PARAMETERS
@@ -44,7 +44,7 @@ function DataOut=TEprepare(varargin)
 %
 % AND
 %
-%   cfg: The configuration MUST contain:
+%  cfg: The configuration MUST contain:
 %
 %  cfg.sgncmb      = list of channelpairs
 %                    cell array (Nx(source, target))
@@ -148,6 +148,9 @@ function DataOut=TEprepare(varargin)
 %      cfg.trial_to    = Superior limit for the trials to be considered
 %  cfg.maxlag      = the range of lags for computing the auto correlation
 %                    time: from -MAXLAG to MAXLAG (default = 1000)
+%
+%  cfg.verbosity   = set the verbosity of console output (see 'help
+%                     TEconsoleoutput', default: 'info_minor')
 %
 % in case of fMRI data:
 %  cfg.embedding_delay_unit = 'ACT' or 'Volumes' (default = 'ACT')

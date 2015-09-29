@@ -75,6 +75,8 @@ function TEgroup_conditionstatssingle(cfg, data1, data2)
 %   cfg.correctm    = correction method used for correction of the multiple
 %                     comparison problem - False discovery rate 'FDR' or
 %                     Bonferroni correction 'BONF' (default = 'FDR')
+%   cfg.verbosity   = set the verbosity of console output (see 'help
+%                     TEconsoleoutput', default 'info_minor')
 %
 % OUTPUT PARAMETERS
 %
@@ -118,10 +120,6 @@ function TEgroup_conditionstatssingle(cfg, data1, data2)
 % Michael Wibral
 % Frankfurt 2015
 %
-
-%% define logging levels
-LOG_INFO_MAJOR = 1;
-LOG_INFO_MINOR = 2;
 
 %% define logging levels
 LOG_INFO_MAJOR = 1;
@@ -179,10 +177,10 @@ end
 %% check cfg
 % -------------------------------------------------------------------------
 
-if ~isfield(cfg, 'alpha'),          cfg.alpha = 0.05;           end;
-if ~isfield(cfg, 'correctm'),       cfg.correctm = 'FDR';       end;
-if ~isfield(cfg, 'tail'),           cfg.tail = 2;               end;
-
+if ~isfield(cfg, 'alpha'),     cfg.alpha = 0.05;             end;
+if ~isfield(cfg, 'correctm'),  cfg.correctm = 'FDR';         end;
+if ~isfield(cfg, 'tail'),      cfg.tail = 2;                 end;
+if ~isfield(cfg, 'verbosity'), cfg.verbosity = 'info_minor'; end
 
 if ~isfield(cfg, 'permstatstype'),  cfg.permstatstype = 'mean'; end;
 if ~strcmp(cfg.permstatstype , 'mean') && ~strcmp(cfg.permstatstype , 'indepsamplesT') && ~strcmp(cfg.permstatstype , 'depsamplesT')

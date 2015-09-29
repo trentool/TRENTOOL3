@@ -56,6 +56,7 @@ switch verbosity
     case 'debug_fine'
         verbosity = 4;
     otherwise
+        fprintf('\n')
         error('TRENTOOL ERROR: Unknown verbosity level!')
 end
 

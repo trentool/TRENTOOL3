@@ -1,6 +1,5 @@
 function [TEresult]=transferentropy(cfg, data, varargin)
 
-%
 % TRANSFERENTROPY computes the transfer entropy (TE) among given pairs of
 % channels for a sequence of trials over periods of time
 %
@@ -34,6 +33,7 @@ function [TEresult]=transferentropy(cfg, data, varargin)
 %           - TEtrialselect
 %           - TEvalues
 %           - TECvalues
+%           - TEconsoleoutput
 %
 %
 % * INPUT PARAPETERS
@@ -105,6 +105,8 @@ function [TEresult]=transferentropy(cfg, data, varargin)
 %                     graph of source and target that are necessary for
 %                     proper delay reconstruction
 %                     (default='VW_ds')
+%   cfg.verbosity   = set the verbosity of console output (see 'help
+%                     TEconsoleoutput', default: 'info_minor')
 %
 %   cfg.maxlag      = the range of lags for computing the auto correlation
 %                     time: from -MAXLAG to MAXLAG (default = 1000)
@@ -165,6 +167,7 @@ function [TEresult]=transferentropy(cfg, data, varargin)
 LOG_INFO_MINOR = 2;
 LOG_DEBUG_COARSE = 2;
 
+if ~isfield(cfg, 'verbosity'), cfg.verbosity = 'info_minor'; end
 
 % check data
 % -------------------------------------------------------------------------

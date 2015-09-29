@@ -45,6 +45,7 @@ function TEpermtest=TEsurrogatestats(cfg,data)
 %         - TEtrialselect
 %         - TEvalues
 %         - TEwait
+%         - TEconsoleoutput
 %
 % * INPUT PARAMETERS
 %
@@ -252,6 +253,12 @@ function TEpermtest=TEsurrogatestats(cfg,data)
 %% Remember the working directory
 working_directory1 = pwd;
 
+%% check if TEprepare was performed
+if ~isfield(data, 'TEprepare'),
+    fprintf('\n')
+    error('TRENTOOL ERROR: The function TEprepare must be performed on the data, see help!');
+end;
+
 %% define logging levels
 LOG_INFO_MAJOR = 1;
 LOG_INFO_MINOR = 2;
@@ -260,12 +267,6 @@ verbosity = data.TEprepare.cfg.verbosity;
 %% check data
 % -------------------------------------------------------------------------
 TEconsoleoutput(verbosity, 'Checking data and config', dbstack, LOG_INFO_MINOR);
-
-% check if TEprepare was performed
-if ~isfield(data, 'TEprepare'),
-    fprintf('\n')
-    error('TRENTOOL ERROR: The function TEprepare must be performed on the data, see help!');
-end;
 
 % check data using checkdata from Fieldtrip
 [data] = ft_checkdata(data, 'datatype','raw');

@@ -38,12 +38,13 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 %
 %
 % * DEPENDENCIES
-%     - running srmd (small resource manager)
+%     - running srmd (small resource manager) if cfg.site = 'ffm'
 %     - functions 'range_search_all_multigpu.mexa64' and 
-%	'fnearneigh_multigpu.mexa64' are used for nearest neighbour and
-%	range searches (Martinez-Zarzuela, 2012)
+%	  - 'fnearneigh_multigpu.mexa64' are used for nearest neighbour and
+%       range searches (Martinez-Zarzuela, 2012)
 %     - this function is called by TEsurrogatestats_ensemble.m, the data
-%	entered into this function has to be embedded first
+%       passed to this function has to be embedded first
+%     - TEconsoleoutput
 %
 %
 %
@@ -68,6 +69,10 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 %     limits the number of values that can be in one input array. The max. 
 %     number of threads and maximum grid size limits the dimension of the 
 %     input array.)
+%   	.verbosity   = set the verbosity of console output (see 'help
+%                      TEconsoleoutput', default: 'info_minor')
+%   	.site        = can be set to 'ffm' if TRENTOOL is executed on the
+%                      cluster in the MEG Lab Frankfurt (default = 'other')
 %
 %
 %   channelpair  = current channelcombination (this is needed to read
@@ -127,9 +132,10 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 % GPU device
 
 %% define logging levels
-LOG_INFO_MAJOR = 1;
-LOG_INFO_MINOR = 2;
+LOG_INFO_MAJOR   = 1;
+LOG_INFO_MINOR   = 2;
 LOG_DEBUG_COARSE = 3;
+LOG_DEBUG_FINE   = 4;
 
 %% Get variables from cfg
 % -------------------------------------------------------------------------
@@ -208,7 +214,7 @@ switch cfg.site
     case 'ffm'
         gpu_id = TEsrmc(pause_time, 'request', cfg.verbosity, sprintf('gpumem:%d', ceil(mem_run)));
     case 'other'
-        ;
+        ; % do nothing
     otherwise
         error('TRENTOOL ERROR: unkown site (has to be ''ffm'' or ''other'').')
 end
@@ -238,44 +244,44 @@ for ii=1:nrruns
 	
 	%% get data for this run (i.e. call of GPU functions) by concatenating indiv. chunks
 	
-	if ii==nrruns  % take remaining data if this is the last run
+    if ii==nrruns  % take remaining data if this is the last run
         
-		% get number and index of first chunk for this run
-		chunk_start = cutpoint-chunksperrun+1;        
-		ind1 = find(chunk_ind==chunk_start,1);
-		
-		% get data from concatenated datasets
-		pointset_p21 = ps_p21(ind1:end,:);        	
-		pointset_p2  = ps_p2(ind1:end,:);
-		pointset_21  = ps_21(ind1:end,:);	
-		pointset_2   = ps_2(ind1:end,:);
-		if MIcalc
-		    pointset_1   = ps_1(ind1:end,:);
-		    pointset_12  = ps_12(ind1:end,:);
-		end    
-		
-		ind2 = size(ps_p21,1);
-		nchunks = (chunk_ind(end)-(chunk_start))+1;		
-    
-	else
+        % get number and index of first chunk for this run
+        chunk_start = cutpoint-chunksperrun+1;
+        ind1 = find(chunk_ind==chunk_start,1);
         
-		% get number and indices of first and last chunk for this run
-		chunk_start = cutpoint-chunksperrun+1;
-		chunk_end   = cutpoint;
-		ind1        = find(chunk_ind==chunk_start,1);
-		ind2        = find(chunk_ind==chunk_end,1,'last');
-		
-		pointset_p21 = ps_p21(ind1:ind2,:);	
-		pointset_p2  = ps_p2(ind1:ind2,:);
-		pointset_21  = ps_21(ind1:ind2,:);	
-		pointset_2   = ps_2(ind1:ind2,:);
-		if MIcalc
-		    pointset_1   = ps_1(ind1:ind2,:);
-		    pointset_12  = ps_12(ind1:ind2,:);
-		end   
-		
-		cutpoint = cutpoint+chunksperrun;
-
+        % get data from concatenated datasets
+        pointset_p21 = ps_p21(ind1:end,:);
+        pointset_p2  = ps_p2(ind1:end,:);
+        pointset_21  = ps_21(ind1:end,:);
+        pointset_2   = ps_2(ind1:end,:);
+        if MIcalc
+            pointset_1   = ps_1(ind1:end,:);
+            pointset_12  = ps_12(ind1:end,:);
+        end
+        
+        ind2 = size(ps_p21,1);
+        nchunks = (chunk_ind(end)-(chunk_start))+1;
+        
+    else
+        
+        % get number and indices of first and last chunk for this run
+        chunk_start = cutpoint-chunksperrun+1;
+        chunk_end   = cutpoint;
+        ind1        = find(chunk_ind==chunk_start,1);
+        ind2        = find(chunk_ind==chunk_end,1,'last');
+        
+        pointset_p21 = ps_p21(ind1:ind2,:);
+        pointset_p2  = ps_p2(ind1:ind2,:);
+        pointset_21  = ps_21(ind1:ind2,:);
+        pointset_2   = ps_2(ind1:ind2,:);
+        if MIcalc
+            pointset_1   = ps_1(ind1:ind2,:);
+            pointset_12  = ps_12(ind1:ind2,:);
+        end
+        
+        cutpoint = cutpoint+chunksperrun;
+        
     end
     
 	%% TE

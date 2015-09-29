@@ -50,6 +50,8 @@ function TEpermtest=TEsurrogatestats_ensemble(cfg,data)
 %	  - TEcallGPUsearch
 %	  - TEcalc
 %	  - TEpvalue
+%     - TEwaitbar
+%     - TEconsoleoutput
 %
 % * INPUT PARAMETERS
 %

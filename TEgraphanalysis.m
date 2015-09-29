@@ -1,4 +1,4 @@
-function [data_paths,cfg] = TEgraphanalysis(cfg,data);
+function [data_paths,cfg] = TEgraphanalysis(cfg,data)
 
 % TEGRAPHANALYSIS: Detects potentially spurious edges in a graph
 % constructed from single subject or single condition TE data. Note that
@@ -41,6 +41,7 @@ function [data_paths,cfg] = TEgraphanalysis(cfg,data);
 %         - TEdfs
 %         - TEdyn
 %         - TEbacktracking
+%         - TEconsoleoutput
 %     - FieldTrip, see http://www.ru.nl/neuroimaging/fieldtrip, Copyright 
 %       (C) 2004-2008, Robert Oostenveld (GNU General Public License)
 %         - ft_progress
@@ -59,6 +60,8 @@ function [data_paths,cfg] = TEgraphanalysis(cfg,data);
 %                       significant after correction for multiple
 %                       comparison (1) or links that are significant at the
 %                       original alpha level (0)
+%       .verbosity    = set the verbosity of console output (see 'help
+%                       TEconsoleoutput', default: 'info_minor')
 %
 %   data
 %       .TEprepare.channelcombi = 2xN matrix that defines analyzed channel
@@ -150,13 +153,13 @@ function [data_paths,cfg] = TEgraphanalysis(cfg,data);
 % 2015-03-20: PW changed the output structure if no paths are found
 
 %% define logging levels
-LOG_INFO_MAJOR = 1;
-LOG_INFO_MINOR = 2;
+LOG_INFO_MAJOR   = 1;
+LOG_INFO_MINOR   = 2;
+LOG_DEBUG_COARSE = 3;
+LOG_DEBUG_FINE   = 4;
 
 % check if a threshold is provided
-if ~isfield(cfg,'verbosity')
-    cfg.verbosity = 'info_minor';
-end;
+if ~isfield(cfg,'verbosity'), cfg.verbosity = 'info_minor'; end;
 
 msg = '################### CORRECTING FOR POTENTIALLY SPURIOUS EDGES';
 TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MAJOR);
