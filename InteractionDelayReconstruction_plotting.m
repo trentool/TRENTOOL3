@@ -82,7 +82,7 @@ for c=1:n_channels
 end
 
 %%
-if n_channels < ch_per_fig
+if n_channels < cfg.ch_per_fig
     figure
     hold all
     plot(uvec,TEmat)
