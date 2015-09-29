@@ -160,7 +160,7 @@ end
 max_dim_scan =  max(cfg.ragdim);
 N = length(fileCell);
 msg = sprintf('You provided %d data sets', N);
-TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 
 %% create output structures
 % -------------------------------------------------------------------------
@@ -190,7 +190,7 @@ for currentSubject = 1:N
     
     
     msg = sprintf('Preparing data for subject %d ', currentSubject);    
-    TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
     dataprepared      = TEprepare(cfg,data);
     
     % get relevant data from TEprepare
@@ -232,9 +232,9 @@ end
 % find maximum dimension over all u and subjects
 max_dim = max(dim_all);
 msg = sprintf('The maximum embedding dimension is %d', max_dim);
-TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 msg = 'Appending group prepare information to data sets';
-TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 
 % create code to check whether data sets went through TEprepare_group
 % within the same run

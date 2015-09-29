@@ -16,7 +16,7 @@ switch cmd
         if status == 0    
             gpu_memsize = str2double(cmdout(strfind(cmdout, ' '):end));
             msg = sprintf('Max. GPU memory is %d MB', gpu_memsize);
-            TEconsoleoutput(verbosity, msg, dbstack, 2);
+            TEconsoleoutput(verbosity, msg, 2);
         else
             error('TRENTOOL ERROR: call to srmc returned non-zero exit!')
         end
@@ -34,7 +34,7 @@ switch cmd
             TEwaitbar('init',50); fprintf('\b')
         end
         msg = sprintf('%s  requesting %s', datestr(now), resources);
-        TEconsoleoutput(verbosity, msg, dbstack, 2);
+        TEconsoleoutput(verbosity, msg, 2);
 
         command=sprintf('srmc request %s', resources);
 
@@ -45,7 +45,7 @@ switch cmd
         end
 
         msg = sprintf('%s  SUCCESS: got unit ''%s''', datestr(now), unit);
-        TEconsoleoutput(verbosity, msg, dbstack, 2);
+        TEconsoleoutput(verbosity, msg, 2);
         %fprintf(1, '===================================================\n');
         %fprintf(1, '===================================================\n');
         if ~strcmp(verbosity, 'none')
@@ -73,7 +73,7 @@ switch cmd
             TEwaitbar('init',50); fprintf('\b')
         end
         msg = sprintf('%s  returning %s', datestr(now), resources);
-        TEconsoleoutput(verbosity, msg, dbstack, 2);
+        TEconsoleoutput(verbosity, msg, 2);
 
         command = sprintf('srmc return %s %s', unit, resources);
 
@@ -84,7 +84,7 @@ switch cmd
         end
 
         msg = sprintf('%s  resources returned', datestr(now));
-        TEconsoleoutput(verbosity, msg, dbstack, 2);
+        TEconsoleoutput(verbosity, msg, 2);
         %fprintf(1, '===================================================\n');
         %fprintf(1, '===================================================\n');
         if ~strcmp(verbosity, 'none')

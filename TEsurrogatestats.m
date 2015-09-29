@@ -266,7 +266,7 @@ verbosity = data.TEprepare.cfg.verbosity;
 
 %% check data
 % -------------------------------------------------------------------------
-TEconsoleoutput(verbosity, 'Checking data and config', dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(verbosity, 'Checking data and config', LOG_INFO_MINOR);
 
 % check data using checkdata from Fieldtrip
 [data] = ft_checkdata(data, 'datatype','raw');
@@ -495,7 +495,7 @@ cfg.permtest.nrtrials=nrtrials;
 %% check nr of permutations
 % -------------------------------------------------------------------------
 msg = 'Checking number of permutations';
-TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 
 %nr2cmc=size(data.TEprepare.channelcombilabel,1)*size(cfg.predicttime_u,2);
 nr2cmc=size(data.TEprepare.channelcombilabel,1);
@@ -503,7 +503,7 @@ nr2cmc=size(data.TEprepare.channelcombilabel,1);
 if ~isfield(cfg, 'numpermutation'),
     cfg.numpermutation = 190100; % for p<0.01 with a possible bonferroni correcetion of 100
     msg = sprintf('TRENTOOL: You didn''t specify a number of permutations. It was set to %d (for p<0.01 with a possible bonferroni correcetion of 100).', cfg.numpermutation);
-    TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
     %cfg.numpermutation = ceil(1/(cfg.alpha/nr2cmc));
     %fprintf('\nTRENTOOL: You didn''t specify a number of permutations. It was set to %d (1/(alpha/no_channelcombis)).', cfg.numpermutation);
 end
@@ -540,7 +540,7 @@ cfg.calctime = 'yes';
 % for unshuffled data
 % ----------------------
 msg = 'Calculating transfer entropy for unshuffled data';
-TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 cfg.shuffle = 'no';
 [TEresult] = transferentropy(cfg,data);
 TEresult.TEprepare = data.TEprepare;
@@ -557,7 +557,7 @@ cfg.calctime = 'no';
 % to avoid later confusion. Please save TEshift yourself if necessary.
 if strcmp(cfg.shifttest, 'yes')
     msg = 'Calculating transfer entropy for shifted data';
-    TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
     
     cfg.shuffle = 'no';
     [TEshift] = transferentropy(cfg,data,'shifttest');
@@ -568,7 +568,7 @@ if strcmp(cfg.shifttest, 'yes')
     
     % permutation test for shift test
     msg = 'Start permutation tests for shift test';
-    TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
     permstatstype = cfg.permstatstype;
     cfg.permstatstype = 'indepsamplesT';
     tailtype = cfg.tail;
@@ -594,7 +594,7 @@ if strcmp(cfg.shifttest, 'yes')
 
     
     % analyze shift test       
-    TEconsoleoutput(cfg.verbosity, 'Analyzing shift test', dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(cfg.verbosity, 'Analyzing shift test', LOG_INFO_MINOR);
     
     % MW: check if there are NaNs in TEresult from errors in
     % transferentropy
@@ -609,10 +609,10 @@ if strcmp(cfg.shifttest, 'yes')
         indexinstmix = find(TEpermshift.TEpermvalues(:,2)==0);
         if size(indexinstmix,1) == 0
             msg = 'No instantaneous mixing found';
-            TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+            TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
         else
             msg = sprintf('%d instantaneous mixings found by strict shifttest!\nFor these cases TEvalues of all trials are set to NaN!\n', size(indexinstmix,1));
-            TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+            TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
             mask=repmat((TEpermshift.TEpermvalues(:,2)-1)*-1, [1 1 size(TEresult.TEmat,2)]);
             TEresult.TEmat(mask==1) = NaN;
             TEresult.MImat(mask==1) = NaN;
@@ -623,10 +623,10 @@ if strcmp(cfg.shifttest, 'yes')
         indexinstmix = find(TEpermshift.TEpermvalues(:,2)==1);
         if size(indexinstmix,1) == 0
             msg = 'No instantaneous mixing found';
-            TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+            TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
         else
             msg = sprintf('%d instantaneous mixings found by strict shifttest!\nFor these cases TEvalues of all trials are set to NaN!\n', size(indexinstmix,1));
-            TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+            TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
             mask=repmat(TEpermshift.TEpermvalues(:,2), [1 1 size(TEresult.TEmat,2)]);
             TEresult.TEmat(mask==1) = NaN;
             TEresult.MImat(mask==1) = NaN;
@@ -645,12 +645,12 @@ end
 % to avoid later confusion. Please save TEshuffle yourself if necessary.
 if cfg.numpermutation > 0    
     msg = 'Calculating transfer entropy for shuffled data';
-    TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);    
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);    
     cfg.shuffle = 'yes';
     [TEshuffle] = transferentropy(cfg,data);
     cfg = rmfield(cfg, 'shuffle');
     msg = 'Starting permutation tests';
-    TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR); 
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR); 
     TEpermtest = TEperm(cfg,TEresult,TEshuffle);
     TEpermtest.TEmat_sur = TEshuffle.TEmat;
 else

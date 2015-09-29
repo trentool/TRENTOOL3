@@ -162,7 +162,7 @@ LOG_DEBUG_FINE   = 4;
 if ~isfield(cfg,'verbosity'), cfg.verbosity = 'info_minor'; end;
 
 msg = '################### CORRECTING FOR POTENTIALLY SPURIOUS EDGES';
-TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MAJOR);
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MAJOR);
 
 
 % check if a threshold is provided
@@ -189,11 +189,11 @@ end
 if cfg.cmc == 1
     link_ind = data.TEpermvalues(:,3) == 1;    
     msg = 'Using links that are significant after correction for multiple comparisons';
-    TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 elseif cfg.cmc == 0
     link_ind = data.TEpermvalues(:,2) == 1;
     msg = 'Using links that are significant without correction for multiple comparisons';
-    TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 end
 weights        = data.TEpermvalues(link_ind,6);
 edges4analysis = data.TEprepare.channelcombi(link_ind,:);       % use numeric representation of channel combis
@@ -207,7 +207,7 @@ n_edges         = length(edges4analysis);
 
 % generate output structure, graph-related info goes into a seperate substructure
 msg = sprintf('no of edges: %d , no of vertices: %d', n_edges, n_vertices);
-TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 graphanalysis = [];
 graphanalysis.n_edges = n_edges;
 graphanalysis.n_vertices = n_vertices;
@@ -365,7 +365,7 @@ end
 if ~isempty(all_paths)
     
     msg = sprintf('Alternative paths were found for %d of %d edges', size(all_paths,1), n_edges);
-    TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
     
     % add alternative paths and graph info to datastructure
     [data_paths, triangle_edges, triangle_nodes] = TEflagedges(data,all_paths,edges4analysis,edges_original);    
@@ -375,12 +375,12 @@ if ~isempty(all_paths)
     data_paths.graphanalysis.triangle_nodes = triangle_nodes;
     
     msg = sprintf('%d triangle(s) were found by TEflagedges', size(triangle_edges, 1));
-    TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
     
 else
     data_paths = data;
     data_paths.graphanalysis = graphanalysis;
-    TEconsoleoutput(cfg.verbosity, 'No alternative paths were found!', dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(cfg.verbosity, 'No alternative paths were found!', LOG_INFO_MINOR);
 end;
 
 % update TEsteps

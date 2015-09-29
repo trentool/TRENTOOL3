@@ -50,7 +50,7 @@ if groupanalysis
     groupprepare = data.groupprepare;
     
     msg = 'Data was prepared for group statistics; the embedding dimension will be set to a common value for all datasets!';
-    TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MINOR);
     if isfield(cfgTEP,'predicttimemax_u') || isfield(cfgTEP,'predicttimemin_u') || isfield(cfgTEP,'predicttimestepsize')
         fprintf('\n')
         warning('Any parameter regarding the prediction time u, provided in cfgTEP will be overwritten by parameters from TEgroup_prepare.')
@@ -62,9 +62,9 @@ if groupanalysis
     % set ragwitz dimension
     warning('Any parameter regarding the ragwitz dimension, provided in cfgTEP and cfgTESS will be overwritten by parameters from TEgroup_prepare.')
     msg = sprintf('Setting ''cfgTEP.ragdim'' to maximum over all subjects (dim = %.0f)',data.groupprepare.max_dim);
-    TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MINOR);
     msg = 'Setting ''cfgTESS.optdimusage'' to ''maxdim'' ';
-    TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MINOR);
     cfgTEP.ragdim        = data.groupprepare.max_dim;
     cfgTESS.optdimusage  = 'maxdim';
 else
@@ -93,7 +93,7 @@ t_total = tic;
 
 %% TEprepare part
 msg = '################### PREPARING DATA FOR TE ANALYSIS';
-TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MAJOR);
+TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MAJOR);
 
 cfgTEP.predicttime_u = cfgTEP.predicttimemax_u;  % fix config
 dataprep = TEprepare(cfgTEP,data);
@@ -101,14 +101,14 @@ clear data;
 
 %% find optimal interaction delays
 msg = '################### OPTIMIZING INFORMATION TRANSFER DELAY';
-TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MAJOR);
+TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MAJOR);
 
 [dataprep, TEmat] = TEfindDelay(predicttimevec_u,cfgTESS,dataprep);
 cfgTESS.embedsource = 'yes';
 
 %% calulate statistics with optimal u for individual channels
 msg = '################### ESTIMATING TRANSFER ENTROPY WITH OPTIMIZED PARAMETERS';
-TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MAJOR);
+TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MAJOR);
 
 cfgTESS.fileidout=strcat(cfgTESS.fileidout,'_RAG4_TGA_opt_u');
 
@@ -130,7 +130,7 @@ end
 %% save results
 
 msg = 'Saving results of TE estimation and surrogate testing';
-TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MINOR);
 save(strcat(cfgTESS.fileidout,'_time',num2str(cfgTEP.toi(1)),'-',num2str(cfgTEP.toi(2)),'s_TEpermtest_output.mat'), ...
     'TEpermtest','-v7.3');
 
@@ -140,4 +140,4 @@ t=toc(t_total);
 msg = sprintf( ...
     'Thank you for using this transfer entropy tool!\n\nTRANSFER ENTROPY CALCULATION ENDED: %s \nCALCULATION TOOK %.0f MINUTES (%.0f SECONDS)', ...
     datestr(now), t/60, t);
-TEconsoleoutput(cfgTEP.verbosity, msg, dbstack, LOG_INFO_MAJOR);
+TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MAJOR);

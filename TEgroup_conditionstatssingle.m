@@ -196,7 +196,7 @@ end;
 
 %% check nr of permutations
 % -------------------------------------------------------------------------
-TEconsoleoutput(cfg.verbosity, 'Checking number of permutations', dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, 'Checking number of permutations', LOG_INFO_MINOR);
 
 nr2cmc = size(data1.TEpermvalues,1);
 
@@ -256,7 +256,7 @@ TEpermtestcondsingle.TEgroupprepare.optdim            = data1.TEprepare.optdim;
 % -------------------------------------------------------------------------
 toi = data1.cfg.toi;
 
-TEconsoleoutput(cfg.verbosity, 'Saving results\n', dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, 'Saving results\n', LOG_INFO_MINOR);
 
 save(...
     strcat(cfg.fileidout,'_time',num2str(toi(1)),'-',num2str(toi(2)),'s_TEpermtestcondsingle_output.mat'), ...

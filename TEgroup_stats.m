@@ -218,7 +218,7 @@ end;
 
 %% check nr of permutations
 % -------------------------------------------------------------------------
-TEconsoleoutput(cfg.verbosity, 'Checking number of permutations', dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, 'Checking number of permutations', LOG_INFO_MINOR);
 
 % cfg.permtest.channelcombi = channelcombi;
 % cfg.permtest.channelcombilabel = data.TEprepare.channelcombilabel ;
@@ -250,7 +250,7 @@ end
 
 %% Define conditions
 % -------------------------------------------------------------------------
-TEconsoleoutput(cfg.verbosity, 'Defining conditions', dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, 'Defining conditions', LOG_INFO_MINOR);
 
 conds    = squeeze(cfg.design(cfg.ivar,:));
 condtype = unique(conds);
@@ -271,7 +271,7 @@ msg = {'Total no. data sets:' num2str(nrunits);
     'Condition 1, ind data sets: ' num2str(condindex1);
     'Condition 2, ind data sets: ' num2str(condindex2)
     };
-TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 
 u_mean1 = mean(u_values(:,condindex1),2);
 u_mean2 = mean(u_values(:,condindex2),2);
@@ -299,7 +299,7 @@ end
 % -------------------------------------------------------------------------
 
 % split TEresultmean matrices for permutation tests
-TEconsoleoutput(cfg.verbosity, 'Preparing condition matrices', dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, 'Preparing condition matrices', LOG_INFO_MINOR);
 
 TEresult1.TEmat = TEresultmean.TEmat(:,condindex1);
 %TEresult1.MImat = TEresultmean.MImat(:,condindex1);
@@ -339,7 +339,7 @@ TEpermtestgroup.TEgroupprepare.optdim            = allTEpermtest{1}.TEprepare.op
 % -------------------------------------------------------------------------
 toi = allTEpermtest{1}.cfg.toi;
 
-TEconsoleoutput(cfg.verbosity, 'Saving results\n', dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, 'Saving results\n', LOG_INFO_MINOR);
 
 % this saves data for each group, that enters the group statistics
 savename1 = strcat(cfg.fileidout,'_time',num2str(toi(1)),'-',num2str(toi(2)),'s_TEpermtestgroup_data.mat');  

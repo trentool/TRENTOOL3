@@ -258,7 +258,7 @@ verbosity = data.TEprepare.cfg.verbosity;
 
 %% check data
 % -------------------------------------------------------------------------
-TEconsoleoutput(verbosity, 'Checking data and config', dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(verbosity, 'Checking data and config', LOG_INFO_MINOR);
 
 % check if TEprepare was performed
 if ~isfield(data, 'TEprepare'),
@@ -397,7 +397,7 @@ end;
 % check if MI calculation is requested
 if ~isfield(cfg,'MIcalc')
     % by default, switch MI calculation on 
-    TEconsoleoutput(verbosity, 'TRENTOOL will also calculate mutual information (MI)', dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(verbosity, 'TRENTOOL will also calculate mutual information (MI)', LOG_INFO_MINOR);
     MIcalc = 1;
     cfg.MIcalc = 1;
 else
@@ -522,7 +522,7 @@ end
 
 %% check nr of permutations 
 % -------------------------------------------------------------------------
-TEconsoleoutput(verbosity, 'Checking number of permutations', dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(verbosity, 'Checking number of permutations', LOG_INFO_MINOR);
 
 %nr2cmc=size(data.TEprepare.channelcombilabel,1)*size(cfg.predicttime_u,2);
 nr2cmc=size(data.TEprepare.channelcombilabel,1);
@@ -533,7 +533,7 @@ if ~isfield(cfg, 'numpermutation'),
     %cfg.numpermutation = 190100; % for p<0.01 with a possible bonferroni correcetion of 100
     cfg.numpermutation = ceil(1/(cfg.alpha/nr2cmc));
     msg = sprintf('TRENTOOL: You didn''t specify a number of permutations. It was set to %d (1/(alpha/no_channelcombis)).', cfg.numpermutation);    
-    TEconsoleoutput(verbosity, msg, dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(verbosity, msg, LOG_INFO_MINOR);
 end
 
 if strcmp(cfg.numpermutation, 'findDelay');
@@ -573,7 +573,7 @@ TEpreparestruct   = data.TEprepare;
 
 %% read data
 % -------------------------------------------------------------------------
-TEconsoleoutput(verbosity, 'Read data', dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(verbosity, 'Read data', LOG_INFO_MINOR);
 
 % read data in to a cell {channelcombi x 2} including data matrices
 % (trial x time)
@@ -634,7 +634,7 @@ else
 end
 
 msg = sprintf('Min. sample points left after embedding: %d (min. required: %d)', mindatapoints, ceil(minsamples));
-TEconsoleoutput(verbosity, msg, dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(verbosity, msg, LOG_INFO_MINOR);
 
 % compare samples in analysis window against minimum feasible no. sample points
 if mindatapoints <= minsamples    
@@ -672,7 +672,7 @@ TEsetRandStream;
 for channelpair = 1:size(channelcombi,1)
 	
     msg = sprintf('Embedding original data for channelpair %d of %d',channelpair,size(channelcombi,1));		
-    TEconsoleoutput(verbosity, msg, dbstack, LOG_INFO_MINOR);    
+    TEconsoleoutput(verbosity, msg, LOG_INFO_MINOR);    
 	
     % prepare data strucuters for embedding		
 	pointsets_concat_2   = [];
@@ -831,7 +831,7 @@ for channelpair = 1:size(channelcombi,1)
         ft_progress('close');
     end;
     
-    TEconsoleoutput(verbosity, 'Starting GPU neighbour count ...', dbstack, LOG_INFO_MINOR);    
+    TEconsoleoutput(verbosity, 'Starting GPU neighbour count ...', LOG_INFO_MINOR);    
     
     % remember indices of individual chunks
     cfg.chunk_ind = chunk_ind;    
@@ -855,7 +855,7 @@ for channelpair = 1:size(channelcombi,1)
 		TELmat{channelpair} = tel;
     end	
     
-    TEconsoleoutput(verbosity, 'Calculating Transfer Entropy', dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(verbosity, 'Calculating Transfer Entropy', LOG_INFO_MINOR);
 	[p TE_diff] = TEpvalue(te,numpermutation);
     
 	% do statistical comparison (is TE_orig an extreme value with respect to the TE values of the surrogate data?)
@@ -879,7 +879,7 @@ end
 % -------------------------------------------------------------------------
 
 if ~findDelay
-    TEconsoleoutput(verbosity, 'Correcting for multiple comparisons', dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(verbosity, 'Correcting for multiple comparisons', LOG_INFO_MINOR);
     pvalues                 = TEpermvalues(:,1);
     nrinstmix               = 0; % instanteneous mixing is not tested when ensemble method is used
     [significance,correctm] = TEcmc(pvalues, cfg.correctm, cfg.alpha, nrinstmix);

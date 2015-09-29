@@ -171,7 +171,7 @@ if ~isfield(cfg, 'verbosity'), cfg.verbosity = 'info_minor'; end
 
 % check data
 % -------------------------------------------------------------------------
-TEconsoleoutput(cfg.verbosity, 'Checking data and config', dbstack, LOG_DEBUG_COARSE);
+TEconsoleoutput(cfg.verbosity, 'Checking data and config', LOG_DEBUG_COARSE);
 
 [data] = ft_checkdata(data, 'datatype','raw');
 
@@ -206,7 +206,7 @@ if ~isfield(cfg, 'embedsource') || strcmp(cfg.embedsource, 'yes')
     noSourceEmb = false;
 else
     noSourceEmb = true;
-    TEconsoleoutput(cfg.verbosity, 'No embedding for source time series is used', dbstack, LOG_INFO_MINOR);
+    TEconsoleoutput(cfg.verbosity, 'No embedding for source time series is used', LOG_INFO_MINOR);
 end
 
 % check if channel or channelcombinations are defined
@@ -268,7 +268,7 @@ nrtrials=data.TEprepare.nrtrials;
 
 % read data
 % -------------------------------------------------------------------------
-TEconsoleoutput(cfg.verbosity, 'Reading data', dbstack, LOG_DEBUG_COARSE);
+TEconsoleoutput(cfg.verbosity, 'Reading data', LOG_DEBUG_COARSE);
 
 % read data in to a cell {channelcombi x 2} including data matrices
 % (trial x time)
@@ -365,7 +365,7 @@ if strcmp(cfg.calctime, 'yes')
     if isfield(data, 'Data4Embedding') && strcmp(data.TEprepare.cfg.datatype, 'fMRI')
         %fprintf('\ncalculation of time is not implementend for fMRI data.\n')
     else
-        TEconsoleoutput(cfg.verbosity, 'Checking calculation time of TE', dbstack, LOG_INFO_MINOR);
+        TEconsoleoutput(cfg.verbosity, 'Checking calculation time of TE', LOG_INFO_MINOR);
         
         %get time of single TE calculation (pessimistic case)
         timetest = 0;
@@ -437,17 +437,17 @@ if strcmp(cfg.calctime, 'yes')
         if timehh<1
             timemm = floor(mod((timeappr/60), 60));         %minutes
             msg = sprintf('Calculation of TE takes appr. : %d minutes!', timemm);
-            TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+            TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
         else
             msg = sprintf('Calculation of TE takes appr. : %d hours (%d days)!', timehh, timehh/24);
-            TEconsoleoutput(cfg.verbosity, msg, dbstack, LOG_INFO_MINOR);
+            TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
         end
     end
 end
 
 % Start calculation of TE
 % -------------------------------------------------------------------------
-TEconsoleoutput(cfg.verbosity, 'Calculating transfer entropy. Please wait ...', dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, 'Calculating transfer entropy. Please wait ...', LOG_INFO_MINOR);
 TEwaitbar('init', size(channelcombi,1), cfg.verbosity);
 
 % create zeros result matrices

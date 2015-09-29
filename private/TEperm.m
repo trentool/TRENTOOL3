@@ -140,7 +140,7 @@ if strcmp(cfg.permstatstype, 'mean')
 end
 
 
-TEconsoleoutput(cfg.verbosity, 'Generating permutations', dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, 'Generating permutations', LOG_INFO_MINOR);
 TEwaitbar('init', 20, cfg.verbosity)
 
 for pp = 1:cfg.numpermutation
@@ -219,7 +219,7 @@ end
 
 
 % Evaluating the quantiles of the true results in the permdistribution
-TEconsoleoutput(cfg.verbosity, 'Starting permutation test. Please wait...', dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, 'Starting permutation test. Please wait...', LOG_INFO_MINOR);
 
 z = sort(TEpermdist,2);
 
@@ -282,7 +282,7 @@ end
 
 
 %% Correction for multiple comparisons
-TEconsoleoutput(cfg.verbosity, 'Correction for multiple comparisons ...', dbstack, LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, 'Correction for multiple comparisons ...', LOG_INFO_MINOR);
 pvalues = TEpermvalues(:,1);
 
 % correct only for all passing instantaneous mixing test

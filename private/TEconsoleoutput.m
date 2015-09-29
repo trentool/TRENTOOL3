@@ -1,4 +1,4 @@
-function TEconsoleoutput(verbosity, message, stack, loglevel, varargin)
+function TEconsoleoutput(verbosity, message, loglevel, varargin)
 
 % TECONSOLEOUTPUT prints information on program execution to the command 
 % line depending on the level of detail requested by the user (verbosity).
@@ -22,7 +22,6 @@ function TEconsoleoutput(verbosity, message, stack, loglevel, varargin)
 %             strings; if a cell array is provided it is assumed to be a
 %             table and printed as such, in this case an optinal heading 
 %             (string) can be passed as a varargin
-% stack     - execution stack as returned by the MATLAB function dbstack
 % loglevel  - level of detail (int 0-4) of the message, defined by the
 %             program logic (see below)
 % varargin  - optional arguments:
@@ -43,6 +42,16 @@ function TEconsoleoutput(verbosity, message, stack, loglevel, varargin)
 % Version 1.0 by Patricia Wollstadt
 % Frankfurt 2015
 %
+
+% get current stack for line info in output
+stack = dbstack;
+if length(stack) > 1
+    stack = stack(2:end);
+else % if function is called directly
+    stack.file = 'base';
+    stack.name = 'base';
+    stack.line = nan;
+end
 
 switch verbosity
     case 'none'
