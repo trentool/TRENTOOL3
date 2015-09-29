@@ -542,10 +542,11 @@ elseif isfield(cfg, 'channel') && ~isfield(cfg, 'sgncmb') ,
     end
     channelselect = 1;
     % a warning because of some issue if only a subselection of
-    % channels enters the analysis
-    if max(size(cfg.channel))<size(data.trial{1},1) % If there are less channels
-        fprintf('\nTRENTOOL WARNING: your are specifying a subselection of channels \n - please use cfg.sgncmb to specify channelcombinations directly'); 
-    end
+    % channels enters the analysis -> PW: I removed this warning, I can't
+    % find any issues
+    %if max(size(cfg.channel))<size(data.trial{1},1) % If there are less channels
+    %    fprintf('\nTRENTOOL WARNING: your are specifying a subselection of channels \n - please use cfg.sgncmb to specify channelcombinations directly'); 
+    %end
 elseif ~isfield(cfg, 'channel') && isfield(cfg, 'sgncmb') ,
     if size(cfg.sgncmb) ~= 2
         fprintf('\n')
@@ -961,9 +962,9 @@ else
         % Change to directory containing mex files for the nearest neighbors search
         %[dir_mex] = TEarch(cfg);
         %cd(dir_mex);
-	TEarch;
-
-
+        TEarch;
+        
+        
         % scan dimensions for each channel and trial
         % -------------------------------------------------------------------------
         maxdim = max(cfg.caodim)+1;
@@ -976,9 +977,9 @@ else
         ch_count = 0;
         for chanpair = 1:size(channelcombi,1) %
             ch_count = ch_count +1;
-
+            
             nt_count = 0;
-            for nt = 1:nrtrials(chanpair,targetchannel) 
+            for nt = 1:nrtrials(chanpair,targetchannel)
                 nt_count = nt_count +1;
                 
                 
