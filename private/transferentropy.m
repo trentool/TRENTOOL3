@@ -28,12 +28,12 @@ function [TEresult]=transferentropy(cfg, data, varargin)
 %           - statistic toolbox
 %     - The functions
 %           - TEactdetect
-%           - TEchannelselect % ToDo: change to Fieldtrip's CHANNELSELECT
-%           function
+%           - TEchannelselect 
 %           - TEtrialselect
 %           - TEvalues
 %           - TECvalues
 %           - TEconsoleoutput
+%           - TEwaitbar
 %
 %
 % * INPUT PARAPETERS
