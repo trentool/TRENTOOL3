@@ -6,11 +6,19 @@ function TEconsoleoutput(verbosity, message, loglevel, varargin)
 % message is considered to have). If the level of verbosity requested by
 % the user corresponds to the loglevel, the message is printed.
 %
-% Input may be a string or cell array of strings, which is assumed to be a
-% table.
+% Input may be a string or cell array of strings. If message is a cell 
+% array, it is assumed that the array contains a table and is printed
+% accordingly (an additional heading may be passed as varargin), e.g.:
+%
+%   >> a = {'x='  '4'; 'y=' '8'; 'z=' '3'};
+%   >> TEconsoleoutput('info_minor', a, 2, 'my table')
+%    base - line NaN: my table
+%        x=     4
+%        y=     8
+%        z=     3
 % 
 % Messages are indented according to the depth of the call stack and are 
-% printed with corresponding function and line number.
+% printed with info on calling function and line number.
 %
 %
 % http://stackoverflow.com/questions/312378/debug-levels-when-writing-an-application
