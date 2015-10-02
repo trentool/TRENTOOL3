@@ -103,6 +103,10 @@ function TEgroup_conditionstatssingle(cfg, data1, data2)
 %                             permutation test
 %            .sgncmb        = labels of channel combinations (source ->
 %                             target)
+%            .nr2cmc        = number used for correction for multiple
+%                             comparisons (returned by TEcmc)
+%            .correctm      = method used for correction for multiple
+%                             comparisons (returned by TEcmc)
 %            .numpermutation = number of permutations
 %            .TEgroupprepare = results of the function TEprepare from the
 %                              data
@@ -198,26 +202,7 @@ end;
 % -------------------------------------------------------------------------
 TEconsoleoutput(cfg.verbosity, 'Checking number of permutations', LOG_INFO_MINOR);
 
-nr2cmc = size(data1.TEpermvalues,1);
-
-if ~isfield(cfg, 'numpermutation'),
-    cfg.numpermutation = 190100; % for p<0.01 with a possible bonferroni correcetion of 100
-elseif cfg.numpermutation < ceil(1/cfg.alpha)
-    error(strcat('\nTRENTOOL ERROR: cfg.numpermutation too small - Nr of permutations must be at least :',num2str(numpermutation),' !'));
-else
-    if cfg.maxtrials>31
-        if cfg.numpermutation > 2^31
-            error(strcat('\nTRENTOOL ERROR: cfg.numpermutation too huge - Nr of permutations must be at least :',num2str(numpermutation),' !'));
-        end
-    else
-        if cfg.numpermutation > 2^cfg.maxtrials
-            error(strcat('\nTRENTOOL ERROR: cfg.numpermutation too huge - Nr of permutations must be at least :',num2str(numpermutation),' !'));
-        end
-    end
-    if cfg.numpermutation < ceil(1/(cfg.alpha/nr2cmc))
-       fprintf('\n#######################################################################################\n# WARNING: Nr of permutations not sufficient for correction for multiple comparisons! #\n#######################################################################################\n'); 
-    end
-end
+cfg.numpermutation = TEchecknumperm(cfg, data1);
 
 
 %% calculate statistics
