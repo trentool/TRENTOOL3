@@ -192,6 +192,10 @@ function TEpermtest=TEsurrogatestats_ensemble(cfg,data)
 %                          permtest
 %            .sgncmb     = labels of channel combinations (source ->
 %                          target)
+%            .nr2cmc     = number used for correction for multiple
+%                          comparisons (returned by TEcmc)
+%            .correctm   = method used for correction for multiple
+%                          comparisons (returned by TEcmc)
 %            .numpermutation = number of permutations
 %            .ACT        = structure including
 %                .act    = ACT matrix (channelcombi x 2 x trial)
