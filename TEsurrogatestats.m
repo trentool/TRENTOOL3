@@ -249,6 +249,8 @@ function TEpermtest=TEsurrogatestats(cfg,data)
 % 2014-11-27 PW: bugfix - nr2cmc is the number of channel combinations, not
 % the no. channel combinations times number of u values to be scanned
 % 2014-06-15 PW: bugfix - no. permutations was not checked correctly
+% 2015-10-01 PW: nr2cmc is now set by TEcmc in TEperm, such that it is only
+% computed in one place and passed to other functions
 
 %% Remember the working directory
 working_directory1 = pwd;
@@ -497,17 +499,6 @@ cfg.permtest.nrtrials=nrtrials;
 msg = 'Checking number of permutations';
 TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 
-%nr2cmc=size(data.TEprepare.channelcombilabel,1)*size(cfg.predicttime_u,2);
-nr2cmc=size(data.TEprepare.channelcombilabel,1);
-
-if ~isfield(cfg, 'numpermutation'),
-    cfg.numpermutation = 190100; % for p<0.01 with a possible bonferroni correcetion of 100
-    msg = sprintf('TRENTOOL: You didn''t specify a number of permutations. It was set to %d (for p<0.01 with a possible bonferroni correcetion of 100).', cfg.numpermutation);
-    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
-    %cfg.numpermutation = ceil(1/(cfg.alpha/nr2cmc));
-    %fprintf('\nTRENTOOL: You didn''t specify a number of permutations. It was set to %d (1/(alpha/no_channelcombis)).', cfg.numpermutation);
-end
-
 findDelay = 0;
 
 if strcmp(cfg.numpermutation, 'findDelay');
@@ -515,21 +506,7 @@ if strcmp(cfg.numpermutation, 'findDelay');
     findDelay = 1;
     cfg.shifttest = 0;
 else 
-
-    if cfg.numpermutation < ceil(1/cfg.alpha)
-    	fprintf('\n')
-    	error('TRENTOOL ERROR: cfg.numpermutation too small (< 1/alpha)!');
-    elseif cfg.numpermutation < ceil(1/(cfg.alpha/nr2cmc))
-       fprintf('\n'); 
-       warning('########################################################################## Nr of permutations not sufficient for correction for multiple comparisons!'); 
-    elseif max(nrtrials(:,2))>31 && cfg.numpermutation > 2^31
-        fprintf('\n')
-        error('TRENTOOL ERROR: cfg.numpermutation too huge (> 2^31)!');
-    elseif max(nrtrials(:,2))>31 && cfg.numpermutation > 2^min(nrtrials(:,2)) % nrtrials is now 2-D!
-        fprintf('\n')
-        error('TRENTOOL ERROR: cfg.numpermutation too huge (> 2^n_trials)!');
-    end
-
+    cfg.numpermutation = TEchecknumperm(cfg, data);
 end
 
 %% start calculating TE
@@ -653,6 +630,8 @@ if cfg.numpermutation > 0
     TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR); 
     TEpermtest = TEperm(cfg,TEresult,TEshuffle);
     TEpermtest.TEmat_sur = TEshuffle.TEmat;
+    cfg.correctm = TEpermtest.correctm;
+    TEpermtest = rmfield(TEpermtest, 'correctm');
 else
     TEpermtest = [];
 end
@@ -672,7 +651,6 @@ TEpermtest.ACT.actvalue = data.TEprepare.ACT;
 TEpermtest.sgncmb = TEresult.sgncmb;
 TEpermtest.numpermutation = cfg.numpermutation;
 TEpermtest.TEprepare = data.TEprepare;
-TEpermtest.nr2cmc = nr2cmc;
 TEpermtest.TEmat = TEresult.TEmat;
 TEpermtest.MImat = TEresult.MImat;
 
