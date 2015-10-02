@@ -49,18 +49,24 @@ if groupanalysis
     
     groupprepare = data.groupprepare;
     
-    msg = 'Data was prepared for group statistics; the embedding dimension will be set to a common value for all datasets!';
+    msg = ['Data was prepared for group statistics; the embedding ' ...
+        'dimension will be set to a common value for all datasets!'];
     TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MINOR);
     if isfield(cfgTEP,'predicttimemax_u') || isfield(cfgTEP,'predicttimemin_u') || isfield(cfgTEP,'predicttimestepsize')
         fprintf('\n')
-        warning('Any parameter regarding the prediction time u, provided in cfgTEP will be overwritten by parameters from TEgroup_prepare.')
+        warning(['TRENTOOL WARNING: Any parameter regarding the ' ...
+            'prediction time u, provided in cfgTEP will be ' ...
+            'overwritten by parameters from TEgroup_prepare.'])
     end
     
     % set prediction time vector
     predicttimevec_u = data.groupprepare.predicttimevec_u;
     
-    % set ragwitz dimension
-    warning('Any parameter regarding the ragwitz dimension, provided in cfgTEP and cfgTESS will be overwritten by parameters from TEgroup_prepare.')
+    % set ragwitz dimension   
+    fprintf('\n')
+    warning(['TRENTOOL WARNING: Any parameter regarding the ' ...
+            'ragwitz dimension, provided in cfgTEP/cfgTESS will be ' ...
+            'overwritten by parameters from TEgroup_prepare.'])
     msg = sprintf('Setting ''cfgTEP.ragdim'' to maximum over all subjects (dim = %.0f)',data.groupprepare.max_dim);
     TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MINOR);
     msg = 'Setting ''cfgTESS.optdimusage'' to ''maxdim'' ';
@@ -71,13 +77,16 @@ else
     
     % cfg.predicttimevec_u supplied ?
     if ~isfield(cfgTEP,'predicttimemax_u')
-        error(' No cfgTEP.predicttimemax_u specified - see HELP InteractionDelayReconstruction_calculate for more information');
+        fprintf('\n')
+        error('TRENTOOL ERROR: No cfgTEP.predicttimemax_u specified - see HELP InteractionDelayReconstruction_calculate for more information');
     end
     if ~isfield(cfgTEP,'predicttimemin_u')
-        error(' No cfgTEP.predicttimemin_u specified - see HELP InteractionDelayReconstruction_calculate for more information');
+        fprintf('\n')
+        error('TRENTOOL ERROR: No cfgTEP.predicttimemin_u specified - see HELP InteractionDelayReconstruction_calculate for more information');
     end
     if ~isfield(cfgTEP,'predicttimestepsize')
-        error(' No cfgTEP.predicttimestepsize specified - see HELP InteractionDelayReconstruction_calculate for more information');
+        fprintf('\n')
+        error('TRENTOOL ERROR: No cfgTEP.predicttimestepsize specified - see HELP InteractionDelayReconstruction_calculate for more information');
     end
 
     predicttimevec_u=cfgTEP.predicttimemin_u:cfgTEP.predicttimestepsize:cfgTEP.predicttimemax_u;
