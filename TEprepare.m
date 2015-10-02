@@ -258,7 +258,7 @@ function DataOut = TEprepare(varargin)
 %
 % 2015-25-09: PW added new output to console 
 %
-% 2015-25-09: PW, tau for calls to TEragwitz was calculated using ceil(), I
+% 2015-02-10: PW, tau for calls to TEragwitz was calculated using ceil(), I
 % changed that to round() with a check if tau >= 1 (otherwise the tau used
 % in the Ragwitz optimization is not the same as used in TE calculation)
 
