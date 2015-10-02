@@ -404,11 +404,15 @@ else
             error('TRENTOOL ERROR: cfg.dim must include a scalar, see help!');
         end
         if cfg.dim < data.TEprepare.optdim
-            fprintf('\n')
-            warning('TRENTOOL WARNING: specified embedding dimension (cfg.dim) is smaller then the optimal dimension from TEprepare.')
+            warning(['\nTRENTOOL WARNING: embedding dimension ' ...
+                'specified in cfg.dim (=%d) is smaller than the optimal ' ...
+                'dimension found by TEprepare (%d).'], ...
+                cfg.dim, data.TEprepare.optdim)
         elseif cfg.dim > data.TEprepare.optdim
-            fprintf('\n')
-            warning('TRENTOOL WARNING: specified embedding dimension (cfg.dim) is bigger then the optimal dimension from TEprepare.')
+            warning(['\nTRENTOOL WARNING: embedding dimension ' ...
+                'specified in cfg.dim (=%d) is bigger than the optimal ' ...
+                'dimension found by TEprepare (%d).'], ...
+                cfg.dim, data.TEprepare.optdim)
         end
     end
 end;
@@ -577,7 +581,8 @@ if strcmp(cfg.shifttest, 'yes')
     % transferentropy
     NaNidx=find(isnan(TEresult.TEmat));
     if ~isempty(NaNidx)
-        warning('Found NaN in TEresult.TEmat! Aborting')
+        fprintf('\n')
+        warning('TRENTOOL WARNING: Found NaN in TEresult.TEmat! Aborting')
         return
     end
     
