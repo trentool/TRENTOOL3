@@ -524,37 +524,17 @@ end
 % -------------------------------------------------------------------------
 TEconsoleoutput(verbosity, 'Checking number of permutations', LOG_INFO_MINOR);
 
-%nr2cmc=size(data.TEprepare.channelcombilabel,1)*size(cfg.predicttime_u,2);
-nr2cmc=size(data.TEprepare.channelcombilabel,1);
-
 findDelay = 0;
 
-if ~isfield(cfg, 'numpermutation'),
-    %cfg.numpermutation = 190100; % for p<0.01 with a possible bonferroni correcetion of 100
-    cfg.numpermutation = ceil(1/(cfg.alpha/nr2cmc));
-    msg = sprintf('TRENTOOL: You didn''t specify a number of permutations. It was set to %d (1/(alpha/no_channelcombis)).', cfg.numpermutation);    
+if ~isfield(cfg, 'numpermutation')
+    cfg.numpermutation = 500;
+    msg = sprintf('You didn''t specify a number of permutations. It was set to %d.', cfg.numpermutation);
     TEconsoleoutput(verbosity, msg, LOG_INFO_MINOR);
 end
 
 if strcmp(cfg.numpermutation, 'findDelay');
     cfg.numpermutation = 0;
     findDelay = 1;
-else 
-
-    if cfg.numpermutation < ceil(1/cfg.alpha)
-    	fprintf('\n')
-    	error('TRENTOOL ERROR: cfg.numpermutation too small (< 1/alpha)!');
-    elseif cfg.numpermutation < ceil(1/(cfg.alpha/nr2cmc))
-       fprintf('\n')
-       warning('########################################################################## Nr of permutations not sufficient for correction for multiple comparisons!'); 
-    elseif max(nrtrials)>31 && cfg.numpermutation > 2^31
-        fprintf('\n')
-        error('TRENTOOL ERROR: cfg.numpermutation too huge (> 2^31)!');
-    elseif max(nrtrials)>31 && cfg.numpermutation > 2^min(min(nrtrials)) % nrtrials is now 2-D!
-        fprintf('\n')
-        error('TRENTOOL ERROR: cfg.numpermutation too huge (> 2^n_trials)!');
-    end
-
 end
 
 
@@ -882,7 +862,7 @@ if ~findDelay
     TEconsoleoutput(verbosity, 'Correcting for multiple comparisons', LOG_INFO_MINOR);
     pvalues                 = TEpermvalues(:,1);
     nrinstmix               = 0; % instanteneous mixing is not tested when ensemble method is used
-    [significance,correctm] = TEcmc(pvalues, cfg.correctm, cfg.alpha, nrinstmix);
+    [significance, correctm, nr2cmc] = TEcmc(pvalues, cfg.correctm, cfg.alpha, nrinstmix);
     TEpermvalues(:,3)       = significance;
     cfg.correctm            = correctm;    % the correction method might change, if only a small no. channels is analyzed, this should be updated
 end
