@@ -108,6 +108,10 @@ function TEgroup_stats(cfg,filesTEpermtest)
 %            .nrdatasets     = number of datasets that entered the analysis
 %            .groupprepare   = results of the function TEgroup_prepare 
 %                              from the data
+%            .nr2cmc     = number used for correction for multiple
+%                          comparisons (returned by TEcmc)
+%            .correctm   = method used for correction for multiple
+%                          comparisons (returned by TEcmc)
 %
 %  Raw data used for statistical testing (saved in file '*TE_output.mat')
 %   TEresult1    = raw TE values for group/condition 1
@@ -223,28 +227,7 @@ TEconsoleoutput(cfg.verbosity, 'Checking number of permutations', LOG_INFO_MINOR
 % cfg.permtest.channelcombi = channelcombi;
 % cfg.permtest.channelcombilabel = data.TEprepare.channelcombilabel ;
 
-
-nr2cmc = nrchannelcombi*length(allTEpermtest{1}.groupprepare.predicttimevec_u);
-
-if ~isfield(cfg, 'numpermutation'),
-    cfg.numpermutation = 190100; % for p<0.01 with a possible bonferroni correcetion of 100
-elseif cfg.numpermutation < ceil(1/cfg.alpha)
-    error(strcat('TRENTOOL ERROR: cfg.numpermutation too small - Nr of permutations must be at least :',num2str(numpermutation),' !'));
-else
-    if cfg.maxtrials>31
-        if cfg.numpermutation > 2^31
-            error(strcat('TRENTOOL ERROR: cfg.numpermutation too huge - Nr of permutations must be at least :',num2str(numpermutation),' !'));
-        end
-    else
-        if cfg.numpermutation > 2^cfg.maxtrials
-            error(strcat('TRENTOOL ERROR: cfg.numpermutation too huge - Nr of permutations must be at least :',num2str(numpermutation),' !'));
-        end
-    end
-    if cfg.numpermutation < ceil(1/(cfg.alpha/nr2cmc))
-       fprintf('\n'); 
-       warning('########################################################################## Nr of permutations not sufficient for correction for multiple comparisons!'); 
-    end
-end
+cfg.numpermutation = TEchecknumperm(cfg, data);
 
 
 
@@ -339,7 +322,7 @@ TEpermtestgroup.TEgroupprepare.optdim            = allTEpermtest{1}.TEprepare.op
 % -------------------------------------------------------------------------
 toi = allTEpermtest{1}.cfg.toi;
 
-TEconsoleoutput(cfg.verbosity, 'Saving results\n', LOG_INFO_MINOR);
+TEconsoleoutput(cfg.verbosity, 'Saving results', LOG_INFO_MINOR);
 
 % this saves data for each group, that enters the group statistics
 savename1 = strcat(cfg.fileidout,'_time',num2str(toi(1)),'-',num2str(toi(2)),'s_TEpermtestgroup_data.mat');  
