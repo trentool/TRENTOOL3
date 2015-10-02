@@ -1,4 +1,4 @@
-function [significance, correctm] = TEcmc(data, correctm, alpha, nrinstmix)
+function [significance, correctm, nr2cmc] = TEcmc(data, correctm, alpha, nrinstmix)
 
 % TEcmc: This function implements the correction for multiple comparisons
 % with false discovery rate or the more conservative Bonferroni correction.
@@ -16,7 +16,10 @@ function [significance, correctm] = TEcmc(data, correctm, alpha, nrinstmix)
 %
 % * OUTPUT PARAMETERS
 %   significance = matrix including significances (1) after correction for
-%   multiple comparison
+%                  multiple comparison
+%   correctm     = method used for correction for multiple comparisons
+%   nr2cmc       = number multiple comparisons (e.g. used to correct the
+%                  alpha level in Bonferroni correction)
 %
 %
 % This program is free software; you can redistribute it and/or modify
@@ -37,17 +40,19 @@ function [significance, correctm] = TEcmc(data, correctm, alpha, nrinstmix)
 % thresholds (missing brackets)
 % 01/19/2015: PW fixed a bug in the FDR algorithm, thresholds and P-Values
 % have to be compared iteratively, starting with the smallest p
+% 10/01/2015: PW nr2cmc is determined in this function and returned for use
+% in calling functions
 
 % if number of multiple comparisons are smaller than 10 Bonferroni correction
 % will be used automatically
 if numel(data) <=10 && strcmp(correctm, 'FDR');
     %cfg.correctm = 'BONF';             % PW this doesn't lead to the use of BONF below, because it changes cfg.correctm not correctm
-    correctm = 'BONF';
-    fprintf('\n')
-    warning('TRENTOOL WARNING: Number of Data to small for FDR -> Bonf was used instead');
+    correctm = 'BONF';    
+    warning('\nTRENTOOL WARNING: Number of channel combinations (%d) to small for FDR -> Bonf was used instead', ...
+        numel(data));
 end
 
-
+nr2cmc = size(data,1) * size(data,2) -nrinstmix; %* size(TEresult.TEmat,3);    
 
 if strcmp(correctm, 'FDR')
     
@@ -81,8 +86,7 @@ if strcmp(correctm, 'FDR')
     significance = reshape(significance, dim);
     
 elseif strcmp(correctm, 'BONF')
-    
-    nrofcomp = size(data,1) * size(data,2) -nrinstmix; %* size(TEresult.TEmat,3);    
-    significance = (data<=(alpha/nrofcomp));
+        
+    significance = (data<=(alpha/nr2cmc));
     
 end
