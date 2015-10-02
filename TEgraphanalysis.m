@@ -223,8 +223,10 @@ all_paths = {};
 %% check if graph is big enough for graph analysis, else return
 
 if n_vertices < 3 || n_edges < 3;
-    fprintf('\n')
-    warning('Graphanalysis does not work for graphs with less than 3 nodes or less than 3 edges! Return...');
+    warning(['\nTRENTOOL WARNING: The input graph has %d nodes and %d ' ...
+        'edges. Graphanalysis does not work for graphs with less ' ... 
+        'than 3 nodes or less than 3 edges! Return...'], ...
+        n_vertices, n_edges);
         
     % add graph info to datastructure
     data_paths                   = data;
