@@ -505,7 +505,7 @@ TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 
 findDelay = 0;
 
-if strcmp(cfg.numpermutation, 'findDelay');
+if isfield(cfg, 'numpermutation') && strcmp(cfg.numpermutation, 'findDelay');
     cfg.numpermutation = 0;
     findDelay = 1;
     cfg.shifttest = 0;
