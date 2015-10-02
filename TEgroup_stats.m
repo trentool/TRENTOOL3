@@ -100,6 +100,10 @@ function TEgroup_stats(cfg,filesTEpermtest)
 %			    6 - mean estimated interaction delay u from the
 %				group with the larger TE value
 %
+%            .nr2cmc     = number used for correction for multiple
+%                          comparisons (returned by TEcmc)
+%            .correctm   = method used for correction for multiple
+%                          comparisons (returned by TEcmc)
 %            .dimord     = dimensions of TEpermvalues
 %            .cfg        = configuration file used for group statistics
 %            .sgncmb     = labels of channel combinations (source ->
@@ -108,10 +112,7 @@ function TEgroup_stats(cfg,filesTEpermtest)
 %            .nrdatasets     = number of datasets that entered the analysis
 %            .groupprepare   = results of the function TEgroup_prepare 
 %                              from the data
-%            .nr2cmc     = number used for correction for multiple
-%                          comparisons (returned by TEcmc)
-%            .correctm   = method used for correction for multiple
-%                          comparisons (returned by TEcmc)
+%
 %
 %  Raw data used for statistical testing (saved in file '*TE_output.mat')
 %   TEresult1    = raw TE values for group/condition 1
