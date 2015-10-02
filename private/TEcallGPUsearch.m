@@ -239,7 +239,7 @@ nchunks  = chunksperrun;
 
 for ii=1:nrruns
 
-	msg = sprintf('\nchannelpair %d (u = %d) - run %d of %d',channelpair,cfg.u_in_ms(channelpair),ii,nrruns);
+	msg = sprintf('channelpair %d (u = %d) - run %d of %d',channelpair,cfg.u_in_ms(channelpair),ii,nrruns);
     TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 	
 	%% get data for this run (i.e. call of GPU functions) by concatenating indiv. chunks
