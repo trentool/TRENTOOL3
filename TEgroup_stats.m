@@ -227,7 +227,7 @@ TEconsoleoutput(cfg.verbosity, 'Checking number of permutations', LOG_INFO_MINOR
 % cfg.permtest.channelcombi = channelcombi;
 % cfg.permtest.channelcombilabel = data.TEprepare.channelcombilabel ;
 
-cfg.numpermutation = TEchecknumperm(cfg, data);
+cfg.numpermutation = TEchecknumperm(cfg, allTEpermtest{1});
 
 
 
