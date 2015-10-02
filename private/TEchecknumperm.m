@@ -41,6 +41,12 @@ function numperm = TEchecknumperm(cfg, data)
 % Version 1.0 by Patricia Wollstadt, Michael Wibral
 % Frankfurt, 2015
 
+%%
+LOG_INFO_MAJOR = 1;
+LOG_INFO_MINOR = 2;
+
+%%
+
 warning('off','all') % nchoosek throws a warning for large n
 nr2cmc = size(data.TEprepare.channelcombi, 1);
 max_nrtrials = max(data.TEprepare.nrtrials(:,2));
