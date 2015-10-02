@@ -42,17 +42,10 @@ function [TEpermtest] = TEperm(cfg,TEresult1,TEresult2)
 %                               difference depending on cfg.permstatstype
 %                           5 - 1 (0), if instantaneous mixing (volume
 %                               conduction) exists (or not)
-%            .cfg           = configuration file used to calculate TE and
-%                             permtest
-%            .label         = labels of used channels
-%            .sgncmb        = labels of channel combinations (source ->
-%                             target)
-%            .numpermutation = number of permutations
-%            .ACT           = structure including
-%                .act       = ACT matrix (channel x trial)
-%                .label     = label of channels in ACT matrix
-%            .TEprepare     = results of the function TEprepare fron the
-%                             data
+%            .nr2cmc   = number used for correction for multiple
+%                        comparisons (returned by TEcmc)
+%            .correctm = method used for correction for multiple
+%                        comparisons (returned by TEcmc)
 %
 %
 % This program is free software; you can redistribute it and/or modify
@@ -303,12 +296,13 @@ mixmask = instmixing1 + instmixing2;
 nrinstmix =  size(pvalues,1) - length(find(mixmask==0));
 
 
-significance = TEcmc(pvalues, cfg.correctm, cfg.alpha, nrinstmix);
-TEpermvalues(:,3)=significance;
+[significance, correctm, nr2cmc] =  TEcmc(pvalues, cfg.correctm, cfg.alpha, nrinstmix);
+TEpermvalues(:,3) = significance;
 
 %TEpermtest.TEpermdist=TEpermdist;
-TEpermtest.TEpermvalues=TEpermvalues;
-
+TEpermtest.TEpermvalues = TEpermvalues;
+TEpermtest.nr2cmc       = nr2cmc;
+TEpermtest.correctm     = correctm;
 
 %% Returning to the working directory
 cd(working_directory)
