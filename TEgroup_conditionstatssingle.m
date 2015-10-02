@@ -98,16 +98,19 @@ function TEgroup_conditionstatssingle(cfg, data1, data2)
 %                           6 - reconstructed interaction delay of the
 %                               condition with stronger TE for that channel
 %                               combination
+%            
+%            .nr2cmc        = number used for correction for multiple
+%                             comparisons (returned by TEcmc)
+%            .correctm      = method used for correction for multiple
+%                             comparisons (returned by TEcmc)
 %            .dimord        = dimensions of TEpermvalues
 %            .cfg           = configuration file used to conduct the 
 %                             permutation test
 %            .sgncmb        = labels of channel combinations (source ->
 %                             target)
-%            .nr2cmc        = number used for correction for multiple
-%                             comparisons (returned by TEcmc)
-%            .correctm      = method used for correction for multiple
-%                             comparisons (returned by TEcmc)
 %            .numpermutation = number of permutations
+%            .nrtrials       = [1 x 2] vector with no. trials in data1 and
+%                              data2 respectively
 %            .TEgroupprepare = results of the function TEprepare from the
 %                              data
 %
@@ -224,6 +227,7 @@ TEpermtestcondsingle.dimord         = 'chanpair_value';
 TEpermtestcondsingle.cfg            = cfg;
 TEpermtestcondsingle.sgncmb         = data1.sgncmb;
 TEpermtestcondsingle.numpermutation = cfg.numpermutation;
+TEpermtestcondsingle.nrtrials       = [size(data1.TEmat,2) size(data2.TEmat,2)];
 TEpermtestcondsingle.TEgroupprepare = data1.groupprepare;
 
 % keep some information from TEprepare (only fields that are relevant to all subjects)
