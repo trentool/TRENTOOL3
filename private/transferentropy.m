@@ -1,6 +1,5 @@
 function [TEresult]=transferentropy(cfg, data, varargin)
 
-%
 % TRANSFERENTROPY computes the transfer entropy (TE) among given pairs of
 % channels for a sequence of trials over periods of time
 %
@@ -29,11 +28,12 @@ function [TEresult]=transferentropy(cfg, data, varargin)
 %           - statistic toolbox
 %     - The functions
 %           - TEactdetect
-%           - TEchannelselect % ToDo: change to Fieldtrip's CHANNELSELECT
-%           function
+%           - TEchannelselect 
 %           - TEtrialselect
 %           - TEvalues
 %           - TECvalues
+%           - TEconsoleoutput
+%           - TEwaitbar
 %
 %
 % * INPUT PARAPETERS
@@ -105,6 +105,8 @@ function [TEresult]=transferentropy(cfg, data, varargin)
 %                     graph of source and target that are necessary for
 %                     proper delay reconstruction
 %                     (default='VW_ds')
+%   cfg.verbosity   = set the verbosity of console output (see 'help
+%                     TEconsoleoutput', default: 'info_minor')
 %
 %   cfg.maxlag      = the range of lags for computing the auto correlation
 %                     time: from -MAXLAG to MAXLAG (default = 1000)
@@ -161,14 +163,17 @@ function [TEresult]=transferentropy(cfg, data, varargin)
 % TheilerT
 % 2015-04-17: PW added a check for scalar delays that lets users call 
 % TEsurrogatestats without calling InteractionDelayReconstruction_calculate
+% 2015-10-02: PW fixed a bug in calls to TEC_dsvalues (didn't use the 
+% fixed Theiler correction if requested)
 
+LOG_INFO_MINOR = 2;
+LOG_DEBUG_COARSE = 2;
 
-%% Remember the working directory
-working_directory = pwd;
+if ~isfield(cfg, 'verbosity'), cfg.verbosity = 'info_minor'; end
 
 % check data
 % -------------------------------------------------------------------------
-fprintf('\nCheck data and config');
+TEconsoleoutput(cfg.verbosity, 'Checking data and config', LOG_DEBUG_COARSE);
 
 [data] = ft_checkdata(data, 'datatype','raw');
 
@@ -203,7 +208,7 @@ if ~isfield(cfg, 'embedsource') || strcmp(cfg.embedsource, 'yes')
     noSourceEmb = false;
 else
     noSourceEmb = true;
-    fprintf('\nNo embedding for source time series.\n')
+    TEconsoleoutput(cfg.verbosity, 'No embedding for source time series is used', LOG_INFO_MINOR);
 end
 
 % check if channel or channelcombinations are defined
@@ -250,9 +255,6 @@ elseif nargin == 3 && strcmp(varargin{1}, 'shifttest') ;
 end
 
 
-fprintf(' - ok');
-
-
 
 % get values from cfg
 % -------------------------------------------------------------------------
@@ -268,7 +270,7 @@ nrtrials=data.TEprepare.nrtrials;
 
 % read data
 % -------------------------------------------------------------------------
-fprintf('\nRead data');
+TEconsoleoutput(cfg.verbosity, 'Reading data', LOG_DEBUG_COARSE);
 
 % read data in to a cell {channelcombi x 2} including data matrices
 % (trial x time)
@@ -318,7 +320,6 @@ end
 % create empty result structure
 TEresult=[];
 
-fprintf(' - ok');
 
 
 
@@ -366,7 +367,7 @@ if strcmp(cfg.calctime, 'yes')
     if isfield(data, 'Data4Embedding') && strcmp(data.TEprepare.cfg.datatype, 'fMRI')
         %fprintf('\ncalculation of time is not implementend for fMRI data.\n')
     else
-        fprintf(strcat('\nCheck calculation time of TE. Please wait...'))
+        TEconsoleoutput(cfg.verbosity, 'Checking calculation time of TE', LOG_INFO_MINOR);
         
         %get time of single TE calculation (pessimistic case)
         timetest = 0;
@@ -375,50 +376,32 @@ if strcmp(cfg.calctime, 'yes')
 	    
 	    currentTau = round(cfg.tau(1)*data.TEprepare.maxact);
 	    if currentTau < 1
-			currentTau = 1;		% this may become zero for small ACT values -> overwrite manually
-	    end
-	    
-            if Theiler_ACT                
-                [te, mi] = TEC_dsvalues( ...
-                    squeeze(data4TE{1,1}(1,timeindices(1):timeindices(2))),squeeze(data4TE{1,2}(1,timeindices(1):timeindices(2))), ...
-                    cfg.dim(1), ...
-                    currentTau, ...
-                    dimu(1), ...
-                    cfg.kth_neighbors, ...
-                    data.TEprepare.maxact, ...
-                    cfg.extracond, ...
-                    1, ...
-                    1);
-%                 % use either the old predictor from 'V'(icente)
-%                 % or the new one 'V(icente)W(ibral)'
-%                 if strcmp(data.TEprepare.cfg.TEcalctype,'V')
-%                     [te, mi] = TEvalues(squeeze(data4TE{1,1}(1,timeindices(1):timeindices(2))),squeeze(data4TE{1,2}(1,timeindices(1):timeindices(2))),cfg.dim(1),round(cfg.tau(1)*data.TEprepare.maxact),dimu,cfg.kth_neighbors,data.TEprepare.maxact);
-%                 elseif strcmp(data.TEprepare.cfg.TEcalctype,'VW')
-%                     [te, mi] = TECvalues(squeeze(data4TE{1,1}(1,timeindices(1):timeindices(2))),squeeze(data4TE{1,2}(1,timeindices(1):timeindices(2))),cfg.dim(1),round(cfg.tau(1)*data.TEprepare.maxact),dimu,cfg.kth_neighbors,data.TEprepare.maxact);
-%                 end
-            else
-                [te, mi] = TEC_dsvalues( ...
-                    squeeze(data4TE{1,1}(1,timeindices(1):timeindices(2))),squeeze(data4TE{1,2}(1,timeindices(1):timeindices(2))), ...
-                    cfg.dim(1), ...
-                    currentTau, ...
-                    dimu(1), ...
-                    cfg.kth_neighbors, ...
-                    cfg.TheilerT, ...
-                    cfg.extracond, ...
-                    1, ...
-                    1);
-%                 if strcmp(data.TEprepare.cfg.TEcalctype,'V')
-%                     [te, mi] = TEvalues(squeeze(data4TE{1,1}(1,timeindices(1):timeindices(2))),squeeze(data4TE{1,2}(1,timeindices(1):timeindices(2))),cfg.dim(1),round(cfg.tau(1)*data.TEprepare.maxact),dimu,cfg.kth_neighbors,cfg.TheilerT);
-%                 elseif strcmp(data.TEprepare.cfg.TEcalctype,'VW')
-%                     [te, mi] = TECvalues(squeeze(data4TE{1,1}(1,timeindices(1):timeindices(2))),squeeze(data4TE{1,2}(1,timeindices(1):timeindices(2))),cfg.dim(1),round(cfg.tau(1)*data.TEprepare.maxact),dimu,cfg.kth_neighbors,cfg.TheilerT);
-%                 end
-            end
+            currentTau = 1;		% this may become zero for small ACT values -> overwrite manually
+        end
+        
+        if Theiler_ACT            
+            theiler_corr = data.TEprepare.maxact;
+        else
+            theiler_corr = cfg.TheilerT;
+        end
+        
+        [te, mi] = TEC_dsvalues( ...
+            squeeze(data4TE{1,1}(1,timeindices(1):timeindices(2))),squeeze(data4TE{1,2}(1,timeindices(1):timeindices(2))), ...
+            cfg.dim(1), ...
+            currentTau, ...
+            dimu(1), ...
+            cfg.kth_neighbors, ...
+            theiler_corr, ...
+            cfg.extracond, ...
+            1, ...
+            1);
+        
+        
             timetest = timetest + toc;
         end
         timetest = timetest/5;
         
         % time * nr of loops
-        % nrloops = size(cfg.sgncmb,1)*size(trials,2)*size(cfg.dim,2)*size(cfg.tau,2)*size(dimu,2)*size(cfg.kth_neighbors,2)*size(cfg.TheilerT,2);
         timeappr = timetest*size(channelcombi,1)*mean(mean(nrtrials))*size(cfg.TheilerT,2);
         
         
@@ -437,24 +420,19 @@ if strcmp(cfg.calctime, 'yes')
         timehh = floor(timeappr/60^2);                      %hours
         if timehh<1
             timemm = floor(mod((timeappr/60), 60));         %minutes
-            fprintf(strcat('\n!!! The calculation of TE takes appr. : ~',num2str(timemm),' minutes  !!!\n'));
+            msg = sprintf('Calculation of TE takes appr. : %d minutes!', timemm);
+            TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
         else
-            fprintf(strcat('\n!!! The calculation of TE takes appr. : ~',num2str(timehh),' hours (',num2str(timehh/24),' days) !!!\n'));
+            msg = sprintf('Calculation of TE takes appr. : %d hours (%d days)!', timehh, timehh/24);
+            TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
         end
     end
 end
 
 % Start calculation of TE
 % -------------------------------------------------------------------------
-fprintf('\nCalculating transfer entropy');
-
-
-% prepare text waitbar
-fprintf('\nPlease wait...\n');
-for ii = 1:size(channelcombi,1)
-    fprintf('-')
-end
-fprintf('\n')
+TEconsoleoutput(cfg.verbosity, 'Calculating transfer entropy. Please wait ...', LOG_INFO_MINOR);
+TEwaitbar('init', size(channelcombi,1), cfg.verbosity);
 
 % create zeros result matrices
 
@@ -492,20 +470,21 @@ if isfield(cfg,'TEparallel') && ft_hastoolbox('DCT');
 end
 %--------------------------------------------------------------------------   
 % loops for scanning channels with different parameter values for TE
-if ~par_state  % non-parallel part 
+
+
+if ~par_state  % non-parallel part
     for channelpair = 1:size(channelcombi,1)
-        fprintf('-');
-
-
+        TEwaitbar('update', channelpair, cfg.verbosity);
+        
         for t4t = 1:nrtrials(channelpair,2)
-
+            
             % OLD trial1 = trials{channelpair,2}(t4t);
             % trial1 (and trial2) will be used as indices into the datamats
             % that are inside data4TE, these are indexed by the indices of the
             % trial numbers, not the trial numbers!
-
+            
             trial1 =t4t;
-
+            
             if strcmp(cfg.shuffle, 'no')
                 
                 trial2 = trial1;
@@ -513,7 +492,7 @@ if ~par_state  % non-parallel part
                 
             elseif strcmp(cfg.shuffle, 'yes')
                 
-                switch cfg.surrogatetype, 
+                switch cfg.surrogatetype,
                     case 'trialshuffling'
                         if mod(t4t,nrtrials(channelpair,2)) == 0
                             trial2 = 1;
@@ -521,27 +500,27 @@ if ~par_state  % non-parallel part
                             trial2 = t4t+1;
                         end
                         timespan = timeindices(1):timeindices(2);
-
+                        
                     case 'blockresampling'
                         trial2 = t4t;
                         cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
                         timespan =[cutpoint:timeindices(2),timeindices(1):cutpoint-1];
-
+                        
                     case 'trialreverse'
                         trial2 = t4t;
                         timespan = timeindices(1):timeindices(2);
                         flipdim(timespan,2)
-
+                        
                     case 'blockreverse1'
                         trial2 = t4t;
                         cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
                         timespan =flipdim([cutpoint:timeindices(2),timeindices(1):cutpoint-1],2);
-
+                        
                     case 'blockreverse2'
                         trial2 = t4t;
                         cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
                         timespan =[flipdim(cutpoint:timeindices(2),2),timeindices(1):cutpoint-1];
-
+                        
                     case 'blockreverse3'
                         trial2 = t4t;
                         cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
@@ -556,11 +535,11 @@ if ~par_state  % non-parallel part
                     otherwise
                         error('TRENTOOL ERROR: Unknown surrogate type!')
                 end
-
+                
             end
-
-
-
+            
+            
+            
             if shifttest == 1
                 if strcmp(cfg.shifttype, 'onesample')
                     a=squeeze(data4TE{channelpair,1}(trial1,timeindices(1)+1:timeindices(2)));
@@ -569,9 +548,9 @@ if ~par_state  % non-parallel part
                     a=squeeze(data4TE{channelpair,1}(trial1,timeindices(1)+dimu(channelpair):timeindices(2)));
                     b=squeeze(data4TE{channelpair,2}(trial2,timeindices(1):timeindices(2)-dimu(channelpair)));
                 end
-
+                
             else
-
+                
                 a=squeeze(data4TE{channelpair,1}(trial1,timespan));
                 b=squeeze(data4TE{channelpair,2}(trial2,timespan));
                 if isfield(data, 'Data4Embedding') && strcmp(data.TEprepare.cfg.datatype, 'fMRI')
@@ -579,229 +558,147 @@ if ~par_state  % non-parallel part
                     b_e=squeeze(embcell{channelpair,2}(trial2,:,timespan));
                 end
             end
-            t = tic;  
-	    
-	    currentTau = round(cfg.tau(channelpair)*ACT(channelpair,2,trials{channelpair,2}(t4t)));	    
-	    if currentTau < 1
-			currentTau = 1;		% this may become zero for small ACT values -> overwrite manually
-	    end
-	    
-            if Theiler_ACT
-                if noSourceEmb
-                    [te, mi] = TEC_dsvalues_noSourceEmb(a,b,cfg.dim(channelpair),currentTau,dimu(channelpair),cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)),cfg.extracond,t4t,channelpair);
-                else
-                    [te, mi] = TEC_dsvalues(a,b,cfg.dim(channelpair),currentTau,dimu(channelpair),cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)),cfg.extracond,t4t,channelpair);
-                end
-%                 if strcmp(data.TEprepare.cfg.TEcalctype,'V')
-%                     if isfield(data, 'Data4Embedding') && strcmp(data.TEprepare.cfg.datatype, 'fMRI')
-%                         error('TRENTOOL ERROR: cfg.TEcalctyp=''V'' is not implemented for fMRI Data 3DAsEmbed')
-%                     else
-%                         [te, mi] = TEvalues(a,b,cfg.dim(channelpair),round(cfg.tau(channelpair)*ACT(channelpair,2,trials{channelpair,2}(t4t))),dimu,cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)));
-%                     end
-%                 elseif strcmp(data.TEprepare.cfg.TEcalctype,'VW')
-%                     if isfield(data, 'Data4Embedding') && strcmp(data.TEprepare.cfg.datatype, 'fMRI')
-%                         [te, mi] = TECvalues3D(a,a_e,b,b_e,round(cfg.tau(channelpair)*ACT(channelpair,2,trials{channelpair,2}(t4t))),dimu,cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)));
-%                     else
-%                         [te, mi] = TECvalues(a,b,cfg.dim(channelpair),round(cfg.tau(channelpair)*ACT(channelpair,trials{channelpair,2}(t4t))),dimu,cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)));
-%                     end
-%                 elseif strcmp( cfg.TEcalctype ,'VW_ds')
-%                     % use a d-sepration criterion to ensure that
-%                     % source(t-u-delta)->source(t-u)->target(t)
-%                     % form a Markov chain, when additonally
-%                     % conditioning on target(t-1)
-%                     [te, mi] = TEC_dsvalues(a,b,cfg.dim(channelpair),round(cfg.tau(channelpair)*ACT(channelpair,trials{channelpair,2}(t4t))),dimu,cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)),cfg.extracond,t4t,channelpair);
-%                 end
-            else
-                if noSourceEmb
-                    [te, mi] = TEC_dsvalues_noSourceEmb(a,b,cfg.dim(channelpair),currentTau,dimu(channelpair),cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)),cfg.extracond,t4t,channelpair);
-                else
-                    [te, mi] = TEC_dsvalues(a,b,cfg.dim(channelpair),currentTau,dimu(channelpair),cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)),cfg.extracond,t4t,channelpair);
-                end
-%                 if strcmp(data.TEprepare.cfg.TEcalctype,'V')
-%                     if isfield(data, 'Data4Embedding') && strcmp(data.TEprepare.cfg.datatype, 'fMRI')
-%                         error('TRENTOOL ERROR: cfg.TEcalctyp=''V'' is not implemented for fMRI Data ')
-%                     else
-%                         [te, mi] = TEvalues(a,b,cfg.dim(channelpair),round(cfg.tau(channelpair)*ACT(channelpair,2,trials{channelpair,2}(t4t))),dimu,cfg.kth_neighbors,cfg.TheilerT);
-%                     end
-%                 elseif strcmp(data.TEprepare.cfg.TEcalctype,'VW')
-%                     if isfield(data, 'Data4Embedding') && strcmp(data.TEprepare.cfg.datatype, 'fMRI')
-%                         [te, mi] = TECvalues3D(a,a_e,b,b_e,round(cfg.tau(channelpair)*ACT(channelpair,2,trials{channelpair,2}(t4t))),dimu,cfg.kth_neighbors,cfg.TheilerT);
-%                     else
-%                         [te, mi] = TECvalues(a,b,cfg.dim(channelpair),round(cfg.tau(channelpair)*ACT(channelpair,2,trials{channelpair,2}(t4t))),dimu,cfg.kth_neighbors,cfg.TheilerT);
-%                     end
-%                 elseif strcmp( cfg.TEcalctype ,'VW_ds')
-%                     % use a d-sepration criterion to ensure that
-%                     % source(t-u-delta)->source(t-u)->target(t)
-%                     % form a Markov chain, when additonally
-%                     % conditioning on target(t-1)
-%                     [te, mi] = TEC_dsvalues(a,b,cfg.dim(channelpair),round(cfg.tau(channelpair)*ACT(channelpair,trials{channelpair,2}(t4t))),dimu,cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)),cfg.extracond,t4t,channelpair);
-%                 end
+            t = tic;
+            
+            currentTau = round(cfg.tau(channelpair)*ACT(channelpair,2,trials{channelpair,2}(t4t)));
+            if currentTau < 1
+                currentTau = 1;		% this may become zero for small ACT values -> overwrite manually
             end
+            
+            if Theiler_ACT
+                theiler_corr = ACT(channelpair,2,trials{channelpair,2}(t4t));
+            else
+                theiler_corr = cfg.TheilerT;
+            end
+                
+            if noSourceEmb
+                [te, mi] = TEC_dsvalues_noSourceEmb( ...
+                    a,b,cfg.dim(channelpair),currentTau,dimu(channelpair),cfg.kth_neighbors,theiler_corr,cfg.extracond,t4t,channelpair);
+            else
+                [te, mi] = TEC_dsvalues( ...
+                    a,b,cfg.dim(channelpair),currentTau,dimu(channelpair),cfg.kth_neighbors,theiler_corr,cfg.extracond,t4t,channelpair);
+            end
+            
             t = toc(t);
             TEresult.TEmat(channelpair,t4t)=te;
             TEresult.MImat(channelpair,t4t)=mi;
-
+            
         end
-
+        
     end
+    
 else % parallel part
+    
     for channelpair = 1:size(channelcombi,1)
-    fprintf('-');
-    
-    aux_TEmat = zeros(1,nrtrials(channelpair,2));
-    aux_MImat = zeros(1,nrtrials(channelpair,2));
-    
-    parfor t4t = 1:nrtrials(channelpair,2)
         
-        % OLD trial1 = trials{channelpair,2}(t4t);
-        % trial1 (and trial2) will be used as indices into the datamats
-        % that are inside data4TE, these are indexed by the indices of the
-        % trial numbers, not the trial numbers!
-
-        trial1 =t4t;
+        TEwaitbar('update', channelpair, cfg.verbosity);
         
-        if strcmp(cfg.shuffle, 'no')
-            trial2 = trial1;
-            timespan = timeindices(1):timeindices(2);
-        elseif strcmp(cfg.shuffle, 'yes')
-            if strcmp(cfg.surrogatetype, 'trialshuffling')
-                if mod(t4t,nrtrials(channelpair,2)) == 0
-                    trial2 = 1;
-                else
-                    trial2 = t4t+1;
+        aux_TEmat = zeros(1,nrtrials(channelpair,2));
+        aux_MImat = zeros(1,nrtrials(channelpair,2));
+        
+        parfor t4t = 1:nrtrials(channelpair,2)
+            
+            % OLD trial1 = trials{channelpair,2}(t4t);
+            % trial1 (and trial2) will be used as indices into the datamats
+            % that are inside data4TE, these are indexed by the indices of the
+            % trial numbers, not the trial numbers!
+            
+            trial1 =t4t;
+            
+            if strcmp(cfg.shuffle, 'no')
+                trial2 = trial1;
+                timespan = timeindices(1):timeindices(2);
+            elseif strcmp(cfg.shuffle, 'yes')
+                if strcmp(cfg.surrogatetype, 'trialshuffling')
+                    if mod(t4t,nrtrials(channelpair,2)) == 0
+                        trial2 = 1;
+                    else
+                        trial2 = t4t+1;
+                    end
+                    timespan = timeindices(1):timeindices(2);
+                    
+                elseif strcmp(cfg.surrogatetype, 'blockresampling')
+                    trial2 = t4t;
+                    cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
+                    timespan =[cutpoint:timeindices(2),timeindices(1):cutpoint-1];
+                    
+                elseif strcmp(cfg.surrogatetype, 'trialreverse')
+                    trial2 = t4t;
+                    timespan = timeindices(1):timeindices(2);
+                    flipdim(timespan,2)
+                    
+                elseif strcmp(cfg.surrogatetype, 'blockreverse1')
+                    trial2 = t4t;
+                    cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
+                    timespan =flipdim([cutpoint:timeindices(2),timeindices(1):cutpoint-1],2);
+                    
+                elseif strcmp(cfg.surrogatetype, 'blockreverse2')
+                    trial2 = t4t;
+                    cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
+                    timespan =[flipdim(cutpoint:timeindices(2),2),timeindices(1):cutpoint-1];
+                    
+                elseif strcmp(cfg.surrogatetype, 'blockreverse3')
+                    trial2 = t4t;
+                    cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
+                    timespan =[cutpoint:timeindices(2),flipdim(timeindices(1):cutpoint-1,2)];
+                elseif strcmp(cfg.surrogatetype, 'swapneighbors')
+                    if mod(t4t,2)==0
+                        trial2 = t4t-1;
+                    else
+                        trial2 = t4t+1;
+                    end
+                    timespan = timeindices(1):timeindices(2);
                 end
-                timespan = timeindices(1):timeindices(2);
                 
-            elseif strcmp(cfg.surrogatetype, 'blockresampling')
-                trial2 = t4t;
-                cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
-                timespan =[cutpoint:timeindices(2),timeindices(1):cutpoint-1];
-                
-            elseif strcmp(cfg.surrogatetype, 'trialreverse')
-                trial2 = t4t;
-                timespan = timeindices(1):timeindices(2);
-                flipdim(timespan,2)
-                
-            elseif strcmp(cfg.surrogatetype, 'blockreverse1')
-                trial2 = t4t;
-                cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
-                timespan =flipdim([cutpoint:timeindices(2),timeindices(1):cutpoint-1],2);
-                
-            elseif strcmp(cfg.surrogatetype, 'blockreverse2')
-                trial2 = t4t;
-                cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
-                timespan =[flipdim(cutpoint:timeindices(2),2),timeindices(1):cutpoint-1];
-                
-            elseif strcmp(cfg.surrogatetype, 'blockreverse3')
-                trial2 = t4t;
-                cutpoint = round( (timeindices(2)-timeindices(1)+1) * rand(1));
-                timespan =[cutpoint:timeindices(2),flipdim(timeindices(1):cutpoint-1,2)];
-            elseif strcmp(cfg.surrogatetype, 'swapneighbors')
-                if mod(t4t,2)==0
-                    trial2 = t4t-1;
-                else
-                    trial2 = t4t+1;
+            end
+            
+            
+            
+            if shifttest == 1
+                if strcmp(cfg.shifttype, 'onesample')
+                    a=squeeze(data4TE{channelpair,1}(trial1_par,timeindices(1)+1:timeindices(2)));
+                    b=squeeze(data4TE{channelpair,2}(trial2,timeindices(1):timeindices(2)-1));
+                elseif strcmp(cfg.shifttype, 'predicttime')
+                    a=squeeze(data4TE{channelpair,1}(trial1_par,timeindices(1)+dimu(channelpair):timeindices(2)));
+                    b=squeeze(data4TE{channelpair,2}(trial2,timeindices(1):timeindices(2)-dimu(channelpair)));
                 end
-                timespan = timeindices(1):timeindices(2);
-            end
-            
-        end
-        
-        
-        
-        if shifttest == 1
-            if strcmp(cfg.shifttype, 'onesample')
-                a=squeeze(data4TE{channelpair,1}(trial1,timeindices(1)+1:timeindices(2)));
-                b=squeeze(data4TE{channelpair,2}(trial2,timeindices(1):timeindices(2)-1));
-            elseif strcmp(cfg.shifttype, 'predicttime')
-                a=squeeze(data4TE{channelpair,1}(trial1,timeindices(1)+dimu(channelpair):timeindices(2)));
-                b=squeeze(data4TE{channelpair,2}(trial2,timeindices(1):timeindices(2)-dimu(channelpair)));
-            end
-            
-        else
-            
-            a=squeeze(data4TE{channelpair,1}(trial1,timespan));
-            b=squeeze(data4TE{channelpair,2}(trial2,timespan));
-%             if isfield(data, 'Data4Embedding') && strcmp(data.TEprepare.cfg.datatype, 'fMRI')
-%                 a_e=squeeze(embcell{channelpair,1}(trial1,:,timespan));
-%                 b_e=squeeze(embcell{channelpair,2}(trial2,:,timespan));
-%             end
-        end
-	
-	currentTau = round(cfg.tau(channelpair)*ACT(channelpair,2,trials{channelpair,2}(t4t)));	    	
-	    if currentTau < 1
-			currentTau = 1;		% this may become zero for small ACT values -> overwrite manually
-	    end
-        
-        if Theiler_ACT
-            if noSourceEmb
-                [te, mi] = TEC_dsvalues_noSourceEmb(a,b,cfg.dim(channelpair),currentTau,dimu(channelpair),cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)),cfg.extracond);
+                
             else
-                [te, mi] = TEC_dsvalues(a,b,cfg.dim(channelpair),currentTau,dimu(channelpair),cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)),cfg.extracond);
+                
+                a=squeeze(data4TE{channelpair,1}(trial1_par,timespan));
+                b=squeeze(data4TE{channelpair,2}(trial2,timespan));
+                
             end
-%             if strcmp(data.TEprepare.cfg.TEcalctype,'V')
-%                 if isfield(data, 'Data4Embedding') && strcmp(data.TEprepare.cfg.datatype, 'fMRI')
-%                     error('TRENTOOL ERROR: cfg.TEcalctyp=''V'' is not implemented for fMRI Data 3DAsEmbed')
-%                 else
-%                     [te, mi] = TEvalues(a,b,cfg.dim(channelpair),round(cfg.tau(channelpair)*ACT(channelpair,2,trials{channelpair,2}(t4t))),dimu,cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)));
-%                 end
-%             elseif strcmp(data.TEprepare.cfg.TEcalctype,'VW')
-%                 if isfield(data, 'Data4Embedding') && strcmp(data.TEprepare.cfg.datatype, 'fMRI')
-%                     %[te, mi] = TECvalues3D(a,a_e,b,b_e,round(cfg.tau(channelpair)*ACT(channelpair,2,trials{channelpair,2}(t4t))),dimu,cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)));
-%                 else
-%                     [te, mi] = TECvalues(a,b,cfg.dim(channelpair),round(cfg.tau(channelpair)*ACT(channelpair,trials{channelpair,2}(t4t))),dimu,cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)));
-%                 end
-%             elseif strcmp( cfg.TEcalctype ,'VW_ds')
-%                 % use a d-sepration criterion to ensure that
-%                 % source(t-u-delta)->source(t-u)->target(t)
-%                 % form a Markov chain, when additonally
-%                 % conditioning on target(t-1)
-%                 [te, mi] = TEC_dsvalues(a,b,cfg.dim(channelpair),round(cfg.tau(channelpair)*ACT(channelpair,trials{channelpair,2}(t4t))),dimu,cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)),cfg.extracond);
-%             end
-        else
-            if noSourceEmb
-                [te, mi] = TEC_dsvalues_noSourceEmb(a,b,cfg.dim(channelpair),currentTau,dimu(channelpair),cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)),cfg.extracond);
+            
+            currentTau = round(cfg.tau(channelpair)*ACT(channelpair,2,trials{channelpair,2}(t4t)));
+            if currentTau < 1
+                currentTau = 1;		% this may become zero for small ACT values -> overwrite manually
+            end
+            
+            if Theiler_ACT
+                theiler_corr = ACT(channelpair,2,trials{channelpair,2}(t4t));
             else
-                [te, mi] = TEC_dsvalues(a,b,cfg.dim(channelpair),currentTau,dimu(channelpair),cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)),cfg.extracond);
+                theiler_corr = cfg.TheilerT;
             end
-%             if strcmp(data.TEprepare.cfg.TEcalctype,'V')
-%                 if isfield(data, 'Data4Embedding') && strcmp(data.TEprepare.cfg.datatype, 'fMRI')
-%                     error('TRENTOOL ERROR: cfg.TEcalctyp=''V'' is not implemented for fMRI Data ')
-%                 else
-%                     [te, mi] = TEvalues(a,b,cfg.dim(channelpair),round(cfg.tau(channelpair)*ACT(channelpair,2,trials{channelpair,2}(t4t))),dimu,cfg.kth_neighbors,cfg.TheilerT);
-%                 end
-%             elseif strcmp(data.TEprepare.cfg.TEcalctype,'VW')
-%                 if isfield(data, 'Data4Embedding') && strcmp(data.TEprepare.cfg.datatype, 'fMRI')
-%                     %[te, mi] = TECvalues3D(a,a_e,b,b_e,round(cfg.tau(channelpair)*ACT(channelpair,2,trials{channelpair,2}(t4t))),dimu,cfg.kth_neighbors,cfg.TheilerT);
-%                 else
-%                     [te, mi] = TECvalues(a,b,cfg.dim(channelpair),round(cfg.tau(channelpair)*ACT(channelpair,2,trials{channelpair,2}(t4t))),dimu,cfg.kth_neighbors,cfg.TheilerT);
-%                 end
-%             elseif strcmp( cfg.TEcalctype ,'VW_ds')
-%                 % use a d-sepration criterion to ensure that
-%                 % source(t-u-delta)->source(t-u)->target(t)
-%                 % form a Markov chain, when additonally
-%                 % conditioning on target(t-1)
-%                 [te, mi] = TEC_dsvalues(a,b,cfg.dim(channelpair),round(cfg.tau(channelpair)*ACT(channelpair,trials{channelpair,2}(t4t))),dimu,cfg.kth_neighbors,ACT(channelpair,2,trials{channelpair,2}(t4t)),cfg.extracond);
-%             end
+                
+            if noSourceEmb
+                [te, mi] = TEC_dsvalues_noSourceEmb( ...
+                    a,b,cfg.dim(channelpair),currentTau,dimu(channelpair),cfg.kth_neighbors,theiler_corr,cfg.extracond,t4t,channelpair);
+            else
+                [te, mi] = TEC_dsvalues( ...
+                    a,b,cfg.dim(channelpair),currentTau,dimu(channelpair),cfg.kth_neighbors,theiler_corr,cfg.extracond,t4t,channelpair);
+            end
+            
+            aux_TEmat(t4t) = te;
+            aux_MImat(t4t) = mi;
+            
         end
         
-        aux_TEmat(t4t) = te;
-        aux_MImat(t4t) = mi;
-        %TEresult.TEmat(channelpair,t4t)=te;
-        %TEresult.MImat(channelpair,t4t)=mi;        
-        
-    end
-        %TEresult.TEmat(channelpair,:)=aux_TEmat;
-        %TEresult.MImat(channelpair,:)=aux_MImat;
-        % bugfix PW 23/12/2014
         TEresult.TEmat(channelpair,1:length(aux_TEmat))=aux_TEmat;
         TEresult.MImat(channelpair,1:length(aux_MImat))=aux_MImat;
+        
     end
 end
-
-%--------------------------------------------------------------------------
-fprintf('\nCalculation finished')
-
 
 
 % results of unshuffled data
@@ -827,7 +724,6 @@ if strcmp(cfg.shuffle, 'no')
     
 end
 
-fprintf('\n')
 
 %% Returning to the working directory
 %cd(working_directory)

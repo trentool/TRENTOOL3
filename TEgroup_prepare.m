@@ -32,11 +32,9 @@ function TEgroup_prepare(cfg,fileCell)
 %     - The following Matlab toolboxes:
 %         - statistic toolbox
 %     - The functions
-%         - transferentropy
-%         - TEcmc
-%         - TEperm
-%         - TEvalues
+%         - TEprepare
 %         - TEwait
+%         - TEconsoleoutput
 %
 %
 %
@@ -62,6 +60,8 @@ function TEgroup_prepare(cfg,fileCell)
 %       .repPred = repPred represents the number of points for which the
 %                  prediction is performed (it has to be smaller than
 %                  length(timeSeries)-(dimEmb-1)*tauEmb-u)
+%       .verbosity = set the verbosity of console output (see 'help
+%                    TEconsoleoutput', default: 'info_minor')
 %
 %	.predicttimemin_u    = minimum interaction delay u to be scanned
 %	.predicttimemax_u    = maximum interaction delay u to be scanned
@@ -114,105 +114,7 @@ function TEgroup_prepare(cfg,fileCell)
 % Frankfurt 2010
 %
 
-% TEPREPARE this function checks the input data and parameter for
-% completeness and correctness. Further, it optimizes the embedding
-% parameters and adds a substructure to the data, which is nesseccary for
-% the further functions.
-% TEPREPARE has to be performed on all datasets first!!!
-%
-%
-%
-% * INPUT PARAMETERS
-%
-%
-%   cfg: The configuration MUST contain:
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%   WARNING:
-%   The span of time needed for embedding is: (max(dim)-1)*max(tau)
-%   The prediction time starts after this embedding time. Hence the span of
-%   time defined in cfg.toi must be a good deal longer than the embedding
-%   time, leastwise a multiple of the prediction time (nrk).
-%
-%       |<  embedding time  >|< prediction time ...
-%   ----|--------------------|-----------------------------------|-->
-%       |<                       cfg.toi                        >|
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%  cfg.TEcalctype =   'VW_ds' : the self-prediction time for the target is tau
-%                     and cross-predictions are made from source states
-%                     that precede the target state to be predicted by
-%                     1 sample. This estimator respects certain conditions
-%                     necessary for d-separation properties  in the causal
-%                     graph of source and target that are necessary for
-%                     proper delay reconstruction
-%                     (default='VW_ds')
-%                     THE FOLLOWING ESTIMATORS ARE NO LONGER SUPPORTED:
-%                     'V' : self-prediction of the target signal and cross-
-%                     prediction are both made from states in source and
-%                     target that precede the target state to be predicted
-%                     by cfg.predicttime_u.
-%                     'VW' : the self-prediction time for the target is tau
-%                     and cross-predictions are made from source states
-%                     that precede the target state to be predicted by
-%                     cfg.predicttime_u.
-%                     (to solve the problem of decreasing self-prediction
-%                     accuracy for large prediction times)
-%
-%  cfg.predicttime_u = time ahead for the advance prediction (scalar, in
-%                      ms) -- this is the effective delay of the acition
-%                      from source to target that is assumed
-%
-%  cfg.ensemblemethod = 'yes' to use ensemble-method (Gomez-Herrero, 2013)
-%                       (default = 'no')
-%
-%  cfg.outputpath     = path to a folder, where group prepared data is
-%                       saved
-%
-%
-%  if you choose 'ensemblemethod = 'yes'':
-%       The size of the GPU memory has to be provided to
-%       TEsurrogatestats_ensemble.m. Note, that using the Faes-Method
-%       is mandatory when using the GPU. Also no shifttest can be computed
-%       and the surrogatetype has to be set to 'trialperm' (see also
-%       help TEsurrogatestats_ensemble).
-%
-%
-%
-%
-%   cfg.kth_neighbors = number of neighbors for fixed mass search (controls
-%                     balance of bias/statistical errors) (default = 4)
-%   cfg.TheilerT    = number of temporal neighbors excluded to avoid serial
-%                     correlations (Theiler correction) (default = ACT)
-%
-%
-%  cfg.trialselect = ACT threshholding of trials - 'ACT' ,'range' or 'no'
-%                    (default = 'ACT'; for fMRI default = 'no')
-%      if you chose 'ACT' (or nothing):
-%      cfg.actthrvalue = max threshold for ACT; min threshold
-%      cfg.minnrtrials = minimum Nr of trials with ACT < actthrest used to
-%                    calculate transfer entropy
-%      if you chose 'range':
-%      cfg.trial_from  = Inferior limit for the trials to be considered
-%      cfg.trial_to    = Superior limit for the trials to be considered
-%  cfg.maxlag      = the range of lags for computing the auto correlation
-%                    time: from -MAXLAG to MAXLAG (default = 1000)
-%
-%
-% in case of parallel computing
-%
-%  cfg.TEparallel.parON = 'yes' for paralell computing tool.
-%
-%  cfg.TEparallel.workers = number of workers for parallel computing, if it
-%       is bigger than the default matlab configuration then the maximum
-%       workers will equal the default matlab configuration
-%
-%
-
-% CHANGELOG:
-%
-% 2013/10/10: PW changed function to the TRENTOOL 3 workflow
+% CHANGELOG
 %
 % 2014/06/23: PW: the function now only performs one TEprepare per data set, using
 %		the biggest requested u - TEprepare doesn't differ for different values 
@@ -221,6 +123,16 @@ function TEgroup_prepare(cfg,fileCell)
 
 %% Remember the working directory
 working_directory = pwd;
+
+%% define logging levels
+% -------------------------------------------------------------------------
+
+LOG_INFO_MAJOR = 1;
+LOG_INFO_MINOR = 2;
+LOG_DEBUG_COARSE = 3;
+LOG_DEBUG_FINE = 4;
+
+if ~isfield(cfg, 'verbosity'), cfg.verbosity = 'info_minor'; end;
 
 %% check input
 % -------------------------------------------------------------------------
@@ -247,7 +159,8 @@ end
 
 max_dim_scan =  max(cfg.ragdim);
 N = length(fileCell);
-fprintf('You provided %.0f data sets\n', N);
+msg = sprintf('You provided %d data sets', N);
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 
 %% create output structures
 % -------------------------------------------------------------------------
@@ -276,7 +189,8 @@ for currentSubject = 1:N
     clear x y varinfile
     
     
-    fprintf('\tPreparing data for subject %d ...\n', currentSubject);        
+    msg = sprintf('Preparing data for subject %d ', currentSubject);    
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
     dataprepared      = TEprepare(cfg,data);
     
     % get relevant data from TEprepare
@@ -317,8 +231,10 @@ end
 
 % find maximum dimension over all u and subjects
 max_dim = max(dim_all);
-fprintf('The maximum embedding dimension was %.0f\n\n', max_dim);
-fprintf('Appending group prepare information to data sets ...\n');
+msg = sprintf('The maximum embedding dimension is %d', max_dim);
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
+msg = 'Appending group prepare information to data sets';
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 
 % create code to check whether data sets went through TEprepare_group
 % within the same run

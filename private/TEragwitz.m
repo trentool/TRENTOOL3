@@ -47,9 +47,8 @@ data = zscore(timeSeries);
 %% Takens embedding
 
 % Computing effective lengths
-T = length(data);                         % length of full time series
-L = T-(dimMax-1)*tauMax-u;             % number of points used from the time series ready for delay embedding
-
+T = length(data);           % length of full time series
+L = T-(dimMax-1)*tauMax-u;  % number of points used from the time series ready for delay embedding
 
 
 % Initialization of the embedding vector

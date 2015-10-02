@@ -29,7 +29,6 @@ working_directory = pwd;
 
 % Select Channels
 % -----------------------------------------------
-fprintf('\nSelect channels');
 
 %read channel labels from data
 if size(data.label,1)==1
@@ -64,10 +63,7 @@ if channelselect == 1   % given channel list
                 combicount = combicount + 1;
             end
         end
-    end
-    fprintf('\n   Channelcombinations:\n');
-    
-    disp(channelcombilabel)
+    end    
     
     if usedcounter ~= size(usedchannels,1)
         fprintf('\n')

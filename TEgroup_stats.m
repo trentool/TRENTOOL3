@@ -38,6 +38,7 @@ function TEgroup_stats(cfg,filesTEpermtest)
 %         - TEperm
 %         - TEvalues
 %         - TEwait
+%         - TEconsoleoutput
 %
 %
 % * INPUT PARAMETERS
@@ -72,6 +73,9 @@ function TEgroup_stats(cfg,filesTEpermtest)
 %                     values used in the statistical test) and
 %                     'TEpermtestgroup_output.mat' (containing the output
 %                     of the statistical test).
+%   cfg.verbosity   = set the verbosity of console output (see 'help
+%                     TEconsoleoutput', default: setting used in group 
+%                     preparation)
 %
 %
 % * OUTPUT PARAMETERS (ouput is saved to the location specified in
@@ -96,6 +100,10 @@ function TEgroup_stats(cfg,filesTEpermtest)
 %			    6 - mean estimated interaction delay u from the
 %				group with the larger TE value
 %
+%            .nr2cmc     = number used for correction for multiple
+%                          comparisons (returned by TEcmc)
+%            .correctm   = method used for correction for multiple
+%                          comparisons (returned by TEcmc)
 %            .dimord     = dimensions of TEpermvalues
 %            .cfg        = configuration file used for group statistics
 %            .sgncmb     = labels of channel combinations (source ->
@@ -104,6 +112,7 @@ function TEgroup_stats(cfg,filesTEpermtest)
 %            .nrdatasets     = number of datasets that entered the analysis
 %            .groupprepare   = results of the function TEgroup_prepare 
 %                              from the data
+%
 %
 %  Raw data used for statistical testing (saved in file '*TE_output.mat')
 %   TEresult1    = raw TE values for group/condition 1
@@ -132,6 +141,10 @@ function TEgroup_stats(cfg,filesTEpermtest)
 
 %% Remember the working directory
 working_directory1 = pwd;
+
+%% define logging levels
+LOG_INFO_MAJOR = 1;
+LOG_INFO_MINOR = 2;
 
 %% load Data
 % -------------------------------------------------------------------------
@@ -171,6 +184,8 @@ clear ll
 % get number of channel combinations
 nrchannelcombi = size(allTEpermtest{1}.sgncmb,1);
 
+cfg.verbosity = TEpermtest.TEprepare.cfg.verbosity;
+
 
 %% check cfg
 % -------------------------------------------------------------------------
@@ -179,73 +194,54 @@ if ~isfield(cfg, 'alpha'),          cfg.alpha = 0.05;           end;
 if ~isfield(cfg, 'correctm'),       cfg.correctm = 'FDR';       end;
 if ~isfield(cfg, 'tail'),           cfg.tail = 2;               end;
 
+if ~isfield(cfg, 'verbosity')
+    cfg.verbosity = TEpermtest.TEprepare.cfg.verbosity;
+end
+
 if ~isfield(cfg, 'design'),
-    error('\nTRENTOOL ERROR: cfg.design must be defined, see help!');
+    error('TRENTOOL ERROR: cfg.design must be defined, see help!');
 end;
 if ~isfield(cfg, 'ivar'),
-    error('\nTRENTOOL ERROR: cfg.ivar must be defined, see help!');
+    error('TRENTOOL ERROR: cfg.ivar must be defined, see help!');
 end;
 if ~isfield(cfg, 'uvar'),
-    error('\nTRENTOOL ERROR: cfg.uvar must be defined, see help!');
+    error('TRENTOOL ERROR: cfg.uvar must be defined, see help!');
 end;
 if size(cfg.design,2) ~= nrdatasets
-    error('\nTRENTOOL ERROR: cfg.design must have the same number of columns than number of datasets exist, see help!');
+    error('TRENTOOL ERROR: cfg.design must have the same number of columns than number of datasets exist, see help!');
 end
 
 if ~isfield(cfg, 'permstatstype'),  cfg.permstatstype = 'mean'; end;
 if ~strcmp(cfg.permstatstype , 'mean') && ~strcmp(cfg.permstatstype , 'indepsamplesT') && ~strcmp(cfg.permstatstype , 'depsamplesT')
-    error('\nTRENTOOL ERROR: wrong cfg.permstatstype - use ''mean'' ''depsamplesT'' or ''indepsamplesT'', see help!');
+    error('TRENTOOL ERROR: wrong cfg.permstatstype - use ''mean'' ''depsamplesT'' or ''indepsamplesT'', see help!');
 end
 
 if ~isfield(cfg, 'fileidout'),
-    error('\nTRENTOOL ERROR: cfg.fileidout must be defined, see help!');
+    error('TRENTOOL ERROR: cfg.fileidout must be defined, see help!');
 end;
 
 
 %% check nr of permutations
 % -------------------------------------------------------------------------
-fprintf('\n\nChecking number of permutations');
-
+TEconsoleoutput(cfg.verbosity, 'Checking number of permutations', LOG_INFO_MINOR);
 
 % cfg.permtest.channelcombi = channelcombi;
 % cfg.permtest.channelcombilabel = data.TEprepare.channelcombilabel ;
 
-
-nr2cmc = nrchannelcombi*length(allTEpermtest{1}.groupprepare.predicttimevec_u);
-
-if ~isfield(cfg, 'numpermutation'),
-    cfg.numpermutation = 190100; % for p<0.01 with a possible bonferroni correcetion of 100
-elseif cfg.numpermutation < ceil(1/cfg.alpha)
-    error(strcat('\nTRENTOOL ERROR: cfg.numpermutation too small - Nr of permutations must be at least :',num2str(numpermutation),' !'));
-else
-    if cfg.maxtrials>31
-        if cfg.numpermutation > 2^31
-            error(strcat('\nTRENTOOL ERROR: cfg.numpermutation too huge - Nr of permutations must be at least :',num2str(numpermutation),' !'));
-        end
-    else
-        if cfg.numpermutation > 2^cfg.maxtrials
-            error(strcat('\nTRENTOOL ERROR: cfg.numpermutation too huge - Nr of permutations must be at least :',num2str(numpermutation),' !'));
-        end
-    end
-    if cfg.numpermutation < ceil(1/(cfg.alpha/nr2cmc))
-       fprintf('\n#######################################################################################\n# WARNING: Nr of permutations not sufficient for correction for multiple comparisons! #\n#######################################################################################\n'); 
-    end
-end
-
-fprintf(' - ok\n');
+cfg.numpermutation = TEchecknumperm(cfg, allTEpermtest{1});
 
 
 
 %% Define conditions
 % -------------------------------------------------------------------------
-fprintf('\nDefine conditions:\n');
+TEconsoleoutput(cfg.verbosity, 'Defining conditions', LOG_INFO_MINOR);
 
 conds    = squeeze(cfg.design(cfg.ivar,:));
 condtype = unique(conds);
 nrconds  = length(condtype);
 if nrconds ~=2
-    fprintf(strcat(['TRENTOOL ERROR: You defined ',num2str(nrconds),' conditions.']))
-    error('\nTRENTOOL ERROR: You have to define two conditions in cfg.design, see help!');
+    fprintf(strcat(['TRENTOOL ERROR: You defined ',num2str(nrconds),' conditions.\n']))
+    error('TRENTOOL ERROR: You have to define two conditions in cfg.design, see help!');
 end
 
 units    = squeeze(cfg.design(cfg.uvar,:));
@@ -255,12 +251,11 @@ nrunits  = length(unittype);
 condindex1 = find(conds == condtype(1));
 condindex2 = find(conds == condtype(2));
 
-fprintf('Total no. datasets: %d\n', nrunits)
-fprintf('\tCondition 1 -> ')
-fprintf('%d ', condindex1 )
-fprintf('\n\tCondition 2 -> ')
-fprintf('%d ', condindex2)
-fprintf('\n')
+msg = {'Total no. data sets:' num2str(nrunits);
+    'Condition 1, ind data sets: ' num2str(condindex1);
+    'Condition 2, ind data sets: ' num2str(condindex2)
+    };
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 
 u_mean1 = mean(u_values(:,condindex1),2);
 u_mean2 = mean(u_values(:,condindex2),2);
@@ -288,7 +283,7 @@ end
 % -------------------------------------------------------------------------
 
 % split TEresultmean matrices for permutation tests
-fprintf('Prepare condition matrices');
+TEconsoleoutput(cfg.verbosity, 'Preparing condition matrices', LOG_INFO_MINOR);
 
 TEresult1.TEmat = TEresultmean.TEmat(:,condindex1);
 %TEresult1.MImat = TEresultmean.MImat(:,condindex1);
@@ -296,7 +291,6 @@ TEresult1.TEmat = TEresultmean.TEmat(:,condindex1);
 TEresult2.TEmat = TEresultmean.TEmat(:,condindex2);
 %TEresult2.MImat = TEresultmean.MImat(:,condindex2);
 
-fprintf(' - ok');
 
 % perform permutation test
 TEpermtestgroup = TEperm(cfg,TEresult1,TEresult2);
@@ -324,25 +318,18 @@ TEpermtestgroup.TEgroupprepare.channellabel      = allTEpermtest{1}.TEprepare.ch
 TEpermtestgroup.TEgroupprepare.timeindices       = allTEpermtest{1}.TEprepare.timeindices;
 TEpermtestgroup.TEgroupprepare.optdim            = allTEpermtest{1}.TEprepare.optdim;
 
-fprintf('\nCalculation finished\n')
-
 
 %% save results
 % -------------------------------------------------------------------------
 toi = allTEpermtest{1}.cfg.toi;
 
-fprintf('\nSaving ...')
+TEconsoleoutput(cfg.verbosity, 'Saving results', LOG_INFO_MINOR);
 
 % this saves data for each group, that enters the group statistics
-fprintf('\n\tdata used in permutation test')
 savename1 = strcat(cfg.fileidout,'_time',num2str(toi(1)),'-',num2str(toi(2)),'s_TEpermtestgroup_data.mat');  
 save(savename1, 'TEresultmean','TEresult1','TEresult2','-v7.3');
-fprintf(' - ok');
-
 % this saves the output of the group statistics
-fprintf('\n\tresults of permutation test')
 save(strcat(cfg.fileidout,'_time',num2str(toi(1)),'-',num2str(toi(2)),'s_TEpermtestgroup_output.mat'), 'TEpermtestgroup','-v7.3');
-fprintf(' - ok\n\n');
 
 
 %% Returning to the working directory

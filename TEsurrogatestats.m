@@ -45,6 +45,7 @@ function TEpermtest=TEsurrogatestats(cfg,data)
 %         - TEtrialselect
 %         - TEvalues
 %         - TEwait
+%         - TEconsoleoutput
 %
 % * INPUT PARAMETERS
 %
@@ -248,19 +249,26 @@ function TEpermtest=TEsurrogatestats(cfg,data)
 % 2014-11-27 PW: bugfix - nr2cmc is the number of channel combinations, not
 % the no. channel combinations times number of u values to be scanned
 % 2014-06-15 PW: bugfix - no. permutations was not checked correctly
+% 2015-10-01 PW: nr2cmc is now set by TEcmc in TEperm, such that it is only
+% computed in one place and passed to other functions
 
 %% Remember the working directory
 working_directory1 = pwd;
 
-%% check data
-% -------------------------------------------------------------------------
-fprintf('\nCheck data and config');
-
-% check if TEprepare was performed
+%% check if TEprepare was performed
 if ~isfield(data, 'TEprepare'),
     fprintf('\n')
     error('TRENTOOL ERROR: The function TEprepare must be performed on the data, see help!');
 end;
+
+%% define logging levels
+LOG_INFO_MAJOR = 1;
+LOG_INFO_MINOR = 2;
+verbosity = data.TEprepare.cfg.verbosity;
+
+%% check data
+% -------------------------------------------------------------------------
+TEconsoleoutput(verbosity, 'Checking data and config', LOG_INFO_MINOR);
 
 % check data using checkdata from Fieldtrip
 [data] = ft_checkdata(data, 'datatype','raw');
@@ -396,11 +404,15 @@ else
             error('TRENTOOL ERROR: cfg.dim must include a scalar, see help!');
         end
         if cfg.dim < data.TEprepare.optdim
-            fprintf('\n')
-            fprintf('TRENTOOL WARNING: specified embedding dimension (cfg.dim) is smaller then the optimal dimension from TEprepare.')
+            warning(['\nTRENTOOL WARNING: embedding dimension ' ...
+                'specified in cfg.dim (=%d) is smaller than the optimal ' ...
+                'dimension found by TEprepare (%d).'], ...
+                cfg.dim, data.TEprepare.optdim)
         elseif cfg.dim > data.TEprepare.optdim
-            fprintf('\n')
-            fprintf('TRENTOOL WARNING: specified embedding dimension (cfg.dim) is bigger then the optimal dimension from TEprepare.')
+            warning(['\nTRENTOOL WARNING: embedding dimension ' ...
+                'specified in cfg.dim (=%d) is bigger than the optimal ' ...
+                'dimension found by TEprepare (%d).'], ...
+                cfg.dim, data.TEprepare.optdim)
         end
     end
 end;
@@ -470,10 +482,6 @@ end
 
 
 
-fprintf(' - ok');
-
-
-
 
 
 %% get channels, ACT and trials from the cfg.TEprepare
@@ -492,54 +500,28 @@ cfg.permtest.nrtrials=nrtrials;
 
 %% check nr of permutations
 % -------------------------------------------------------------------------
-fprintf('\nChecking number of permutations');
-
-%nr2cmc=size(data.TEprepare.channelcombilabel,1)*size(cfg.predicttime_u,2);
-nr2cmc=size(data.TEprepare.channelcombilabel,1);
-
-if ~isfield(cfg, 'numpermutation'),
-    cfg.numpermutation = 190100; % for p<0.01 with a possible bonferroni correcetion of 100
-    fprintf('\nTRENTOOL: You didn''t specify a number of permutations. It was set to %d (for p<0.01 with a possible bonferroni correcetion of 100).', cfg.numpermutation);
-    %cfg.numpermutation = ceil(1/(cfg.alpha/nr2cmc));
-    %fprintf('\nTRENTOOL: You didn''t specify a number of permutations. It was set to %d (1/(alpha/no_channelcombis)).', cfg.numpermutation);
-end
+msg = 'Checking number of permutations';
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 
 findDelay = 0;
 
-if strcmp(cfg.numpermutation, 'findDelay');
+if isfield(cfg, 'numpermutation') && strcmp(cfg.numpermutation, 'findDelay');
     cfg.numpermutation = 0;
     findDelay = 1;
     cfg.shifttest = 0;
 else 
-
-    if cfg.numpermutation < ceil(1/cfg.alpha)
-    	fprintf('\n')
-    	error('TRENTOOL ERROR: cfg.numpermutation too small (< 1/alpha)!');
-    elseif cfg.numpermutation < ceil(1/(cfg.alpha/nr2cmc))
-       fprintf('\n#######################################################################################\n');
-       fprintf('# WARNING: Nr of permutations not sufficient for correction for multiple comparisons! #\n');
-       fprintf('#######################################################################################'); 
-    elseif max(nrtrials(:,2))>31 && cfg.numpermutation > 2^31
-        fprintf('\n')
-        error('TRENTOOL ERROR: cfg.numpermutation too huge (> 2^31)!');
-    elseif max(nrtrials(:,2))>31 && cfg.numpermutation > 2^min(nrtrials(:,2)) % nrtrials is now 2-D!
-        fprintf('\n')
-        error('TRENTOOL ERROR: cfg.numpermutation too huge (> 2^n_trials)!');
-    end
-
+    cfg.numpermutation = TEchecknumperm(cfg, data);
 end
-
-fprintf(' - ok\n');
-
 
 %% start calculating TE
 % -------------------------------------------------------------------------
-
+warning('off','all')        % otherwise parfor loops throw warnings
 cfg.calctime = 'yes';
 
 % for unshuffled data
 % ----------------------
-fprintf('\nStart calculating transfer entropy for unshuffled data');
+msg = 'Calculating transfer entropy for unshuffled data';
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 cfg.shuffle = 'no';
 [TEresult] = transferentropy(cfg,data);
 TEresult.TEprepare = data.TEprepare;
@@ -555,7 +537,9 @@ cfg.calctime = 'no';
 % TEresult without certain fields. TEshift is never written to disk/file
 % to avoid later confusion. Please save TEshift yourself if necessary.
 if strcmp(cfg.shifttest, 'yes')
-    fprintf('\nStart calculating transfer entropy for shifted data');
+    msg = 'Calculating transfer entropy for shifted data';
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
+    
     cfg.shuffle = 'no';
     [TEshift] = transferentropy(cfg,data,'shifttest');
 
@@ -564,7 +548,8 @@ if strcmp(cfg.shifttest, 'yes')
 
     
     % permutation test for shift test
-    fprintf('\nStart permutation tests for shift test');
+    msg = 'Start permutation tests for shift test';
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
     permstatstype = cfg.permstatstype;
     cfg.permstatstype = 'indepsamplesT';
     tailtype = cfg.tail;
@@ -589,14 +574,15 @@ if strcmp(cfg.shifttest, 'yes')
 %     save(strcat(cfg.fileidout,'_TEpermshift'), 'TEpermshift','-v7.3');
 
     
-    % analyze shift test
-    fprintf('\nanalyze shift test\n');
+    % analyze shift test       
+    TEconsoleoutput(cfg.verbosity, 'Analyzing shift test', LOG_INFO_MINOR);
     
     % MW: check if there are NaNs in TEresult from errors in
     % transferentropy
     NaNidx=find(isnan(TEresult.TEmat));
     if ~isempty(NaNidx)
-        disp('Found NaN in TEresult.TEmat! Aborting')
+        fprintf('\n')
+        warning('TRENTOOL WARNING: Found NaN in TEresult.TEmat! Aborting')
         return
     end
     
@@ -604,9 +590,11 @@ if strcmp(cfg.shifttest, 'yes')
     if strcmp(cfg.shifttesttype, 'TE>TEshift')
         indexinstmix = find(TEpermshift.TEpermvalues(:,2)==0);
         if size(indexinstmix,1) == 0
-            fprintf('No instantaneous mixing found!\n')
+            msg = 'No instantaneous mixing found';
+            TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
         else
-            fprintf(strcat(num2str(size(indexinstmix,1)),' instantaneous mixings found by strict shifttest!\nFor these cases TEvalues of all trials are set to NaN!\n'))
+            msg = sprintf('%d instantaneous mixings found by strict shifttest!\nFor these cases TEvalues of all trials are set to NaN!\n', size(indexinstmix,1));
+            TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
             mask=repmat((TEpermshift.TEpermvalues(:,2)-1)*-1, [1 1 size(TEresult.TEmat,2)]);
             TEresult.TEmat(mask==1) = NaN;
             TEresult.MImat(mask==1) = NaN;
@@ -616,9 +604,11 @@ if strcmp(cfg.shifttest, 'yes')
     elseif strcmp(cfg.shifttesttype, 'TEshift>TE')
         indexinstmix = find(TEpermshift.TEpermvalues(:,2)==1);
         if size(indexinstmix,1) == 0
-            fprintf('No instantaneous mixing found!\n')
+            msg = 'No instantaneous mixing found';
+            TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
         else
-            fprintf(strcat(num2str(size(indexinstmix,1)),' instantaneous mixings found by non-strict shifttest!\nFor these cases TEvalues of all trials are set to NaN!\n'))
+            msg = sprintf('%d instantaneous mixings found by strict shifttest!\nFor these cases TEvalues of all trials are set to NaN!\n', size(indexinstmix,1));
+            TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
             mask=repmat(TEpermshift.TEpermvalues(:,2), [1 1 size(TEresult.TEmat,2)]);
             TEresult.TEmat(mask==1) = NaN;
             TEresult.MImat(mask==1) = NaN;
@@ -635,14 +625,18 @@ end
 % TEshuffle is created inside transferentropy.m as a reduced version of
 % TEresult without certain fields. TEshuffle is never written to disk/file
 % to avoid later confusion. Please save TEshuffle yourself if necessary.
-if cfg.numpermutation > 0
-    fprintf('\nStart calculating transfer entropy for shuffled data');
+if cfg.numpermutation > 0    
+    msg = 'Calculating transfer entropy for shuffled data';
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);    
     cfg.shuffle = 'yes';
     [TEshuffle] = transferentropy(cfg,data);
     cfg = rmfield(cfg, 'shuffle');
-    fprintf('\nStart permutation tests');
+    msg = 'Starting permutation tests';
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR); 
     TEpermtest = TEperm(cfg,TEresult,TEshuffle);
     TEpermtest.TEmat_sur = TEshuffle.TEmat;
+    cfg.correctm = TEpermtest.correctm;
+    TEpermtest = rmfield(TEpermtest, 'correctm');
 else
     TEpermtest = [];
 end
@@ -651,7 +645,7 @@ cfg = rmfield(cfg, 'calctime');
 %     %$ML
 %    save(strcat(cfg.fileidout,'_TEshuffle'), 'TEshuffle','-v7.3');
 
-
+warning('on','all')
 
 %% permutation tests
 % -------------------------------------------------------------------------
@@ -662,7 +656,6 @@ TEpermtest.ACT.actvalue = data.TEprepare.ACT;
 TEpermtest.sgncmb = TEresult.sgncmb;
 TEpermtest.numpermutation = cfg.numpermutation;
 TEpermtest.TEprepare = data.TEprepare;
-TEpermtest.nr2cmc = nr2cmc;
 TEpermtest.TEmat = TEresult.TEmat;
 TEpermtest.MImat = TEresult.MImat;
 

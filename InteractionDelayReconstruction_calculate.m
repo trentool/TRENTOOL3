@@ -29,13 +29,19 @@ function TEpermtest = InteractionDelayReconstruction_calculate(cfgTEP,cfgTESS,da
 %		 interaction delay
 % 2013-27-06 PW: TEpermtest is saved to disk by this function
 
-%%%
+
+%% check input
 if nargin ~= 3
     error('TRENTOOL: Please provide ''cfgTEP'', ''cfgTESS'' and ''data'' as input!');
 end
 
+%% define logging levels
+LOG_INFO_MAJOR = 1;
+LOG_INFO_MINOR = 2;
 
-%%% checks and parameter preparations
+if ~isfield(cfgTEP, 'verbosity'), cfgTEP.verbosity = 'info_minor'; end;
+
+%% checks and parameter preparations
 
 % check if data was prepared for later group statistics
 groupanalysis = isfield(data,'groupprepare');
@@ -43,32 +49,44 @@ if groupanalysis
     
     groupprepare = data.groupprepare;
     
-    fprintf('\n\nData was prepared for group statistics!\n')
-    fprintf('The embedding dimension will be set to a common value for all datasets!\n\n')
+    msg = ['Data was prepared for group statistics; the embedding ' ...
+        'dimension will be set to a common value for all datasets!'];
+    TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MINOR);
     if isfield(cfgTEP,'predicttimemax_u') || isfield(cfgTEP,'predicttimemin_u') || isfield(cfgTEP,'predicttimestepsize')
-        warning('Any parameter regarding the prediction time u, provided in cfgTEP will be overwritten by parameters from TEgroup_prepare.')
+        fprintf('\n')
+        warning(['TRENTOOL WARNING: Any parameter regarding the ' ...
+            'prediction time u, provided in cfgTEP will be ' ...
+            'overwritten by parameters from TEgroup_prepare.'])
     end
     
     % set prediction time vector
     predicttimevec_u = data.groupprepare.predicttimevec_u;
     
-    % set ragwitz dimension
-    warning('Any parameter regarding the ragwitz dimension, provided in cfgTEP and cfgTESS will be overwritten by parameters from TEgroup_prepare.')
-    fprintf('\tSetting ''cfgTEP.ragdim'' to maximum over all subjects (dim = %.0f)...\n',data.groupprepare.max_dim);
-    fprintf('\tSetting ''cfgTESS.optdimusage'' to ''maxdim''...\n\n');
+    % set ragwitz dimension   
+    fprintf('\n')
+    warning(['TRENTOOL WARNING: Any parameter regarding the ' ...
+            'ragwitz dimension, provided in cfgTEP/cfgTESS will be ' ...
+            'overwritten by parameters from TEgroup_prepare.'])
+    msg = sprintf('Setting ''cfgTEP.ragdim'' to maximum over all subjects (dim = %.0f)',data.groupprepare.max_dim);
+    TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MINOR);
+    msg = 'Setting ''cfgTESS.optdimusage'' to ''maxdim'' ';
+    TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MINOR);
     cfgTEP.ragdim        = data.groupprepare.max_dim;
     cfgTESS.optdimusage  = 'maxdim';
 else
     
     % cfg.predicttimevec_u supplied ?
     if ~isfield(cfgTEP,'predicttimemax_u')
-        error(' No cfgTEP.predicttimemax_u specified - see HELP InteractionDelayReconstruction_calculate for more information');
+        fprintf('\n')
+        error('TRENTOOL ERROR: No cfgTEP.predicttimemax_u specified - see HELP InteractionDelayReconstruction_calculate for more information');
     end
     if ~isfield(cfgTEP,'predicttimemin_u')
-        error(' No cfgTEP.predicttimemin_u specified - see HELP InteractionDelayReconstruction_calculate for more information');
+        fprintf('\n')
+        error('TRENTOOL ERROR: No cfgTEP.predicttimemin_u specified - see HELP InteractionDelayReconstruction_calculate for more information');
     end
     if ~isfield(cfgTEP,'predicttimestepsize')
-        error(' No cfgTEP.predicttimestepsize specified - see HELP InteractionDelayReconstruction_calculate for more information');
+        fprintf('\n')
+        error('TRENTOOL ERROR: No cfgTEP.predicttimestepsize specified - see HELP InteractionDelayReconstruction_calculate for more information');
     end
 
     predicttimevec_u=cfgTEP.predicttimemin_u:cfgTEP.predicttimestepsize:cfgTEP.predicttimemax_u;
@@ -83,18 +101,23 @@ end
 t_total = tic;
 
 %% TEprepare part
-fprintf('\n\n################### PREPARING DATA FOR TE ANALYSIS\n')
+msg = '################### PREPARING DATA FOR TE ANALYSIS';
+TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MAJOR);
+
 cfgTEP.predicttime_u = cfgTEP.predicttimemax_u;  % fix config
 dataprep = TEprepare(cfgTEP,data);
 clear data;
 
 %% find optimal interaction delays
-fprintf('\n\n################### OPTIMIZING INFORMATION TRANSFER DELAY\n\n')
+msg = '################### OPTIMIZING INFORMATION TRANSFER DELAY';
+TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MAJOR);
+
 [dataprep, TEmat] = TEfindDelay(predicttimevec_u,cfgTESS,dataprep);
 cfgTESS.embedsource = 'yes';
 
 %% calulate statistics with optimal u for individual channels
-fprintf('\n\n################### ESTIMATING TRANSFER ENTROPY WITH OPTIMIZED PARAMETERS\n\n')
+msg = '################### ESTIMATING TRANSFER ENTROPY WITH OPTIMIZED PARAMETERS';
+TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MAJOR);
 
 cfgTESS.fileidout=strcat(cfgTESS.fileidout,'_RAG4_TGA_opt_u');
 
@@ -115,15 +138,15 @@ end
 
 %% save results
 
-fprintf('\nSaving results of TE estimation and surrogate testing')
+msg = 'Saving results of TE estimation and surrogate testing';
+TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MINOR);
 save(strcat(cfgTESS.fileidout,'_time',num2str(cfgTEP.toi(1)),'-',num2str(cfgTEP.toi(2)),'s_TEpermtest_output.mat'), ...
     'TEpermtest','-v7.3');
-fprintf(' - ok');
 
 %%
 
 t=toc(t_total);
-fprintf('\n\nThank you for using this transfer entropy tool!')
-
-fprintf('\n\n\nCALCULATION ENDED: %s \n', datestr(now));
-fprintf('CALCULATION TOOK %.0f MINUTES (%.0f SECONDS)\n\n', t/60,t);
+msg = sprintf( ...
+    'Thank you for using this transfer entropy tool!\n\nTRANSFER ENTROPY CALCULATION ENDED: %s \nCALCULATION TOOK %.0f MINUTES (%.0f SECONDS)', ...
+    datestr(now), t/60, t);
+TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MAJOR);

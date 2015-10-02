@@ -38,12 +38,13 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 %
 %
 % * DEPENDENCIES
-%     - running srmd (small resource manager)
+%     - running srmd (small resource manager) if cfg.site = 'ffm'
 %     - functions 'range_search_all_multigpu.mexa64' and 
-%	'fnearneigh_multigpu.mexa64' are used for nearest neighbour and
-%	range searches (Martinez-Zarzuela, 2012)
+%	  - 'fnearneigh_multigpu.mexa64' are used for nearest neighbour and
+%       range searches (Martinez-Zarzuela, 2012)
 %     - this function is called by TEsurrogatestats_ensemble.m, the data
-%	entered into this function has to be embedded first
+%       passed to this function has to be embedded first
+%     - TEconsoleoutput
 %
 %
 %
@@ -68,6 +69,10 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 %     limits the number of values that can be in one input array. The max. 
 %     number of threads and maximum grid size limits the dimension of the 
 %     input array.)
+%   	.verbosity   = set the verbosity of console output (see 'help
+%                      TEconsoleoutput', default: 'info_minor')
+%   	.site        = can be set to 'ffm' if TRENTOOL is executed on the
+%                      cluster in the MEG Lab Frankfurt (default = 'other')
 %
 %
 %   channelpair  = current channelcombination (this is needed to read
@@ -126,6 +131,12 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 % 2015-05-27 PW: function now calls 'srmc max' to determine max. memory on
 % GPU device
 
+%% define logging levels
+LOG_INFO_MAJOR   = 1;
+LOG_INFO_MINOR   = 2;
+LOG_DEBUG_COARSE = 3;
+LOG_DEBUG_FINE   = 4;
+
 %% Get variables from cfg
 % -------------------------------------------------------------------------
 
@@ -159,7 +170,7 @@ end
 
 switch cfg.site
     case 'ffm'
-        gpu_memsize = TEsrmc(pause_time, 'maxmem');
+        gpu_memsize = TEsrmc(pause_time, 'maxmem', cfg.verbosity);
     case 'other'
         gpu_memsize = cfg.GPUmemsize;
     otherwise
@@ -194,15 +205,16 @@ else
 end
 mem_run = 2.5*chunksperrun*chunksize;
 
-fprintf('Chunks in current data set: %.0f (%0.4f MB per chunk, total: %.2f MB)\n', n_chunks, chunksize, chunksize*n_chunks);
-fprintf('Number of runs: %.0f (%0.4f MB per run) \n\n', nrruns, mem_run);
-
+msg = sprintf('Chunks in current data set: %.0f (%0.4f MB per chunk, total: %.2f MB)', n_chunks, chunksize, chunksize*n_chunks);
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
+msg = sprintf('Number of runs: %.0f (%0.4f MB per run)', nrruns, mem_run);
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 
 switch cfg.site
     case 'ffm'
-        gpu_id = TEsrmc(pause_time, 'request', sprintf('gpumem:%d', ceil(mem_run)));
+        gpu_id = TEsrmc(pause_time, 'request', cfg.verbosity, sprintf('gpumem:%d', ceil(mem_run)));
     case 'other'
-        ;
+        ; % do nothing
     otherwise
         error('TRENTOOL ERROR: unkown site (has to be ''ffm'' or ''other'').')
 end
@@ -227,54 +239,54 @@ nchunks  = chunksperrun;
 
 for ii=1:nrruns
 
-	fprintf('\nchannelpair %d (u = %d) - run %.0f of %.0f\n',channelpair,cfg.u_in_ms(channelpair),ii,nrruns);
+	msg = sprintf('channelpair %d (u = %d) - run %d of %d',channelpair,cfg.u_in_ms(channelpair),ii,nrruns);
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 	
 	%% get data for this run (i.e. call of GPU functions) by concatenating indiv. chunks
 	
-	if ii==nrruns  % take remaining data if this is the last run
+    if ii==nrruns  % take remaining data if this is the last run
         
-		% get number and index of first chunk for this run
-		chunk_start = cutpoint-chunksperrun+1;        
-		ind1 = find(chunk_ind==chunk_start,1);
-		
-		% get data from concatenated datasets
-		pointset_p21 = ps_p21(ind1:end,:);        	
-		pointset_p2  = ps_p2(ind1:end,:);
-		pointset_21  = ps_21(ind1:end,:);	
-		pointset_2   = ps_2(ind1:end,:);
-		if MIcalc
-		    pointset_1   = ps_1(ind1:end,:);
-		    pointset_12  = ps_12(ind1:end,:);
-		end    
-		
-		ind2 = size(ps_p21,1);
-		nchunks = (chunk_ind(end)-(chunk_start))+1;		
-    
-	else
+        % get number and index of first chunk for this run
+        chunk_start = cutpoint-chunksperrun+1;
+        ind1 = find(chunk_ind==chunk_start,1);
         
-		% get number and indices of first and last chunk for this run
-		chunk_start = cutpoint-chunksperrun+1;
-		chunk_end   = cutpoint;
-		ind1        = find(chunk_ind==chunk_start,1);
-		ind2        = find(chunk_ind==chunk_end,1,'last');
-		
-		pointset_p21 = ps_p21(ind1:ind2,:);	
-		pointset_p2  = ps_p2(ind1:ind2,:);
-		pointset_21  = ps_21(ind1:ind2,:);	
-		pointset_2   = ps_2(ind1:ind2,:);
-		if MIcalc
-		    pointset_1   = ps_1(ind1:ind2,:);
-		    pointset_12  = ps_12(ind1:ind2,:);
-		end   
-		
-		cutpoint = cutpoint+chunksperrun;
-
+        % get data from concatenated datasets
+        pointset_p21 = ps_p21(ind1:end,:);
+        pointset_p2  = ps_p2(ind1:end,:);
+        pointset_21  = ps_21(ind1:end,:);
+        pointset_2   = ps_2(ind1:end,:);
+        if MIcalc
+            pointset_1   = ps_1(ind1:end,:);
+            pointset_12  = ps_12(ind1:end,:);
+        end
+        
+        ind2 = size(ps_p21,1);
+        nchunks = (chunk_ind(end)-(chunk_start))+1;
+        
+    else
+        
+        % get number and indices of first and last chunk for this run
+        chunk_start = cutpoint-chunksperrun+1;
+        chunk_end   = cutpoint;
+        ind1        = find(chunk_ind==chunk_start,1);
+        ind2        = find(chunk_ind==chunk_end,1,'last');
+        
+        pointset_p21 = ps_p21(ind1:ind2,:);
+        pointset_p2  = ps_p2(ind1:ind2,:);
+        pointset_21  = ps_21(ind1:ind2,:);
+        pointset_2   = ps_2(ind1:ind2,:);
+        if MIcalc
+            pointset_1   = ps_1(ind1:ind2,:);
+            pointset_12  = ps_12(ind1:ind2,:);
+        end
+        
+        cutpoint = cutpoint+chunksperrun;
+        
     end
     
 	%% TE
     
 	% k nearest neighbors search (fixed mass)
-	fprintf('\t knn search for TE ...');
 	t = tic;
     switch cfg.site
         case 'ffm'
@@ -284,11 +296,11 @@ for ii=1:nrruns
     end
 	clear index_p21;
 	t = toc(t);
-	fprintf('\t - ok (%.1f minutes)\n',t/60);
+	msg = sprintf('knn search for TE - %.1f minutes',t/60);    
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 	clear t;
     
-	% n nearest neighbor range search (fixed radius)	
-	fprintf('\t range search for TE ...');
+	% n nearest neighbor range search (fixed radius)		
     t = tic;
 	radius_p21 = single(distance_p21(:,k_th));
 	radius_p21 = radius_p21 - eps('single');
@@ -306,7 +318,8 @@ for ii=1:nrruns
     end
     t = toc(t);
 	
-	fprintf('\t - ok (%.1f minutes)\n\n',t/60);
+	msg = sprintf('range search for TE - %.1f minutes',t/60);    
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 	clear t;
 	
 	
@@ -314,7 +327,6 @@ for ii=1:nrruns
 	if MIcalc
 	
 		% k nearest neighbors search (fixed mass)
-		fprintf('\t knn search for MI...');
         t = tic;
         switch cfg.site
             case 'ffm'
@@ -323,11 +335,11 @@ for ii=1:nrruns
                 [~, distance_12]   = fnearneigh_gpu(single(pointset_12),single(pointset_12),k_th,TheilerT,nchunks);
         end
         t = toc(t);
-		fprintf('\t - ok (%.1f minutes)\n',t/60);
+		msg = sprintf('knn search for MI - %.1f minutes',t/60);
+        TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 		clear t;	
 		
 		% n nearest neighbor range search (fixed radius)	
-		fprintf('\t range search for MI ...');
 		t = tic;
 		radius_12  = single(distance_12(:,k_th));
 		radius_12  = radius_12 - eps('single');
@@ -343,7 +355,8 @@ for ii=1:nrruns
         end
         t = toc(t); 
 		
-		fprintf('\t - ok (%.1f minutes)\n',t/60);
+		msg = sprintf('range search for MI - %.1f minutes',t/60);
+        TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 		clear t;
 	end	
 	
@@ -355,7 +368,7 @@ switch cfg.site
     case 'ffm'
         resource = sprintf('gpumem:%d', ceil(mem_run));
         unit     = sprintf('/dev/nvidia%d', gpu_id);
-        TEsrmc(pause_time, 'return', resource, unit);
+        TEsrmc(pause_time, 'return', cfg.verbosity, resource, unit);
     case 'other'
         ;
     otherwise

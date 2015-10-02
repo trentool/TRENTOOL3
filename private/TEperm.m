@@ -21,6 +21,8 @@ function [TEpermtest] = TEperm(cfg,TEresult1,TEresult2)
 %   cfg.numpermutation = nr of permutations
 %   cfg.correctm       = for cmc
 %   cfg.permstatstype  = 'mean', 'indepsamplesT' or 'depsamplesT'
+%   cfg.verbosity      = set the verbosity of console output (see 'help
+%                        TEconsoleoutput', default: 'info_minor')
 %
 % * OUTPUT PARAMETERS
 %
@@ -40,17 +42,10 @@ function [TEpermtest] = TEperm(cfg,TEresult1,TEresult2)
 %                               difference depending on cfg.permstatstype
 %                           5 - 1 (0), if instantaneous mixing (volume
 %                               conduction) exists (or not)
-%            .cfg           = configuration file used to calculate TE and
-%                             permtest
-%            .label         = labels of used channels
-%            .sgncmb        = labels of channel combinations (source ->
-%                             target)
-%            .numpermutation = number of permutations
-%            .ACT           = structure including
-%                .act       = ACT matrix (channel x trial)
-%                .label     = label of channels in ACT matrix
-%            .TEprepare     = results of the function TEprepare fron the
-%                             data
+%            .nr2cmc   = number used for correction for multiple
+%                        comparisons (returned by TEcmc)
+%            .correctm = method used for correction for multiple
+%                        comparisons (returned by TEcmc)
 %
 %
 % This program is free software; you can redistribute it and/or modify
@@ -69,6 +64,12 @@ function [TEpermtest] = TEperm(cfg,TEresult1,TEresult2)
 
 %% Remember the working directory
 working_directory = pwd;
+
+%% define logging levels
+LOG_INFO_MAJOR = 1;
+LOG_INFO_MINOR = 2;
+
+if ~isfield(cfg, 'verbosity'), cfg.verbosity = 'info_minor'; end;
 
 %% set new stream for random numbers
 
@@ -131,18 +132,15 @@ if strcmp(cfg.permstatstype, 'mean')
     dist_y=zeros(size(datay,1),cfg.numpermutation);
 end
 
-fprintf('\nGenerate permutations\n');
 
-for kk = 1:20
-    fprintf('-')
-end
-fprintf('\n')
+TEconsoleoutput(cfg.verbosity, 'Generating permutations', LOG_INFO_MINOR);
+TEwaitbar('init', 20, cfg.verbosity)
 
 for pp = 1:cfg.numpermutation
     
     %   text waitbar
-    if mod(pp,floor(cfg.numpermutation/20))==0
-        fprintf('-')
+    if mod(pp,floor(cfg.numpermutation/20))==0 || pp == 1
+        TEwaitbar('update', pp, cfg.verbosity);
     end
     
     if strcmp(cfg.permstatstype, 'mean')
@@ -212,24 +210,19 @@ if strcmp(cfg.permstatstype, 'mean')
 end
 
 
-fprintf(' - ok');
 
 % Evaluating the quantiles of the true results in the permdistribution
-fprintf('\nStart permutation test');
+TEconsoleoutput(cfg.verbosity, 'Starting permutation test. Please wait...', LOG_INFO_MINOR);
 
 z = sort(TEpermdist,2);
 
 TEpermvalues = NaN(size(datax,1),5);
 
-% prepare text waitbar
-fprintf('\nPlease wait...\n');
-for ii = 1:size(datax, 1)
-    fprintf('-')
-end
-fprintf('\n')
+TEwaitbar('init', size(datax, 1), cfg.verbosity);
 
 for channelpair = 1:size(datax,1) % loop over singalcombinations
-    fprintf('-');
+
+    TEwaitbar('update', channelpair, cfg.verbosity);
     
     if isnan(TEstatistic(channelpair)) == 1 % check if a preceeding shiftest has indicated inst. mixing
         TEpermvalues(channelpair,1) = 1;
@@ -280,10 +273,9 @@ for channelpair = 1:size(datax,1) % loop over singalcombinations
 end
 
 
-fprintf(' - ok');
 
 %% Correction for multiple comparisons
-fprintf('\nCorrection for multiple comparison...')
+TEconsoleoutput(cfg.verbosity, 'Correction for multiple comparisons ...', LOG_INFO_MINOR);
 pvalues = TEpermvalues(:,1);
 
 % correct only for all passing instantaneous mixing test
@@ -304,13 +296,13 @@ mixmask = instmixing1 + instmixing2;
 nrinstmix =  size(pvalues,1) - length(find(mixmask==0));
 
 
-significance = TEcmc(pvalues, cfg.correctm, cfg.alpha, nrinstmix);
-TEpermvalues(:,3)=significance;
-fprintf(' - ok\n');
+[significance, correctm, nr2cmc] =  TEcmc(pvalues, cfg.correctm, cfg.alpha, nrinstmix);
+TEpermvalues(:,3) = significance;
 
 %TEpermtest.TEpermdist=TEpermdist;
-TEpermtest.TEpermvalues=TEpermvalues;
-
+TEpermtest.TEpermvalues = TEpermvalues;
+TEpermtest.nr2cmc       = nr2cmc;
+TEpermtest.correctm     = correctm;
 
 %% Returning to the working directory
 cd(working_directory)

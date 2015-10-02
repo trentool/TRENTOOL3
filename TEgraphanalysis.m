@@ -1,4 +1,4 @@
-function [data_paths,cfg] = TEgraphanalysis(cfg,data);
+function [data_paths,cfg] = TEgraphanalysis(cfg,data)
 
 % TEGRAPHANALYSIS: Detects potentially spurious edges in a graph
 % constructed from single subject or single condition TE data. Note that
@@ -41,6 +41,7 @@ function [data_paths,cfg] = TEgraphanalysis(cfg,data);
 %         - TEdfs
 %         - TEdyn
 %         - TEbacktracking
+%         - TEconsoleoutput
 %     - FieldTrip, see http://www.ru.nl/neuroimaging/fieldtrip, Copyright 
 %       (C) 2004-2008, Robert Oostenveld (GNU General Public License)
 %         - ft_progress
@@ -59,6 +60,8 @@ function [data_paths,cfg] = TEgraphanalysis(cfg,data);
 %                       significant after correction for multiple
 %                       comparison (1) or links that are significant at the
 %                       original alpha level (0)
+%       .verbosity    = set the verbosity of console output (see 'help
+%                       TEconsoleoutput', default: 'info_minor')
 %
 %   data
 %       .TEprepare.channelcombi = 2xN matrix that defines analyzed channel
@@ -149,6 +152,18 @@ function [data_paths,cfg] = TEgraphanalysis(cfg,data);
 %
 % 2015-03-20: PW changed the output structure if no paths are found
 
+%% define logging levels
+LOG_INFO_MAJOR   = 1;
+LOG_INFO_MINOR   = 2;
+LOG_DEBUG_COARSE = 3;
+LOG_DEBUG_FINE   = 4;
+
+% check if a threshold is provided
+if ~isfield(cfg,'verbosity'), cfg.verbosity = 'info_minor'; end;
+
+msg = '################### CORRECTING FOR POTENTIALLY SPURIOUS EDGES';
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MAJOR);
+
 
 % check if a threshold is provided
 if isfield(cfg,'threshold')
@@ -173,10 +188,12 @@ if ~isfield(cfg,'cmc')
 end
 if cfg.cmc == 1
     link_ind = data.TEpermvalues(:,3) == 1;    
-    fprintf('\nUsing links that are significant after correction for multiple comparisons.\n')  
+    msg = 'Using links that are significant after correction for multiple comparisons';
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 elseif cfg.cmc == 0
     link_ind = data.TEpermvalues(:,2) == 1;
-    fprintf('\nUsing links that are significant without correction for multiple comparisons.\n')    
+    msg = 'Using links that are significant without correction for multiple comparisons';
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 end
 weights        = data.TEpermvalues(link_ind,6);
 edges4analysis = data.TEprepare.channelcombi(link_ind,:);       % use numeric representation of channel combis
@@ -189,7 +206,8 @@ n_edges         = length(edges4analysis);
 
 
 % generate output structure, graph-related info goes into a seperate substructure
-fprintf(['no of edges: ' num2str(n_edges) ', no of vertices: ' num2str(n_vertices) '\n\n']);
+msg = sprintf('no of edges: %d , no of vertices: %d', n_edges, n_vertices);
+TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 graphanalysis = [];
 graphanalysis.n_edges = n_edges;
 graphanalysis.n_vertices = n_vertices;
@@ -205,7 +223,10 @@ all_paths = {};
 %% check if graph is big enough for graph analysis, else return
 
 if n_vertices < 3 || n_edges < 3;
-    disp('Graphanalysis does not work for graphs with less than 3 nodes or less than 3 edges! Return...');
+    warning(['\nTRENTOOL WARNING: The input graph has %d nodes and %d ' ...
+        'edges. Graphanalysis does not work for graphs with less ' ... 
+        'than 3 nodes or less than 3 edges! Return...'], ...
+        n_vertices, n_edges);
         
     % add graph info to datastructure
     data_paths                   = data;
@@ -224,16 +245,26 @@ end;
 
 %% find alternative paths for all neighbours
 % init progress bar
-ft_progress('init', 'text',    'Starting graph analysis...')
+if ~strcmp(cfg.verbosity, 'none')
+    fprintf('\n')
+    stack = dbstack;
+    msg = [ ...
+            repmat('   ', 1, length(stack)-1) ...
+            stack(1).file ...
+            ' - line ' ...
+            num2str(stack(1).line) ...
+            ': Starting graph analysis ...'];
+    ft_progress('init', 'text', msg)
+end
 
 % count number of cases were either method doesn't return an alternative path
 n_nopath_TEdyn          = 0;
 n_nopath_TEbacktracking = 0;
 
 for i=1:n_edges;
-    
-    ft_progress(i/n_edges, 'Processing edge %d of %d ...', i, n_edges)
-        
+    if ~strcmp(cfg.verbosity, 'none')
+        ft_progress(i/n_edges, [repmat('   ', 1, length(dbstack)-1) '   Processing edge %d of %d ...'], i, n_edges);
+    end
     
     % define current source, target and upper limit k
     k = weights(i) + threshold;      
@@ -327,15 +358,16 @@ for i=1:n_edges;
  	end;
 
 end;
-ft_progress('close');
-
+if ~strcmp(cfg.verbosity, 'none')
+    ft_progress('close');
+end
 %% prepare output
 
 % flag all edges to which alternative paths exist
 if ~isempty(all_paths)
     
-    disp(['Alternative paths were found for ' num2str(size(all_paths,1)) ...
-        ' of ' num2str(n_edges) ' edges.']);
+    msg = sprintf('Alternative paths were found for %d of %d edges', size(all_paths,1), n_edges);
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
     
     % add alternative paths and graph info to datastructure
     [data_paths, triangle_edges, triangle_nodes] = TEflagedges(data,all_paths,edges4analysis,edges_original);    
@@ -344,10 +376,13 @@ if ~isempty(all_paths)
     data_paths.graphanalysis.triangle_edges = triangle_edges;
     data_paths.graphanalysis.triangle_nodes = triangle_nodes;
     
+    msg = sprintf('%d triangle(s) were found by TEflagedges', size(triangle_edges, 1));
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
+    
 else
     data_paths = data;
     data_paths.graphanalysis = graphanalysis;
-    disp('No alternative paths were found!')
+    TEconsoleoutput(cfg.verbosity, 'No alternative paths were found!', LOG_INFO_MINOR);
 end;
 
 % update TEsteps
