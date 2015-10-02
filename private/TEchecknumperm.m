@@ -58,7 +58,7 @@ warning('on','all')
 if ~isfield(cfg, 'numpermutation'),
     %numperm = 190100; % for p<0.01 with a possible bonferroni correcetion of 100, 1/(alpha/nr2cmc)
     numperm = requiredpermutations * 20;
-    msg = sprintf(['TRENTOOL: You didn''t specify a number of permutations. ' ...
+    msg = sprintf(['You didn''t specify a number of permutations. ' ...
         'It was set to %d (for p < %0.2f with a possible bonferroni ', ...
         'correcetion of %d).'], ...
         numperm, cfg.alpha, nr2cmc);
@@ -69,7 +69,7 @@ end
    
 if numperm < ceil(1/cfg.alpha)
     error(['\nTRENTOOL ERROR: numperm too small - Nr of permutations' ...
-        'must be at least %d!'], num2str(numpermutation));
+        'must be at least %d!'], num2str(numperm));
 end
 
 if max_nrtrials > 31 && numperm > 2 ^ 31
