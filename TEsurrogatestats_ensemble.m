@@ -340,7 +340,9 @@ if ~isfield(cfg, 'embedsource'),    cfg.embedsource = 'yes';         end;
 
 if isfield(cfg, 'tail') && cfg.tail ~= 1
     cfg = rmfield(cfg, 'tail');
-    warning('You provided "cfg.tail" with tail not equal one, this will be ignored, when ensemble method is chosen, see help. \n');
+    fprintf('\n')
+    warning(['TRENTOOL WARNING: You provided "cfg.tail = 2", this ' ...
+        'will be ignored, when ensemble method is chosen, see help.']);
 end;
 
 if ~isfield(cfg, 'fileidout'),
@@ -351,13 +353,16 @@ end;
 % check if Frankfurt specific options are requested
 if ~isfield(cfg, 'site')
     cfg.site = 'other';
-elseif ~(strcmp(cfg.site, 'ffm') || strcmp(cfg.site, 'other'))
-    error('TRENTOOL ERROR: Unkown site.')
+elseif ~(strcmp(cfg.site, 'ffm') || strcmp(cfg.site, 'other'))    
+    error('\nTRENTOOL ERROR: Unkown site %s.', cfg.site)
 end
 
 % check if the user provided the GPU's memory
 if ~strcmp(cfg.site, 'ffm') && ~isfield(cfg,'GPUmemsize');
-    error('TRENTOOL ERROR: You requested ensemble method with GPU calculation. Please provide your GPUs memory in "cfg.GPUmemsize". See help!');
+    fprintf('\n')
+    error(['TRENTOOL ERROR: You requested ensemble method with GPU ' ...
+        'calculation. Please provide your GPUs memory in ' ...
+        '"cfg.GPUmemsize". See help!']);
 end;
 
 % check if the user provided the GPU's no. threads and grid dimension
@@ -372,19 +377,25 @@ if ~isfield(cfg,'maxgriddim'); cfg.maxgriddim = 65535; end;
 % faes method is needed as a shift test is not possible when using the
 % ensemble method
 if ~isfield(cfg,'extracond') || ~strcmp(cfg.extracond,'Faes_Method');
-    error('TRENTOOL ERROR: You requested ensemble method with GPU calculation. Please provide "Faes_Method" in "cfg.extracond". See help!');
+    fprintf('\n')    
+    error(['TRENTOOL ERROR: You requested ensemble method with GPU ' ...
+        'calculation. Please provide "Faes_Method" in "cfg.extracond". ' ...
+        'See help!']);
 end;
-
-if isfield(cfg, 'shifttest')
-    if ~strcmp(cfg.shifttest,'no');
-        error('TRENTOOL ERROR: You requested ensemble method with GPU calculation AND a shifttest. A shifttest is not possible when using the ensemble method, use the Faes method instead, see help.');
-    end
+if isfield(cfg, 'shifttest') && ~strcmp(cfg.shifttest,'no');
+    fprintf('\n')    
+    error(['TRENTOOL ERROR: You requested ensemble method with GPU ' ...
+        'calculation AND a shifttest. A shifttest is not possible ' ...
+        'when using the ensemble method, use the Faes method ' ...
+        'instead, see help.']);
 end
 
 % check if the correct permutation method for surrogate generation is
 % chosen
 if ~isfield (cfg,'surrogatetype') || ~strcmp(cfg.surrogatetype,'trialshuffling')
-    error('TRENTOOL ERROR:  If ensemble method is used, "cfg.surrogatetype" has to be set to "trialshuffling", see help.');
+    fprintf('\n')
+    error(['TRENTOOL ERROR:  If ensemble method is used, ' ...
+        '"cfg.surrogatetype" has to be set to "trialshuffling", see help.']);
 end
 
 % check optimizemethod
@@ -392,9 +403,10 @@ if ~isfield(cfg, 'optdimusage'),
     fprintf('\n')
     error('TRENTOOL ERROR: cfg.optdimusage is not defined, see help!')
 else
-    if strcmp(cfg.optdimusage, 'maxdim') == 0 && strcmp(cfg.optdimusage, 'indivdim') == 0 
-        fprintf('\n')
-        error(['TRENTOOL ERROR: ',cfg.optdimusage,' is a wrong input for cfg.optdimusage , see help!'])
+    if ~strcmp(cfg.optdimusage, 'maxdim') && ~strcmp(cfg.optdimusage, 'indivdim')
+        error(['\nTRENTOOL ERROR: You requested cfg.optdimusage=%s, ' ...
+            'but has to be ''maxdim'' or ''indivdim'' when using the ' ...
+            'ensemble method for TE estiamtion, see help!'], cfg.optdimusage)
     end
 end;
 
@@ -412,12 +424,12 @@ else
     end
 end
     
-% check if local TE calculation is requested
+% check if local TE calculation is requested (requires a lot of disc space)    
 if ~isfield(cfg,'TELcalc')
-    % by default, switch TEL calculation off (requires a lot of disc space)     
     cfg.TELcalc = 0;
 else 
 	if cfg.TELcalc
+        fprintf('\n')
 		warning('TRENTOOL: You''re calculating local TE, this may require a lot of disc space when saving files!');
 	end
 end
@@ -426,31 +438,26 @@ end
 if ~isfield(cfg, 'dim')
     if strcmp(cfg.optdimusage, 'indivdim')
         cfg.dim = data.TEprepare.optdimmat;
-%         cfg.optdimusage = cfg.optdimusage;
-    else
+    else % cfg.optdimusage= 'maxdim'
         cfg.dim(1:size(data.TEprepare.optdimmat,1),1) = data.TEprepare.optdim;
-%         cfg.optdimusage = cfg.optdimusage;
     end
 else
     if strcmp(cfg.optdimusage, 'indivdim')
-        if size(cfg.dim,1) ~= size(data.TEprepare.channelcombi,1)
+        if size(cfg.dim,1) ~= size(data.TEprepare.channelcombi,1) || size(cfg.dim,2) > 1
             fprintf('\n')
-            error('TRENTOOL ERROR: cfg.dim has to be in that size: (channelcombi x 1), see help!')
-        elseif size(cfg.dim,2)>1
-            fprintf('\n')
-            error('TRENTOOL ERROR: cfg.dim has to be in that size: (channelcombi x 1), see help!')
+            error('TRENTOOL ERROR: cfg.dim has to have dimensions [channelcombi x 1], see help!')                    
         end
-    else
-        if size(cfg.dim,1)>1 && size(cfg.dim,2)>1
-            fprintf('\n')
-            error('TRENTOOL ERROR: cfg.dim must include a scalar, see help!');
-        end
+    else % cfg.optdimusage= 'maxdim'
         if cfg.dim < data.TEprepare.optdim
-            fprintf('\n')
-            warning('TRENTOOL WARNING: specified embedding dimension (cfg.dim) is smaller then the optimal dimension from TEprepare.')
+            warning(['\nTRENTOOL WARNING: embedding dimension ' ...
+                'specified in cfg.dim (=%d) is smaller than the optimal ' ...
+                'dimension found by TEprepare (%d).'], ...
+                cfg.dim, data.TEprepare.optdim)
         elseif cfg.dim > data.TEprepare.optdim
-            fprintf('\n')
-            warning('TRENTOOL WARNING: specified embedding dimension (cfg.dim) is bigger then the optimal dimension from TEprepare.')
+            warning(['\nTRENTOOL WARNING: embedding dimension ' ...
+                'specified in cfg.dim (=%d) is bigger than the optimal ' ...
+                'dimension found by TEprepare (%d).'], ...
+                cfg.dim, data.TEprepare.optdim)
         end
     end
 end;
@@ -469,17 +476,14 @@ if ~isfield(cfg, 'tau')
     
 else
     if strcmp(cfg.optdimusage, 'indivdim') && strcmp(data.TEprepare.cfg.optimizemethod, 'ragwitz') 
-        if size(cfg.tau,1) ~= size(data.TEprepare.channelcombi,1)
+        if size(cfg.tau,1) ~= size(data.TEprepare.channelcombi,1) || size(cfg.tau,2) > 1
             fprintf('\n')
-            error('TRENTOOL ERROR: cfg.tau has to be in that size: (channelconmbi x 1), see help!')
-        elseif size(cfg.tau,2)>1
-            fprintf('\n')
-            error('TRENTOOL ERROR: cfg.tau has to be in that size: (channelconmbi x 1), see help!')
+            error('TRENTOOL ERROR: cfg.tau has to have dimensions [channelconmbi x 1], see help!')
         end
     else
-        if size(cfg.tau,1)>1 && size(cfg.tau,2)>1
+        if ~isscalar(cfg.tau)
             fprintf('\n')
-            error('TRENTOOL ERROR: cfg.tau must include a scalar, see help!');
+            error('TRENTOOL ERROR: cfg.tau must be a scalar, see help!');
         end
     end
     
@@ -493,21 +497,18 @@ cfg.permtest.nrtrials = nrtrials;
     
     
 % check TE parameter
-if isempty(cfg.predicttime_u), error('TRENTOOL ERROR: specify cfg.predicttime_u, see help!');  end;
-
+if isempty(cfg.predicttime_u), 
+    fprintf('\n')
+    error('TRENTOOL ERROR: specify cfg.predicttime_u, see help!');  
+end;
 if ~isfield(cfg, 'kth_neighbors'),  cfg.kth_neighbors = 4;  end;
-
 if ~isfield(cfg, 'TheilerT'),       cfg.TheilerT = 'ACT';   end;
 if strcmp(cfg.TheilerT, 'ACT');
-    
-    % get TheilerT if cfg.TheilerT == 'ACT' -> max ACT for each sgncombi over trials
-    % ACT: [#signalcombis 2 nrtrials]
-    cfg.TheilerT = max(squeeze(data.TEprepare.ACT(:,2,:)),[],2);
-        
+    cfg.TheilerT = max(squeeze(data.TEprepare.ACT(:,2,:)),[],2);        
 else
-    if size(cfg.TheilerT,1)>1 || size(cfg.TheilerT,2)>1
+    if ~isscalar(cfg.TheilerT)
         fprintf('\n')
-        error('TRENTOOL ERROR: cfg.TheilerT must include a scalar, see help!');
+        error('TRENTOOL ERROR: cfg.TheilerT must be a scalar, see help!');
     end
 end
 
@@ -517,9 +518,9 @@ if size(cfg.toi,1)>size(cfg.toi,2)
     cfg.toi=cfg.toi';
 elseif size(cfg.predicttime_u,1)>size(cfg.predicttime_u,2)
     cfg.predicttime_u=cfg.predicttime_u';
-elseif size(cfg.kth_neighbors,1)>1 || size(cfg.kth_neighbors,2)>1
+elseif ~isscalar(cfg.kth_neighbors)
     fprintf('\n')
-    error('TRENTOOL ERROR: cfg.dim must include a scalar, see help!');
+    error('TRENTOOL ERROR: cfg.kth_neighbors must be a scalar, see help!');
 end
 
 
@@ -622,7 +623,9 @@ TEconsoleoutput(verbosity, msg, LOG_INFO_MINOR);
 
 % compare samples in analysis window against minimum feasible no. sample points
 if mindatapoints <= minsamples    
-    error('\nTRENTOOL ERROR: not enough data points left after embedding.');
+    error(['\nTRENTOOL ERROR: not enough data points left after ' ...
+        ' embedding (required: %d, available: %d).'], ...
+        minsamples, mindatapoints);
 end
 
 
@@ -655,7 +658,7 @@ TEsetRandStream;
 
 for channelpair = 1:size(channelcombi,1)
 	
-    msg = sprintf('Embedding original data for channelpair %d of %d',channelpair,size(channelcombi,1));		
+    msg = sprintf('Embedding original data for channelpair %d of %d', channelpair, size(channelcombi,1));		
     TEconsoleoutput(verbosity, msg, LOG_INFO_MINOR);    
 	
     % prepare data strucuters for embedding		
