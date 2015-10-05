@@ -63,20 +63,23 @@ function TEgroup_conditionstatssingle(cfg, data1, data2)
 %
 %   Optional arguments:
 %
-%   cfg.tail        = 1 tail or 2 tailed test of significance (for the
-%                     permutation tests) (default = 2)
-%   cfg.permstatstype  = 'mean' to use the distribution of the mean
-%                     differences and 'depsamplesT' or
-%                    'indepsamplesT' for distribution of the
-%                     t-values. (default = 'mean')
-%   cfg.alpha       = significance level for statisatical shift test,
+%   cfg.alpha       = significance level for statistical shift test,
 %                     permutation test and correction for multiple
 %                     comparison (default = 0.05)
+%   cfg.numpermutation = nr of permutations in permutation test
+%                     (default = 190100)
+%   cfg.permstatstype  = 'mean' to use the distribution of the mean
+%                     differences and 'depsamplesT' or
+%                     'indepsamplesT' for distribution of the
+%                     t-values. (default = 'mean')
+%   cfg.tail        = 1 tail or 2 tailed test of significance (for the
+%                     permutation tests) (default = 2)
 %   cfg.correctm    = correction method used for correction of the multiple
 %                     comparison problem - False discovery rate 'FDR' or
 %                     Bonferroni correction 'BONF' (default = 'FDR')
 %   cfg.verbosity   = set the verbosity of console output (see 'help
 %                     TEconsoleoutput', default 'info_minor')
+%
 %
 % OUTPUT PARAMETERS
 %
