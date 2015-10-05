@@ -111,7 +111,7 @@ function TEpermtest=TEsurrogatestats(cfg,data)
 %
 %                       examples:
 %                       original trial:     1 2 3 4 5 6
-%                       trialshufling:      2 3 4 5 6 1
+%                       trialshuffling:     2 3 4 5 6 1
 %                       trialreverse:       6 5 4 3 2 1
 %                       blockresampling:    4 5 6 1 2 3
 %                       blockreverse1:      3 2 1 6 5 4

@@ -115,12 +115,12 @@ function TEpermtest=TEsurrogatestats_ensemble(cfg,data)
 %                     installed (default = 1)
 %
 %   cfg.surrogatetype = If ensemble method is chosen for TE calculation, 
-%                       'trialshuffling' is the only possible option for  
+%                       'trialperm' is the only possible option for  
 %                       the creation of surrogate data. Parameter will be  
-%                       set to 'trialshuffling' if no other option is 
+%                       set to 'trialperm' if no other option is 
 %                       chosen and will throw an error if any different 
 %                       option is provided.
-%                       'trialshuffling' will lead to a permutation of  
+%                       'trialperm' will lead to a permutation of  
 %                       trials times the number of permutations provided 
 %                       for the permutation test, i.e.:
 %
@@ -246,6 +246,8 @@ function TEpermtest=TEsurrogatestats_ensemble(cfg,data)
 % the ACT and rounding -> if yes, set to 1 manually
 % 2014-04-14 PW: changed surrogate type from trialperm to trialshuffling to
 % beconsistent with the CPU method
+% 2014-05-10 PW: undid the last change, trialshuffling does not permute
+% trials but shift them by one, it makes sense to call them differently
 
 
 %% Remember the working directory
@@ -335,7 +337,7 @@ cfg.u_in_ms = data.TEprepare.u_in_ms;
 % if not defined set defaults
 if ~isfield(cfg, 'alpha'),          cfg.alpha = 0.05;                end;
 if ~isfield(cfg, 'correctm'),       cfg.correctm = 'FDR';            end;
-if ~isfield(cfg, 'surrogatetype'),  cfg.surrogatetype = 'trialshuffling'; end;
+if ~isfield(cfg, 'surrogatetype'),  cfg.surrogatetype = 'trialperm'; end;
 if ~isfield(cfg, 'embedsource'),    cfg.embedsource = 'yes';         end;
 
 if isfield(cfg, 'tail') && cfg.tail ~= 1
@@ -392,10 +394,10 @@ end
 
 % check if the correct permutation method for surrogate generation is
 % chosen
-if ~isfield (cfg,'surrogatetype') || ~strcmp(cfg.surrogatetype,'trialshuffling')
+if ~isfield (cfg,'surrogatetype') || ~strcmp(cfg.surrogatetype,'trialperm')
     fprintf('\n')
     error(['TRENTOOL ERROR:  If ensemble method is used, ' ...
-        '"cfg.surrogatetype" has to be set to "trialshuffling", see help.']);
+        '"cfg.surrogatetype" has to be set to "trialperm", see help.']);
 end
 
 % check optimizemethod
