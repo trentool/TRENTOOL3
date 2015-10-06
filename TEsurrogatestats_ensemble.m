@@ -874,6 +874,8 @@ if ~findDelay
     [significance, correctm, nr2cmc] = TEcmc(pvalues, cfg.correctm, cfg.alpha, nrinstmix);
     TEpermvalues(:,3)       = significance;
     cfg.correctm            = correctm;    % the correction method might change, if only a small no. channels is analyzed, this should be updated
+else
+    nr2cmc = nan;
 end
 
 %% prepare output structure

@@ -56,7 +56,7 @@ cfgTESS.optdimusage = 'indivdim';
 
 % surrogate testing
 cfgTESS.tail           = 1;
-cfgTESS.surrogatetype  = 'trialshuffling';
+cfgTESS.surrogatetype  = 'trialperm';
 cfgTESS.numpermutation = 100;
 
 % GPU specifications
@@ -97,7 +97,7 @@ save([OutputDataPath 'Lorenz_1->2_TGA_results_analyzed_GA.mat'],'TGA_results_GA'
 
 %% plotting
 
-load('exampledata/Lorenz_layout.mat');
+load('exampledata/lorenz_layout.mat');
 
 cfgPLOT = [];
 
