@@ -17,4 +17,4 @@ TRENTOOL is implemented in Mathworks MATLAB (The MathWorks Inc., Natick, MA, 200
 ## Releases
 For a quick start download the latest release v3.4 [here](https://github.com/trentool/TRENTOOL3/releases).
 
-All changes are documented in the [change log]().
+All changes are documented in the [change log](https://github.com/trentool/TRENTOOL3/blob/master/CHANGELOG.md).
