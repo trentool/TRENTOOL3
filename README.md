@@ -13,3 +13,6 @@ TRENTOOL provides the following features:
 
 ## Implementation
 TRENTOOL is implemented in Mathworks MATLAB (The MathWorks Inc., Natick, MA, 2008) with some functions written in NVIDIA CUDA C/C++ code (NVIDIA Corporation, 2013). TRENTOOL also makes use of the MATLAB toolboxes [FieldTrip](http://www.fieldtriptoolbox.org/) and [TSTOOL](http://www.dpi.physik.uni-goettingen.de/tstool/). The user interacts with TRENTOOL through MATLAB scripts (.m-files).
+
+## Releases
+For a quick start download the latest release v3.4 [here](https://github.com/trentool/TRENTOOL3/releases).
