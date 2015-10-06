@@ -496,18 +496,15 @@ trials=data.TEprepare.trials;
 nrtrials=data.TEprepare.nrtrials;
 cfg.permtest.trials=trials;
 cfg.permtest.nrtrials=nrtrials;
-
+ 
 
 %% check nr of permutations
 % -------------------------------------------------------------------------
 msg = 'Checking number of permutations';
 TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 
-findDelay = 0;
-
 if isfield(cfg, 'numpermutation') && strcmp(cfg.numpermutation, 'findDelay');
     cfg.numpermutation = 0;
-    findDelay = 1;
     cfg.shifttest = 0;
 else 
     cfg.numpermutation = TEchecknumperm(cfg, size(cfg.permtest.channelcombi, 1), min(nrtrials(:,2)), min(nrtrials(:,2)));
