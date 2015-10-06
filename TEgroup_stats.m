@@ -221,17 +221,6 @@ if ~isfield(cfg, 'fileidout'),
 end;
 
 
-%% check nr of permutations
-% -------------------------------------------------------------------------
-TEconsoleoutput(cfg.verbosity, 'Checking number of permutations', LOG_INFO_MINOR);
-
-% cfg.permtest.channelcombi = channelcombi;
-% cfg.permtest.channelcombilabel = data.TEprepare.channelcombilabel ;
-
-cfg.numpermutation = TEchecknumperm(cfg, allTEpermtest{1});
-
-
-
 %% Define conditions
 % -------------------------------------------------------------------------
 TEconsoleoutput(cfg.verbosity, 'Defining conditions', LOG_INFO_MINOR);
@@ -260,6 +249,18 @@ TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 u_mean1 = mean(u_values(:,condindex1),2);
 u_mean2 = mean(u_values(:,condindex2),2);
 clear u_values;
+
+
+%% check nr of permutations
+% -------------------------------------------------------------------------
+TEconsoleoutput(cfg.verbosity, 'Checking number of permutations', LOG_INFO_MINOR);
+
+% cfg.permtest.channelcombi = channelcombi;
+% cfg.permtest.channelcombilabel = data.TEprepare.channelcombilabel ;
+
+cfg.numpermutation = TEchecknumperm( ...
+    cfg, nrchannelcombi, length(condindex1), length(condindex2));
+
 
 %% Create TEresultmean (mean over trials per subject)
 % -------------------------------------------------------------------------

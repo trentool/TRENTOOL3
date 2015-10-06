@@ -510,7 +510,7 @@ if isfield(cfg, 'numpermutation') && strcmp(cfg.numpermutation, 'findDelay');
     findDelay = 1;
     cfg.shifttest = 0;
 else 
-    cfg.numpermutation = TEchecknumperm(cfg, data);
+    cfg.numpermutation = TEchecknumperm(cfg, size(cfg.permtest.channelcombi, 1), min(nrtrials(:,2)), min(nrtrials(:,2)));
 end
 
 %% start calculating TE

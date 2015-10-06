@@ -208,9 +208,9 @@ end;
 % -------------------------------------------------------------------------
 TEconsoleoutput(cfg.verbosity, 'Checking number of permutations', LOG_INFO_MINOR);
 
-n_channelcombinations = size(cfg.sgncmb, 1);
+n_channelcombinations = cfg.sgncmb, 
 cfg.numpermutation = TEchecknumperm(...
-    cfg, n_channelcombinations, size(data1.TEmat, 2), size(data2.TEmat, 2));
+    cfg, , size(data1.TEmat, 2), size(data2.TEmat, 2));
 
 
 %% calculate statistics
