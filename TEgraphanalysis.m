@@ -159,7 +159,11 @@ LOG_DEBUG_COARSE = 3;
 LOG_DEBUG_FINE   = 4;
 
 % check if a threshold is provided
-if ~isfield(cfg,'verbosity'), cfg.verbosity = 'info_minor'; end;
+if ~isfield(data.TEprepare.cfg,'verbosity')
+    cfg.verbosity = 'info_minor'; 
+else
+    cfg.verbosity = data.TEprepare.cfg.verbosity;
+end;
 
 msg = '################### CORRECTING FOR POTENTIALLY SPURIOUS EDGES';
 TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MAJOR);

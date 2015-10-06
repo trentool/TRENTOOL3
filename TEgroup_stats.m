@@ -73,9 +73,6 @@ function TEgroup_stats(cfg,filesTEpermtest)
 %                     values used in the statistical test) and
 %                     'TEpermtestgroup_output.mat' (containing the output
 %                     of the statistical test).
-%   cfg.verbosity   = set the verbosity of console output (see 'help
-%                     TEconsoleoutput', default: setting used in group 
-%                     preparation)
 %
 %
 % * OUTPUT PARAMETERS (ouput is saved to the location specified in
