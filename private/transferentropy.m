@@ -656,16 +656,16 @@ else % parallel part
             
             if shifttest == 1
                 if strcmp(cfg.shifttype, 'onesample')
-                    a=squeeze(data4TE{channelpair,1}(trial1_par,timeindices(1)+1:timeindices(2)));
+                    a=squeeze(data4TE{channelpair,1}(trial1,timeindices(1)+1:timeindices(2)));
                     b=squeeze(data4TE{channelpair,2}(trial2,timeindices(1):timeindices(2)-1));
                 elseif strcmp(cfg.shifttype, 'predicttime')
-                    a=squeeze(data4TE{channelpair,1}(trial1_par,timeindices(1)+dimu(channelpair):timeindices(2)));
+                    a=squeeze(data4TE{channelpair,1}(trial1,timeindices(1)+dimu(channelpair):timeindices(2)));
                     b=squeeze(data4TE{channelpair,2}(trial2,timeindices(1):timeindices(2)-dimu(channelpair)));
                 end
                 
             else
                 
-                a=squeeze(data4TE{channelpair,1}(trial1_par,timespan));
+                a=squeeze(data4TE{channelpair,1}(trial1,timespan));
                 b=squeeze(data4TE{channelpair,2}(trial2,timespan));
                 
             end
