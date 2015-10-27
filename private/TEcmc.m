@@ -77,7 +77,7 @@ if strcmp(correctm, 'FDR')
     significancecor = sorteddatacor <= thresh;
     significance = zeros(1,nrdata);
     ind = 1;
-    while significancecor(ind)        
+    while ind <= length(significancecor) && significancecor(ind)        
         significance(ind) = 1;
         ind = ind + 1;
     end
