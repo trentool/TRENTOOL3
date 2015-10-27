@@ -93,16 +93,16 @@ if strcmp(cfg.permstatstype, 'depsamplesT')
 end
 
 %% Computing the basic statistics
-meandatax = mean(datax,2);
-meandatay = mean(datay,2);
+meandatax = nanmean(datax,2);
+meandatay = nanmean(datay,2);
 
 if strcmp(cfg.permstatstype, 'mean')
     TEstatistic = meandatax-meandatay;
 elseif strcmp(cfg.permstatstype, 'indepsamplesT')
     
     % calculate sum of squares
-    SoSx= sum((datax-repmat(meandatax,[1 size(datax,2)])).^2,2);
-    SoSy= sum((datay-repmat(meandatay,[1 size(datay,2)])).^2,2);
+    SoSx= nansum((datax-repmat(meandatax,[1 size(datax,2)])).^2,2);
+    SoSy= nansum((datay-repmat(meandatay,[1 size(datay,2)])).^2,2);
     DiffSoSxy = (SoSx - SoSy);
     % calculate weighted variance (mean of weighted sample-variances)
     S = sqrt( abs( DiffSoSxy ./ (n+m-2) ));
@@ -112,8 +112,8 @@ elseif strcmp(cfg.permstatstype, 'indepsamplesT')
     
 elseif strcmp(cfg.permstatstype, 'depsamplesT')
     Diffd = datax-datay;
-    Dd = mean((datax-datay),2);
-    Sdd = sqrt(var(Diffd,0,2));
+    Dd = nanmean((datax-datay),2);
+    Sdd = sqrt(nanvar(Diffd,0,2));
     TEstatistic = sqrt(n)*Dd./Sdd;
     clear Diffd Dd Sdd
 end
@@ -170,11 +170,11 @@ for pp = 1:cfg.numpermutation
         data4test_x=data_pool(:,kkt);
         kkt2=permu(n+1:m+n);
         data4test_y=data_pool(:,kkt2);
-        meandata4test_x = mean(data4test_x,2);
-        meandata4test_y = mean(data4test_y,2);
+        meandata4test_x = nanmean(data4test_x,2);
+        meandata4test_y = nanmean(data4test_y,2);
         
-        pSoSx= sum((data4test_x-repmat(meandata4test_x,[1 size(data4test_x,2)])).^2,2);
-        pSoSy= sum((data4test_y-repmat(meandata4test_y,[1 size(data4test_y,2)])).^2,2);
+        pSoSx= nansum((data4test_x-repmat(meandata4test_x,[1 size(data4test_x,2)])).^2,2);
+        pSoSy= nansum((data4test_y-repmat(meandata4test_y,[1 size(data4test_y,2)])).^2,2);
         
         Sp = sqrt( abs(pSoSx - pSoSy)./ (n+m-2) );
         Tp = ((meandata4test_x-meandata4test_y)./Sp) .* (sqrt(n*m/(n+m)));
@@ -197,8 +197,8 @@ for pp = 1:cfg.numpermutation
         data4test_y = datay .* mm;%repmat(permvector, [size(datay,1),size(datay,2),size(datay,3)]);
         
         Diff = data4test_x-data4test_y;
-        D = mean((data4test_x-data4test_y),2);
-        Sd = sqrt(var(Diff,0,2));
+        D = nanmean((data4test_x-data4test_y),2);
+        Sd = sqrt(nanvar(Diff,0,2));
         Tp = sqrt(size(D,1))*D./Sd;
         TEpermdist(:,pp) = Tp;
     end
@@ -303,6 +303,7 @@ TEpermvalues(:,3) = significance;
 TEpermtest.TEpermvalues = TEpermvalues;
 TEpermtest.nr2cmc       = nr2cmc;
 TEpermtest.correctm     = correctm;
+TEpermtest.TEpermdist   = TEpermdist;
 
 %% Returning to the working directory
 cd(working_directory)
