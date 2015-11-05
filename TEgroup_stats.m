@@ -43,6 +43,14 @@ function TEgroup_stats(cfg,filesTEpermtest)
 %
 % * INPUT PARAMETERS
 %
+%   filesTEpermtest = cell array of strings containing files names of data 
+%                     sets for group statistics (this assumes the function 
+%                     is called from the folder containing the files); OR
+%                     full paths to data sets (function can be called from
+%                     anywhere). Note that the order of the files has to
+%                     match the order of entries in the design matrix
+%                     (along the 2nd dimension)
+%
 %   cfg.design      = matrix containing a row with subject number and a row
 %                     with independent variable representing the order of
 %                     the data input.
@@ -135,9 +143,10 @@ function TEgroup_stats(cfg,filesTEpermtest)
 % 2013-10-20 PW: TEpermtestgroup.TEpermvalues now returns the mean interaction
 % delay u for channel combinations with significant differences (mean value 
 % from the group with the higher TE value)
+% 2015-11-05 PW: function now handles unordered data correctly (relevant 
+% for dependent samples t-test, assures that corresponding data sets are
+% substracted from each other)
 
-%% Remember the working directory
-working_directory1 = pwd;
 
 %% define logging levels
 LOG_INFO_MAJOR = 1;
@@ -251,10 +260,6 @@ clear u_values;
 %% check nr of permutations
 % -------------------------------------------------------------------------
 TEconsoleoutput(cfg.verbosity, 'Checking number of permutations', LOG_INFO_MINOR);
-
-% cfg.permtest.channelcombi = channelcombi;
-% cfg.permtest.channelcombilabel = data.TEprepare.channelcombilabel ;
-
 cfg.numpermutation = TEchecknumperm( ...
     cfg, nrchannelcombi, length(condindex1), length(condindex2));
 
@@ -262,35 +267,28 @@ cfg.numpermutation = TEchecknumperm( ...
 %% Create TEresultmean (mean over trials per subject)
 % -------------------------------------------------------------------------
 
-% create empty matrices
+% looping over conditions and subjects makes sure we have the same order of
+% subjects within conditions -> this is important for unsorted data
+% entering a dependent samples t-test
+subject = 1;
+sorted_design = [];
 TEresultmean.TEmat = zeros(nrchannelcombi,nrdatasets);
-%TEresultmean.MImat = zeros(nrchannelcombi,nrdatasets);
-
-% TE value per subject and significant channel combi (mean over trials)
-for subject = 1:nrdatasets
-    
-    % find all significant TE values
-    % sign_ind = allTEpermtest{subject}.TEmat(:,CMC_ind);
-    
-    TEresultmean.TEmat(:,subject) = squeeze(mean(allTEpermtest{subject}.TEmat, 2));
-    %TEresultmean.MImat(:,subject) = squeeze(mean(MImat{subject}, 2));
+for c = condtype
+    for u = unittype   
+        ind = cfg.design(cfg.uvar,:) == u & cfg.design(cfg.ivar,:) == c;       
+        TEresultmean.TEmat(:,subject) = squeeze(mean(allTEpermtest{ind}.TEmat, 2));
+        sorted_design(:,subject) = [u;c];   % for debugging
+        subject = subject + 1;        
+    end
 end
 
 
 %% permutation tests
 % -------------------------------------------------------------------------
 
-% split TEresultmean matrices for permutation tests
 TEconsoleoutput(cfg.verbosity, 'Preparing condition matrices', LOG_INFO_MINOR);
-
-TEresult1.TEmat = TEresultmean.TEmat(:,condindex1);
-%TEresult1.MImat = TEresultmean.MImat(:,condindex1);
-
-TEresult2.TEmat = TEresultmean.TEmat(:,condindex2);
-%TEresult2.MImat = TEresultmean.MImat(:,condindex2);
-
-
-% perform permutation test
+TEresult1.TEmat = TEresultmean.TEmat(:,1:nrunits);
+TEresult2.TEmat = TEresultmean.TEmat(:,nrunits+1:end);
 TEpermtestgroup = TEperm(cfg,TEresult1,TEresult2);
 
 % add mean u value from group with bigger TE value
@@ -299,15 +297,13 @@ ind_u_2 = TEpermtestgroup.TEpermvalues(:,2) & TEpermtestgroup.TEpermvalues(:,4)<
 u_vec = sum([u_mean1.*ind_u_1 u_mean2.*ind_u_2],2);
 TEpermtestgroup.TEpermvalues = [TEpermtestgroup.TEpermvalues u_vec];
 
-% add info to output structure
+% add info to output structure (keep TEprepare info relevant for all subjects)
 TEpermtestgroup.dimord         = 'chanpair_value'; 
 TEpermtestgroup.cfg            = cfg;
 TEpermtestgroup.sgncmb         = allTEpermtest{1}.sgncmb;
 TEpermtestgroup.numpermutation = cfg.numpermutation;
 TEpermtestgroup.nrdatasets     = nrdatasets;
-%TEpermtestgroup.TEprepare      = allTEpermtest{1}.TEprepare;
 TEpermtestgroup.TEgroupprepare = allTEpermtest{1}.groupprepare;
-% keep some information from TEprepare (only fields that are relevant to all subjects)
 TEpermtestgroup.TEgroupprepare.ensemblemethod    = allTEpermtest{1}.TEprepare.ensemblemethod;
 TEpermtestgroup.TEgroupprepare.cfg               = allTEpermtest{1}.TEprepare.cfg;
 TEpermtestgroup.TEgroupprepare.channelcombi      = allTEpermtest{1}.TEprepare.channelcombi;
@@ -327,11 +323,8 @@ TEconsoleoutput(cfg.verbosity, 'Saving results', LOG_INFO_MINOR);
 savename1 = strcat(cfg.fileidout,'_time',num2str(toi(1)),'-',num2str(toi(2)),'s_TEpermtestgroup_data.mat');  
 save(savename1, 'TEresultmean','TEresult1','TEresult2','-v7.3');
 % this saves the output of the group statistics
-save(strcat(cfg.fileidout,'_time',num2str(toi(1)),'-',num2str(toi(2)),'s_TEpermtestgroup_output.mat'), 'TEpermtestgroup','-v7.3');
-
-
-%% Returning to the working directory
-cd(working_directory1)
+save(strcat(cfg.fileidout,'_time',num2str(toi(1)),'-',num2str(toi(2)),'s_TEpermtestgroup_output.mat'), ...
+    'TEpermtestgroup','-v7.3');
 
 
 end
