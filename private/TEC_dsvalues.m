@@ -148,34 +148,34 @@ for ii = 1:L           % Join distributions of join marginal and own future stat
         end
     end
 end
-
+pointset_2_mi = pointset_2;
 % Augment conditioning time series '2' by the sample of the source 
 % time series (1) that occurs  at the time of the prediction point in the
 % target time series, i.e. the
 % source equivalent of 'p'. This goes back to an idea of Luca Faes
 % (reference?)
 if  strcmp(extracond, 'Faes_Method')
- % augment the pointset (2) for the past of the target timeseries by the sample
- % of the source (1) at the prediction point (ii+FirstPredictionP)
- % disp('***** using faes method***')
- % do this for all elevant pointsets that contain (2)
- % do it in their after their last dimension i.e. at (end+1)
- %
- % preallocate additional memory
- pointset_2(:,end+1)   = zeros(L,1);
- pointset_21(:,end+1)  = zeros(L,1);
- pointset_p21(:,end+1) = zeros(L,1);
- pointset_p2(:,end+1)  = zeros(L,1);
- 
- % fill the new last rows of the embedding state matrices with source values
- % at the prediction time (ii+FirstPredictionP)
- for ii = 1:L 
- pointset_2(ii,end) = z_data_1(ii+FirstPredictionP); % augment marginal target
- pointset_21(ii,end)= z_data_1(ii+FirstPredictionP); % augment joint of source and target
- pointset_p21(ii,end)= z_data_1(ii+FirstPredictionP); % augment joint of source and target and predictee
- pointset_p2(ii,end)= z_data_1(ii+FirstPredictionP); % augment marginal target plus predictee
- end
- % TODO: fix these changes for MI computation...
+    % augment the pointset (2) for the past of the target timeseries by the sample
+    % of the source (1) at the prediction point (ii+FirstPredictionP)
+    % disp('***** using faes method***')
+    % do this for all elevant pointsets that contain (2)
+    % do it in their after their last dimension i.e. at (end+1)
+    %
+    % preallocate additional memory
+    pointset_2(:,end+1)   = zeros(L,1);
+    pointset_21(:,end+1)  = zeros(L,1);
+    pointset_p21(:,end+1) = zeros(L,1);
+    pointset_p2(:,end+1)  = zeros(L,1);
+    
+    % fill the new last rows of the embedding state matrices with source values
+    % at the prediction time (ii+FirstPredictionP)
+    for ii = 1:L
+        pointset_2(ii,end) = z_data_1(ii+FirstPredictionP); % augment marginal target
+        pointset_21(ii,end)= z_data_1(ii+FirstPredictionP); % augment joint of source and target
+        pointset_p21(ii,end)= z_data_1(ii+FirstPredictionP); % augment joint of source and target and predictee
+        pointset_p2(ii,end)= z_data_1(ii+FirstPredictionP); % augment marginal target plus predictee
+    end
+    % TODO: fix these changes for MI computation...
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -190,25 +190,27 @@ end
 % makes lookups for the points of interest faster
 atria_1 = nn_prepare(pointset_1,'maximum');
 atria_2 = nn_prepare(pointset_2,'maximum');
+atria_2_mi = nn_prepare(pointset_2_mi,'maximum');   % this is without the Faes-correction for MI calculation
 atria_p2 = nn_prepare(pointset_p2,'maximum');
 atria_12 = nn_prepare(pointset_12,'maximum');
 atria_21 = nn_prepare(pointset_21,'maximum');
 atria_p21 = nn_prepare(pointset_p21,'maximum');
 
 % Finding the k_th nearest neighbor
-[index_p21, distance_p21] = nn_search(pointset_p21,atria_p21,WOI,k_th,TheilerT);
-[index_12, distance_12] = nn_search(pointset_12,atria_12,WOI,k_th,TheilerT);
+[index_p21, distance_p21] = nn_search(pointset_p21,atria_p21,WOI,k_th,TheilerT);  % for TE estimation
+[index_12, distance_12] = nn_search(pointset_12,atria_12,WOI,k_th,TheilerT);      % for MI estimation
 clear index_p21 index_12
 
 %% Nearest neighbor search (fixed radius)
 
-
+% TE neighbor counts
 ncount_p21_p2 = range_search(pointset_p2,atria_p2,1:L,distance_p21(1:L,k_th)-eps,TheilerT);
 ncount_p21_21 = range_search(pointset_21,atria_21,1:L,distance_p21(1:L,k_th)-eps,TheilerT);
 ncount_p21_2  = range_search(pointset_2,atria_2,1:L,distance_p21(1:L,k_th)-eps,TheilerT);
 
+% MI neighbor counts
 ncount_12_1  = range_search(pointset_1,atria_1,1:L,distance_12(1:L,k_th)-eps,TheilerT);
-ncount_12_2  = range_search(pointset_2,atria_2,1:L,distance_12(1:L,k_th)-eps,TheilerT);
+ncount_12_2  = range_search(pointset_2_mi,atria_2_mi,1:L,distance_12(1:L,k_th)-eps,TheilerT);
 
 %% Transfer entropy
 te = psi(k_th)+mean(psi(ncount_p21_2+1)-psi(ncount_p21_p2+1)-psi(ncount_p21_21+1));
@@ -216,8 +218,8 @@ te = psi(k_th)+mean(psi(ncount_p21_2+1)-psi(ncount_p21_p2+1)-psi(ncount_p21_21+1
 %% Mutual Information
 mi = psi(k_th)+psi(L)-mean(psi(ncount_12_1+1)+psi(ncount_12_2+1));
 % MW: Quick hack until I have some more time 
-if  strcmp(extracond, 'Faes_Method')
-    mi = NaN;
-end
+% if  strcmp(extracond, 'Faes_Method')
+%     mi = NaN;
+% end
 
 return;
