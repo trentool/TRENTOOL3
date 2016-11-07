@@ -198,39 +198,17 @@ atria_p21 = nn_prepare(pointset_p21,'maximum');
 % Finding the k_th nearest neighbor
 [index_p21, distance_p21] = nn_search(pointset_p21,atria_p21,WOI,k_th,TheilerT);
 [index_12, distance_12] = nn_search(pointset_12,atria_12,WOI,k_th,TheilerT);
+clear index_p21 index_12
 
 %% Nearest neighbor search (fixed radius)
 
-ncount_p21_p2 = zeros(L,1);
-ncount_p21_21 = zeros(L,1);
-ncount_p21_2 = zeros(L,1);
-ncount_12_1 = zeros(L,1);
-ncount_12_2 = zeros(L,1);
 
-% for i=1:L
-%     [count_p21_p2, neighbors_p21_p2] = range_search(pointset_p2,atria_p2,i,distance_p21(i,k_th)-eps,TheilerT);
-%     [count_p21_21, neighbors_p21_21] = range_search(pointset_21,atria_21,i,distance_p21(i,k_th)-eps,TheilerT);
-%     [count_p21_2,  neighbors_p21_2]  = range_search(pointset_2,atria_2,i,distance_p21(i,k_th)-eps,TheilerT);
-%     ncount_p21_p2(i) = count_p21_p2;
-%     ncount_p21_21(i) = count_p21_21;
-%     ncount_p21_2(i)  = count_p21_2;
-% end
-% 
-% 
-% for i=1:L
-%     [count_12_1, neighbors_12_1] = range_search(pointset_1,atria_1,i,distance_12(i,k_th)-eps,TheilerT);
-%     [count_12_2, neighbors_12_2] = range_search(pointset_2,atria_2,i,distance_12(i,k_th)-eps,TheilerT);
-%     ncount_12_1(i) = count_12_1;
-%     ncount_12_2(i) = count_12_2;
-% end
+ncount_p21_p2 = range_search(pointset_p2,atria_p2,1:L,distance_p21(1:L,k_th)-eps,TheilerT);
+ncount_p21_21 = range_search(pointset_21,atria_21,1:L,distance_p21(1:L,k_th)-eps,TheilerT);
+ncount_p21_2  = range_search(pointset_2,atria_2,1:L,distance_p21(1:L,k_th)-eps,TheilerT);
 
-
-[ncount_p21_p2, neighbors_p21_p2] = range_search(pointset_p2,atria_p2,1:L,distance_p21(1:L,k_th)-eps,TheilerT);
-[ncount_p21_21, neighbors_p21_21] = range_search(pointset_21,atria_21,1:L,distance_p21(1:L,k_th)-eps,TheilerT);
-[ncount_p21_2,  neighbors_p21_2]  = range_search(pointset_2,atria_2,1:L,distance_p21(1:L,k_th)-eps,TheilerT);
-
-[ncount_12_1, neighbors_12_1] = range_search(pointset_1,atria_1,1:L,distance_12(1:L,k_th)-eps,TheilerT);
-[ncount_12_2, neighbors_12_2] = range_search(pointset_2,atria_2,1:L,distance_12(1:L,k_th)-eps,TheilerT);
+ncount_12_1  = range_search(pointset_1,atria_1,1:L,distance_12(1:L,k_th)-eps,TheilerT);
+ncount_12_2  = range_search(pointset_2,atria_2,1:L,distance_12(1:L,k_th)-eps,TheilerT);
 
 %% Transfer entropy
 te = psi(k_th)+mean(psi(ncount_p21_2+1)-psi(ncount_p21_p2+1)-psi(ncount_p21_21+1));

@@ -61,6 +61,9 @@ function TEgroup_stats(cfg,filesTEpermtest)
 %                     (in the example: 1)
 %   cfg.ivar        = row in cfg.design which contains the independent
 %                     variable (in the example: 2)
+%   cfg.rawvalues   = use raw TE values for statistic (default=1), if set 
+%		      to 0, distance between raw TE and mean surrogate TE
+%		      value is used (4th column in TEpermtest table)
 %   cfg.alpha       = significance level for statistical shift test,
 %                     permutation test and correction for multiple
 %                     comparison (default = 0.05)
@@ -146,6 +149,8 @@ function TEgroup_stats(cfg,filesTEpermtest)
 % 2015-11-05 PW: function now handles unordered data correctly (relevant 
 % for dependent samples t-test, assures that corresponding data sets are
 % substracted from each other)
+% 2015-11-10 PW: allow user to switch between raw TE values and surrogate-
+% corrected TE values for test
 
 
 %% define logging levels
@@ -199,6 +204,7 @@ cfg.verbosity = TEpermtest.TEprepare.cfg.verbosity;
 if ~isfield(cfg, 'alpha'),          cfg.alpha = 0.05;           end;
 if ~isfield(cfg, 'correctm'),       cfg.correctm = 'FDR';       end;
 if ~isfield(cfg, 'tail'),           cfg.tail = 2;               end;
+if ~isfield(cfg, 'rawvalues'),      cfg.rawvalues = 1;          end;
 
 if ~isfield(cfg, 'verbosity')
     cfg.verbosity = TEpermtest.TEprepare.cfg.verbosity;
@@ -276,6 +282,11 @@ TEresultmean.TEmat = zeros(nrchannelcombi,nrdatasets);
 for c = condtype
     for u = unittype   
         ind = cfg.design(cfg.uvar,:) == u & cfg.design(cfg.ivar,:) == c;       
+	if cfg.rawvalues
+            TEresultmean.TEmat(:,subject) = squeeze(mean(allTEpermtest{ind}.TEmat, 2));
+        else
+            TEresultmean.TEmat(:,subject) = allTEpermtest{ind}.TEpermvalues(:,4);
+	end
         TEresultmean.TEmat(:,subject) = squeeze(mean(allTEpermtest{ind}.TEmat, 2));
         sorted_design(:,subject) = [u;c];   % for debugging
         subject = subject + 1;        
