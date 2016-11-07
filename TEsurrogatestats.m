@@ -631,6 +631,13 @@ if cfg.numpermutation > 0
     msg = 'Starting permutation tests';
     TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR); 
     TEpermtest = TEperm(cfg,TEresult,TEshuffle);
+    if cfg.MIcalc
+        cfg.datatype = 'MI';
+        MIpermtest = TEperm(cfg,TEresult,TEshuffle);
+        TEpermtest.MIpermvalues = MIpermtest.MIpermvalues;
+        TEpermtest.MIpermdist = MIpermtest.MIpermdist;
+        TEpermtest.MImat_sur = TEshuffle.MImat;
+    end
     TEpermtest.TEmat_sur = TEshuffle.TEmat;
     cfg.correctm = TEpermtest.correctm;
     TEpermtest = rmfield(TEpermtest, 'correctm');
