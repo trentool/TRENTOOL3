@@ -54,13 +54,20 @@ function TEgroup_stats(cfg,filesTEpermtest)
 %   cfg.design      = matrix containing a row with subject number and a row
 %                     with independent variable representing the order of
 %                     the data input.
-%                       example:
+%                       example dependent sample t-test:
 %                       datasets:    1 2 3 4 5 1 2 3 4 5
 %                       conditions:  1 1 1 1 1 2 2 2 2 2
+%                       example independent sample t-test:
+%                       datasets:    1 2 3 4 5 6 7 8 9 10
+%                       conditions:  1 1 1 1 1 2 2 2 2  2
 %   cfg.uvar        = row in cfg.design which contains the dataset number
 %                     (in the example: 1)
 %   cfg.ivar        = row in cfg.design which contains the independent
 %                     variable (in the example: 2)
+%   cfg.datatype    = 'TE' or 'MI' to test transfer entropy or mutual
+%                     information values against each other; depending
+%                     on the data type, the function returns a structure
+%                     with a field TE/MIpermvalues (default='TE')
 %   cfg.rawvalues   = use raw TE values for statistic (default=1), if set 
 %		      to 0, distance between raw TE and mean surrogate TE
 %		      value is used (4th column in TEpermtest table)
@@ -90,6 +97,7 @@ function TEgroup_stats(cfg,filesTEpermtest)
 %                      cfg.fileidout)
 %
 %  TEpermtestgroup (saved in file '*TE_output.mat')
+%            .MIpermvalues/
 %            .TEpermvalues  = matrix with size:
 %                             (channelpair,value)
 %                           The last dimension "value" includes:
@@ -125,7 +133,6 @@ function TEgroup_stats(cfg,filesTEpermtest)
 %  Raw data used for statistical testing (saved in file '*TE_output.mat')
 %   TEresult1    = raw TE values for group/condition 1
 %   TEresult2    = raw TE values for group/condition 2
-%   TEresultmean = mean over raw values per group/condition
 %
 %
 % This program is free software; you can redistribute it and/or modify
@@ -204,6 +211,7 @@ cfg.verbosity = TEpermtest.TEprepare.cfg.verbosity;
 if ~isfield(cfg, 'alpha'),          cfg.alpha = 0.05;           end;
 if ~isfield(cfg, 'correctm'),       cfg.correctm = 'FDR';       end;
 if ~isfield(cfg, 'tail'),           cfg.tail = 2;               end;
+if ~isfield(cfg, 'datatype'),       cfg.datatype = 'TE';        end;
 if ~isfield(cfg, 'rawvalues'),      cfg.rawvalues = 1;          end;
 
 if ~isfield(cfg, 'verbosity')
@@ -248,9 +256,19 @@ end
 units    = squeeze(cfg.design(cfg.uvar,:));
 unittype = unique(units);
 nrunits  = length(unittype);
+n_channelcombis = size(allTEpermtest{1}.TEmat, 1);
 
 condindex1 = find(conds == condtype(1));
 condindex2 = find(conds == condtype(2));
+
+% sort units (this is important for the dependent samples test, so
+% observations from the same units are subtracted from each other)
+[b, cond1_ind] = sort(units(condindex1));
+[b, cond2_ind] = sort(units(condindex2));
+clear b;
+
+condindex1 = condindex1(cond1_ind);
+condindex2 = condindex2(cond2_ind);
 
 msg = {'Total no. data sets:' num2str(nrunits);
     'Condition 1, ind data sets: ' num2str(condindex1);
@@ -258,6 +276,7 @@ msg = {'Total no. data sets:' num2str(nrunits);
     };
 TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 
+% get mean u per condition and channel combination
 u_mean1 = mean(u_values(:,condindex1),2);
 u_mean2 = mean(u_values(:,condindex2),2);
 clear u_values;
@@ -270,27 +289,35 @@ cfg.numpermutation = TEchecknumperm( ...
     cfg, nrchannelcombi, length(condindex1), length(condindex2));
 
 
-%% Create TEresultmean (mean over trials per subject)
+%% Create TEresultmean (mean over realizations per unit of observation)
 % -------------------------------------------------------------------------
 
-% looping over conditions and subjects makes sure we have the same order of
-% subjects within conditions -> this is important for unsorted data
-% entering a dependent samples t-test
-subject = 1;
-sorted_design = [];
-TEresultmean.TEmat = zeros(nrchannelcombi,nrdatasets);
-for c = condtype
-    for u = unittype   
-        ind = cfg.design(cfg.uvar,:) == u & cfg.design(cfg.ivar,:) == c;       
-	if cfg.rawvalues
-            TEresultmean.TEmat(:,subject) = squeeze(mean(allTEpermtest{ind}.TEmat, 2));
-        else
-            TEresultmean.TEmat(:,subject) = allTEpermtest{ind}.TEpermvalues(:,4);
-	end
-        TEresultmean.TEmat(:,subject) = squeeze(mean(allTEpermtest{ind}.TEmat, 2));
-        sorted_design(:,subject) = [u;c];   % for debugging
-        subject = subject + 1;        
+TEresult1.TEmat = zeros(n_channelcombis, length(condindex1));
+TEresult2.TEmat = zeros(n_channelcombis, length(condindex2));
+
+% condition 1
+unit = 1;
+for c = condindex1
+    if cfg.rawvalues
+        TEresult1.TEmat(:,unit) = squeeze(mean(allTEpermtest{c}.TEmat, 2));
+        TEresult1.MImat(:,unit) = squeeze(mean(allTEpermtest{c}.MImat, 2));
+    else
+        TEresult1.TEmat(:,unit) = allTEpermtest{c}.TEpermvalues(:,4);
+        TEresult1.MImat(:,unit) = allTEpermtest{c}.MIpermvalues(:,4);
     end
+    unit = unit + 1;
+end
+% condition 2
+unit = 1;
+for c = condindex2
+    if cfg.rawvalues
+        TEresult2.TEmat(:,unit) = squeeze(mean(allTEpermtest{c}.TEmat, 2));
+        TEresult2.MImat(:,unit) = squeeze(mean(allTEpermtest{c}.MImat, 2));
+    else
+        TEresult2.TEmat(:,unit) = allTEpermtest{c}.TEpermvalues(:,4);
+        TEresult2.MImat(:,unit) = allTEpermtest{c}.MIpermvalues(:,4);
+    end
+    unit = unit + 1;
 end
 
 
@@ -298,15 +325,21 @@ end
 % -------------------------------------------------------------------------
 
 TEconsoleoutput(cfg.verbosity, 'Preparing condition matrices', LOG_INFO_MINOR);
-TEresult1.TEmat = TEresultmean.TEmat(:,1:nrunits);
-TEresult2.TEmat = TEresultmean.TEmat(:,nrunits+1:end);
 TEpermtestgroup = TEperm(cfg,TEresult1,TEresult2);
 
 % add mean u value from group with bigger TE value
-ind_u_1 = TEpermtestgroup.TEpermvalues(:,2) & TEpermtestgroup.TEpermvalues(:,4)>0;
-ind_u_2 = TEpermtestgroup.TEpermvalues(:,2) & TEpermtestgroup.TEpermvalues(:,4)<0;
-u_vec = sum([u_mean1.*ind_u_1 u_mean2.*ind_u_2],2);
-TEpermtestgroup.TEpermvalues = [TEpermtestgroup.TEpermvalues u_vec];
+switch cfg.datatype
+    case 'TE'
+        ind_u_1 = TEpermtestgroup.TEpermvalues(:,2) & TEpermtestgroup.TEpermvalues(:,4)>0;
+        ind_u_2 = TEpermtestgroup.TEpermvalues(:,2) & TEpermtestgroup.TEpermvalues(:,4)<0;
+        u_vec = sum([u_mean1.*ind_u_1 u_mean2.*ind_u_2],2);
+        TEpermtestgroup.TEpermvalues = [TEpermtestgroup.TEpermvalues u_vec];
+    case 'MI'
+        ind_u_1 = TEpermtestgroup.MIpermvalues(:,2) & TEpermtestgroup.MIpermvalues(:,4)>0;
+        ind_u_2 = TEpermtestgroup.MIpermvalues(:,2) & TEpermtestgroup.MIpermvalues(:,4)<0;
+        u_vec = sum([u_mean1.*ind_u_1 u_mean2.*ind_u_2],2);
+        TEpermtestgroup.MIpermvalues = [TEpermtestgroup.MIpermvalues u_vec];
+end
 
 % add info to output structure (keep TEprepare info relevant for all subjects)
 TEpermtestgroup.dimord         = 'chanpair_value'; 
@@ -332,7 +365,7 @@ TEconsoleoutput(cfg.verbosity, 'Saving results', LOG_INFO_MINOR);
 
 % this saves data for each group, that enters the group statistics
 savename1 = strcat(cfg.fileidout,'_time',num2str(toi(1)),'-',num2str(toi(2)),'s_TEpermtestgroup_data.mat');  
-save(savename1, 'TEresultmean','TEresult1','TEresult2','-v7.3');
+save(savename1,'TEresult1','TEresult2','-v7.3');
 % this saves the output of the group statistics
 save(strcat(cfg.fileidout,'_time',num2str(toi(1)),'-',num2str(toi(2)),'s_TEpermtestgroup_output.mat'), ...
     'TEpermtestgroup','-v7.3');

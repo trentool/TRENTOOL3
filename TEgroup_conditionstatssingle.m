@@ -68,6 +68,10 @@ function TEgroup_conditionstatssingle(cfg, data1, data2)
 %                     comparison (default = 0.05)
 %   cfg.numpermutation = nr of permutations in permutation test
 %                     (default = 190100)
+%   cfg.datatype    = 'TE' or 'MI' to test transfer entropy or mutual
+%                     information values against each other; depending
+%                     on the data type, the function returns a structure
+%                     with a field TE/MIpermvalues (default='TE')
 %   cfg.permstatstype  = 'mean' to use the distribution of the mean
 %                     differences and 'depsamplesT' or
 %                     'indepsamplesT' for distribution of the
@@ -82,6 +86,7 @@ function TEgroup_conditionstatssingle(cfg, data1, data2)
 % OUTPUT PARAMETERS
 %
 %  TEpermtestcondsingle
+%            .MIpermvalues/
 %            .TEpermvalues  = matrix with size:
 %                             (channelpair x value)
 %                           The last dimension "value" includes:
@@ -151,7 +156,7 @@ end
 % get the max no. trials in any of the data sets that enter the test
 cfg.maxtrials = max([max(data1.TEprepare.nrtrials(:,2)) max(data2.TEprepare.nrtrials(:,2))]);
 
-
+if ~isfield(cfg, 'datatype'),       cfg.datatype = 'TE';        end;
 
 %% compare new cfg and cfg from TEprepare if equal entries exist
 % -------------------------------------------------------------------------
@@ -209,9 +214,17 @@ end;
 % -------------------------------------------------------------------------
 TEconsoleoutput(cfg.verbosity, 'Checking number of permutations', LOG_INFO_MINOR);
 
-n_channelcombinations = size(cfg.sgncmb, 1);
-cfg.numpermutation = TEchecknumperm(...
-    cfg, n_channelcombinations, size(data1.TEmat, 2), size(data2.TEmat, 2));
+switch cfg.datatype
+    case 'TE'
+        n_1 = size(data1.TEmat, 2);
+        n_2 = size(data2.TEmat, 2);
+    case 'MI'
+        n_1 = size(data1.MImat, 2);
+        n_2 = size(data2.MImat, 2);
+end
+
+n_channelcombinations = size(data1.TEprepare.channelcombi, 1);
+cfg.numpermutation = TEchecknumperm(cfg, n_channelcombinations, n_1, n_2);
 
 
 %% calculate statistics
@@ -221,12 +234,22 @@ cfg.numpermutation = TEchecknumperm(...
 TEpermtestcondsingle = TEperm(cfg,data1,data2);
 
 % add mean u value from group with bigger TE value
-ind_u_1 = TEpermtestcondsingle.TEpermvalues(:,2) & TEpermtestcondsingle.TEpermvalues(:,4)>0;
-ind_u_2 = TEpermtestcondsingle.TEpermvalues(:,2) & TEpermtestcondsingle.TEpermvalues(:,4)<0;
-u_vec = sum([...
-    data1.TEpermvalues(:,6) .* ind_u_1 ...
-    data2.TEpermvalues(:,6) .* ind_u_2],2);
-TEpermtestcondsingle.TEpermvalues = [TEpermtestcondsingle.TEpermvalues u_vec];
+switch cfg.datatype
+    case 'TE'
+        ind_u_1 = TEpermtestcondsingle.TEpermvalues(:,2) & TEpermtestcondsingle.TEpermvalues(:,4)>0;
+        ind_u_2 = TEpermtestcondsingle.TEpermvalues(:,2) & TEpermtestcondsingle.TEpermvalues(:,4)<0;
+        u_vec = sum([...
+            data1.TEpermvalues(:,6) .* ind_u_1 ...
+            data2.TEpermvalues(:,6) .* ind_u_2],2);
+        TEpermtestcondsingle.TEpermvalues = [TEpermtestcondsingle.TEpermvalues u_vec];
+    case 'MI'
+        ind_u_1 = TEpermtestcondsingle.MIpermvalues(:,2) & TEpermtestcondsingle.MIpermvalues(:,4)>0;
+        ind_u_2 = TEpermtestcondsingle.MIpermvalues(:,2) & TEpermtestcondsingle.MIpermvalues(:,4)<0;
+        u_vec = sum([...
+            data1.TEpermvalues(:,6) .* ind_u_1 ...
+            data2.TEpermvalues(:,6) .* ind_u_2],2);
+        TEpermtestcondsingle.MIpermvalues = [TEpermtestcondsingle.MIpermvalues u_vec];
+end
 
 % add info to output structure
 TEpermtestcondsingle.dimord         = 'chanpair_value'; 

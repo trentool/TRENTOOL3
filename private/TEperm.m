@@ -16,6 +16,11 @@ function [TEpermtest] = TEperm(cfg,TEresult1,TEresult2)
 %   cfg: The configuration MUST contain:
 %
 %   cfg.alpha          = required significance level
+%   cfg.datatype       = 'TE' or 'MI' to test transfer entropy or mutual
+%                        information values against each other; depending
+%                        on the data type, the function returns a structure
+%                        with fields TE/MIpermdist and TE/MIpermvalues
+%                        (default='TE')
 %   cfg.tail           = 1 tail or 2 tail testing; tail 1 = one-tailed test
 %                          for TEresult1 > TEresult2
 %   cfg.numpermutation = nr of permutations
@@ -27,7 +32,8 @@ function [TEpermtest] = TEperm(cfg,TEresult1,TEresult2)
 % * OUTPUT PARAMETERS
 %
 %  TEpermtest
-%            .TEpermvalues  = matrix with size:
+%            .TEpermvalues/
+%            .MIpermvalues  = matrix with size:
 %                             (channelpair,value)
 %                           The last dimension "value" includes:
 %                           1 - p_values of the statistic within the
@@ -46,6 +52,7 @@ function [TEpermtest] = TEperm(cfg,TEresult1,TEresult2)
 %                        comparisons (returned by TEcmc)
 %            .correctm = method used for correction for multiple
 %                        comparisons (returned by TEcmc)
+%            .TE/MIpermdist = surrogate distribution
 %
 %
 % This program is free software; you can redistribute it and/or modify
@@ -73,13 +80,19 @@ if ~isfield(cfg, 'verbosity'), cfg.verbosity = 'info_minor'; end;
 
 %% set new stream for random numbers
 
+if ~isfield(cfg, 'datatype'),       cfg.datatype = 'TE';        end;
+
 %RandStream.setDefaultStream(RandStream('mt19937ar','seed',sum(100*clock)));
 TEsetRandStream;
 
-
-datax = TEresult1.TEmat;
-datay = TEresult2.TEmat;
-
+switch cfg.datatype
+    case 'TE'
+        datax = TEresult1.TEmat;
+        datay = TEresult2.TEmat;
+    case 'MI'
+        datax = TEresult1.MImat;
+        datay = TEresult2.MImat;
+end
 
 % Some definitions (extracting the number of trials)
 n = size(datax,2);
@@ -300,10 +313,16 @@ nrinstmix =  size(pvalues,1) - length(find(mixmask==0));
 TEpermvalues(:,3) = significance;
 
 %TEpermtest.TEpermdist=TEpermdist;
-TEpermtest.TEpermvalues = TEpermvalues;
 TEpermtest.nr2cmc       = nr2cmc;
 TEpermtest.correctm     = correctm;
-TEpermtest.TEpermdist   = TEpermdist;
+switch cfg.datatype
+    case 'TE'
+        TEpermtest.TEpermdist   = TEpermdist;
+        TEpermtest.TEpermvalues = TEpermvalues;
+    case 'MI'
+        TEpermtest.MIpermdist   = TEpermdist;
+        TEpermtest.MIpermvalues = TEpermvalues;
+end
 
 %% Returning to the working directory
 cd(working_directory)
