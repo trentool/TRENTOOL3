@@ -135,6 +135,7 @@ TEpermtest.TEbyU        = TEmat;
 if groupanalysis
     TEpermtest.groupprepare = groupprepare;
 end
+cfgTEP.groupanalysis = groupanalysis;
 
 %% save results
 
@@ -143,7 +144,10 @@ TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MINOR);
 save(strcat(cfgTESS.fileidout,'_time',num2str(cfgTEP.toi(1)),'-',num2str(cfgTEP.toi(2)),'s_TEpermtest_output.mat'), ...
     'TEpermtest','-v7.3');
 
-%%
+%% print final info (logs & warnings) and report elapsed time
+
+msg = TEgetwarnings(cfgTEP, cfgTESS);
+TEconsoleoutput(cfgTEP.verbosity, msg, LOG_INFO_MAJOR);	% print warnings to screen (this is always displayed, regardless what log-level the user requested)
 
 t=toc(t_total);
 msg = sprintf( ...
