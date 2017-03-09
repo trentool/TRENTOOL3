@@ -280,16 +280,16 @@ subject = 1;
 sorted_design = [];
 TEresultmean.TEmat = zeros(nrchannelcombi,nrdatasets);
 for c = condtype
-    for u = unittype   
-        ind = cfg.design(cfg.uvar,:) == u & cfg.design(cfg.ivar,:) == c;       
-	if cfg.rawvalues
+    for u = unittype
+        ind = cfg.design(cfg.uvar,:) == u & cfg.design(cfg.ivar,:) == c;
+        if cfg.rawvalues
             TEresultmean.TEmat(:,subject) = squeeze(mean(allTEpermtest{ind}.TEmat, 2));
         else
             TEresultmean.TEmat(:,subject) = allTEpermtest{ind}.TEpermvalues(:,4);
-	end
-        TEresultmean.TEmat(:,subject) = squeeze(mean(allTEpermtest{ind}.TEmat, 2));
+        end
+        %TEresultmean.TEmat(:,subject) = squeeze(mean(allTEpermtest{ind}.TEmat, 2));
         sorted_design(:,subject) = [u;c];   % for debugging
-        subject = subject + 1;        
+        subject = subject + 1;
     end
 end
 
