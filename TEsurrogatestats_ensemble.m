@@ -1,7 +1,7 @@
 function TEpermtest=TEsurrogatestats_ensemble(cfg,data)
 
-% TESURROGATESTATS_ENSEMBLE: This function calculates the transfer entropy 
-% values and performs a test of transfer entropy from experimental data 
+% TESURROGATESTATS_ENSEMBLE: This function calculates the transfer entropy
+% values and performs a test of transfer entropy from experimental data
 % sets against surrogate data.
 %
 % !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -28,17 +28,17 @@ function TEpermtest=TEsurrogatestats_ensemble(cfg,data)
 %         EEG- and MEG-data. J. of Neuroscience Methods, 164, 177-190.
 %
 %   - ensemble method
-%       - Gomez-Herrero, Wu, Rutanen, Soriano, Pipa & Vicente (2010). 
-%         Assessing coupling dynamics from an ensemble of time series. 
+%       - Gomez-Herrero, Wu, Rutanen, Soriano, Pipa & Vicente (2010).
+%         Assessing coupling dynamics from an ensemble of time series.
 %         arXiv preprint arXiv:1008.0539.
 %   - Faes method
-%       - Faes, Nollo & Porta (2013). Compensated transfer entropy as a 
-%         tool for reliably estimating information Transfer in 
+%       - Faes, Nollo & Porta (2013). Compensated transfer entropy as a
+%         tool for reliably estimating information Transfer in
 %         physiological time series. Entropy, 15, 198-219.
 %
 %
 % * DEPENDENCIES
-%     - Functions 'range_search_all_multigpu.mexa64' and 
+%     - Functions 'range_search_all_multigpu.mexa64' and
 %	  'fnearneigh_multigpu.mexa64' are used for nearest neighbour and
 %	  range searches (Wollstadt, 2014)
 %     - The following Matlab toolboxes:
@@ -60,10 +60,10 @@ function TEpermtest=TEsurrogatestats_ensemble(cfg,data)
 %                     each trial
 %       .time       = cell (1xnr of trials) containing the time indices for
 %                     each trial
-%       .label      = cell (1xnr of channels), containing the labels of 
+%       .label      = cell (1xnr of channels), containing the labels of
 %                     channels included in the data
 %       .fsample    = value of sampling rate (in Hertz)
-%       .TEprepare  = structure added by TEprepare 
+%       .TEprepare  = structure added by TEprepare
 %
 % AND
 %
@@ -77,63 +77,70 @@ function TEpermtest=TEsurrogatestats_ensemble(cfg,data)
 %
 %   cfg.dim         = Value(s) for embedding dimension. In case of using
 %                     cfg.optdimusage = 'maxdim' this has to be a scalar
-%                     value. In case of cfg.optdimusage = 'indivdim' this 
-%                     has to be a vector of the size (channelcombi x 1). 
-%                     If not specified, the optimal dimension(s) found in 
-%                     TEprepare will be used, which is the recommended 
+%                     value. In case of cfg.optdimusage = 'indivdim' this
+%                     has to be a vector of the size (channelcombi x 1).
+%                     If not specified, the optimal dimension(s) found in
+%                     TEprepare will be used, which is the recommended
 %                     option!
 %   cfg.tau         = embedding delay in units of act (x*act). If not
 %                     specified (recommended option), the tau is used as
 %                     followed:
 %                     Depending optimizemethod in TEprepare:
-%                           'ragwitz' = optimal tau found via ragwitz 
+%                           'ragwitz' = optimal tau found via ragwitz
 %                                       critrion
 %                           'cao'     = cfg.tau given by user in TEprepare
-%                     If not specified, the optimal embedding delay found  
-%                     in TEprepare will be used, which is the recommended 
+%                     If not specified, the optimal embedding delay found
+%                     in TEprepare will be used, which is the recommended
 %                     option!
-%   cfg.alpha       = significance level for statisatical permutation test 
-%                     and correction for multiple comparison 
+%   cfg.alpha       = significance level for statisatical permutation test
+%                     and correction for multiple comparison
 %                     (default = 0.05)
-%   cfg.MIcalc	    = tells TRENTOOL to also calculate mutual information 
+%   cfg.MIcalc	    = tells TRENTOOL to also calculate mutual information
 %		      (MI) for the current data set if set to 1. If set to
-%		      0, MI will not be calculated, this makes the 
-%		      calculation faster and requires less memory 
+%		      0, MI will not be calculated, this makes the
+%		      calculation faster and requires less memory
 %		      (default = 1).
-%   cfg.site        = can be set to 'ffm' if TRENTOOL is executed on the
-%                     cluster in the MEG Lab Frankfurt (default = 'other')
-%
-%  hardware specifications of your GPU device:
-%   cfg.GPUmemsize  = the memory of the GPU in MB (e.g. cfg.GPUmemsize =
-%                     4200), this information is mandatory if cfg.site is
-%                     not set to 'ffm'.
 %   cfg.numthreads  = max. number of threads that can be run in one block
 %                     on the GPU (default = 512)
 %   cfg.maxgriddim  = max. grid dimension of the GPU (default = 65535)
-%   cfg.GPUid       = tells TRENTOOL which GPU device to use if multiple
-%                     devices are installed, set to 1 if only one device is
-%                     installed (default = 1)
+%   cfg.site        = can be either 'ffm', 'ffm_srmc', or 'other'
+%                     (default = 'other'); set to 'ffm' if TRENTOOL is
+%                     executed on the cluster in the MEG Lab Frankfurt using
+%                     multiple GPUs with manual parallelization via
+%                     specification of the GPUid; set to 'ffm_srmc' if TRENTOOL
+%                     is executed on the cluster in the MEG Lab Frankfurt using
+%                     multiple GPUs with the small resource manager (srmc),
+%                     the manager automatically distributes jobs over GPUs,
+%                     managing the available main memory and devices
 %
-%   cfg.surrogatetype = If ensemble method is chosen for TE calculation, 
-%                       'trialperm' is the only possible option for  
-%                       the creation of surrogate data. Parameter will be  
-%                       set to 'trialperm' if no other option is 
-%                       chosen and will throw an error if any different 
+%   additional hardware specifications of GPU device if .site='ffm':
+%      .GPUid        = device to be used for GPU computation
+%   additional hardware specifications of GPU device if .site='ffm' or 'other':
+%      .GPUmemsize   = the memory of the GPU in MB (e.g. cfg.GPUmemsize =
+%                      4200)
+%   if .site='other' no multi-GPU support is provided, all jobs will be
+%   executed on the device with the lowest ID.
+%
+%   cfg.surrogatetype = If ensemble method is chosen for TE calculation,
+%                       'trialperm' is the only possible option for
+%                       the creation of surrogate data. Parameter will be
+%                       set to 'trialperm' if no other option is
+%                       chosen and will throw an error if any different
 %                       option is provided.
-%                       'trialperm' will lead to a permutation of  
-%                       trials times the number of permutations provided 
+%                       'trialperm' will lead to a permutation of
+%                       trials times the number of permutations provided
 %                       for the permutation test, i.e.:
 %
 %                       original trial:    1 2 3 4 5 6
 %                       permtrial1:        2 4 1 3 6 5
 %                       permtrial2:        6 1 5 2 3 4
 %                       permtrial3:        ...
-%  
+%
 %   cfg.extracond   = perform conditioning in tansfer entropy formula on
-%                     additional variables. This option is mandatory for 
-%                     the ensemble method. 
+%                     additional variables. This option is mandatory for
+%                     the ensemble method.
 %                     Values:
-%                     'Faes_Method' - include the future sample of the 
+%                     'Faes_Method' - include the future sample of the
 %                     source at the prediction time into the state vector
 %                     of the past of of the target to condition on it.
 %                     In principle, this removes any volume conduction effect.
@@ -143,19 +150,19 @@ function TEpermtest=TEsurrogatestats_ensemble(cfg,data)
 %                     system, i.e. a global system state.This will be done
 %                     by creating a channel carrying that signal which will
 %                     then be used as an addional entry for the past state
-%                     of the source 
+%                     of the source
 %
-%   cfg.shifttest   = has to be set to 'no' or not defined if ensemble 
-%                     method is chosen for TE calculation as no shift test 
+%   cfg.shifttest   = has to be set to 'no' or not defined if ensemble
+%                     method is chosen for TE calculation as no shift test
 %                     can be computed.
-%                     Accordingly, parameters 'shifttesttype' and 
+%                     Accordingly, parameters 'shifttesttype' and
 %                     'shifttype' will be ignored.
 %
 %   cfg.numpermutation = nr of permutations in permutation test
 %                       (default = 500)
-%   cfg.permstatstype  = no permutation test is conducted when using ensemble 
+%   cfg.permstatstype  = no permutation test is conducted when using ensemble
 %                        method, this parameter will be ignored
-%   cfg.tail        = when using the ensemble method this parameter is 
+%   cfg.tail        = when using the ensemble method this parameter is
 %		      ignored as a one-tailed test is conducted always
 %                     permutation tests) (default in TEsurrogatestats= 1)
 %   cfg.correctm    = correction method used for correction of the multiple
@@ -183,8 +190,8 @@ function TEpermtest=TEsurrogatestats_ensemble(cfg,data)
 %                               (or not)
 %                           4 - difference between empirical TE value and
 %                               median of the surrogate data distribution
-%                           5 - 0, volume conduction (is set to 0 as the 
-%                               Faes Method is mandatory for using the 
+%                           5 - 0, volume conduction (is set to 0 as the
+%                               Faes Method is mandatory for using the
 %                               ensemble method, see Faes, 2013)
 %
 %            .dimord     = dimensions of TEpermvalues
@@ -205,14 +212,14 @@ function TEpermtest=TEsurrogatestats_ensemble(cfg,data)
 %            .TEprepare  = results of the function TEprepare from the
 %                          data
 %
-% AND 
+% AND
 %
 %  TEresult             = Equivalent to the utput structure of the function tranferentropy
 %          .TEmat       = resultvector including transfer entropy(TE)
 %                         values (one per channelpair)
 %          .MImat       = resultvector including mutual information (MI)
 %                         values (one per channelpair)
-%          .dimord      = 'channelpair'; the dimensions of TEmat 
+%          .dimord      = 'channelpair'; the dimensions of TEmat
 %                         and MImat
 %          .cfg         = configuration file used to calculate TE
 %          .trials      = trial numbers selected from raw dataset
@@ -238,7 +245,7 @@ function TEpermtest=TEsurrogatestats_ensemble(cfg,data)
 %
 
 % CHANGELOG
-% 
+%
 % 2014-24-13 PW: I made MI calculation optional (can be switched on/off
 % using cfg.MIcalc
 % 2014-04-14 PW: function now uses TEsetRandStream.m
@@ -355,22 +362,65 @@ end;
 % check if Frankfurt specific options are requested
 if ~isfield(cfg, 'site')
     cfg.site = 'other';
-elseif ~(strcmp(cfg.site, 'ffm') || strcmp(cfg.site, 'other'))    
+elseif ~(strcmp(cfg.site, 'ffm') || strcmp(cfg.site, 'ffm_srmc') || strcmp(cfg.site, 'other'))
     error('\nTRENTOOL ERROR: Unkown site %s.', cfg.site)
 end
 
-% check if the user provided the GPU's memory
-if ~strcmp(cfg.site, 'ffm') && ~isfield(cfg,'GPUmemsize');
+% check if the user provided the GPU memory
+if strcmp(cfg.site, 'ffm') && ~isfield(cfg,'GPUmemsize');
     fprintf('\n')
-    error(['TRENTOOL ERROR: You requested ensemble method with GPU ' ...
-        'calculation. Please provide your GPUs memory in ' ...
+    error(['TRENTOOL ERROR: You requested the ensemble method with GPU ' ...
+        'calculation using site=''ffm''. Please provide your GPUs memory in ' ...
+        '"cfg.GPUmemsize". See help!']);
+end;
+
+% check if the user provided the GPU id
+if strcmp(cfg.site, 'ffm') && ~isfield(cfg,'GPUid');
+    fprintf('\n')
+    error(['TRENTOOL ERROR: You requested the ensemble method with GPU ' ...
+        'calculation using site=''ffm''. Please provide the GPU ID in ' ...
+        '"cfg.GPUid". See help!']);
+end;
+
+% check if the user provided requested the small resource manager and provided the GPU main memory
+if strcmp(cfg.site, 'ffm_srmc') && isfield(cfg,'GPUmemsize');
+    fprintf('\n')
+    error(['TRENTOOL ERROR: You requested the ensemble method with GPU ' ...
+        'calculation using site=''ffm_srmc'' and provided the GPU main memory. The provided ' ...
+        'memory is ignored because it is assigned by the small resource manager ' ...
+        'instead. See help!']);
+end;
+
+% check if the user provided requested the small resource manager and provided the GPU id
+if strcmp(cfg.site, 'ffm_srmc') && isfield(cfg,'GPUid');
+    fprintf('\n')
+    error(['TRENTOOL ERROR: You requested the ensemble method with GPU ' ...
+        'calculation using site=''ffm_srmc'' and provided a GPU ID. The provided ' ...
+        'ID is ignored because the ID is assigned by the small resource manager ' ...
+        'instead. See help!']);
+end;
+
+% check if the user provided requested the small resource manager and provided the GPU main memory
+if strcmp(cfg.site, 'other') && isfield(cfg,'GPUid');
+    fprintf('\n')
+    error(['TRENTOOL ERROR: You requested the ensemble method with GPU ' ...
+        'calculation using site=''other'' and provided a GPU ID. The provided ' ...
+        'ID is ignored, the use of multiple GPUs is not supported with ' ...
+        'site=''other'', remove field. See help!']);
+end;
+
+% check if the user provided the GPU memory
+if strcmp(cfg.site, 'other') && ~isfield(cfg,'GPUmemsize');
+    fprintf('\n')
+    error(['TRENTOOL ERROR: You requested the ensemble method with GPU ' ...
+        'calculation using site=''other''. Please provide your GPUs memory in ' ...
         '"cfg.GPUmemsize". See help!']);
 end;
 
 % check if the user provided the GPU's no. threads and grid dimension
 % this info limits the maximum size of the input array to the knn- and
 % range-search
-if ~isfield(cfg,'numthreads'); cfg.numthreads = 512; end;    
+if ~isfield(cfg,'numthreads'); cfg.numthreads = 512; end;
 if ~isfield(cfg,'maxgriddim'); cfg.maxgriddim = 65535; end;
 
 % check if the user provided faes method or explicitly set 'extracond'
@@ -379,13 +429,13 @@ if ~isfield(cfg,'maxgriddim'); cfg.maxgriddim = 65535; end;
 % faes method is needed as a shift test is not possible when using the
 % ensemble method
 if ~isfield(cfg,'extracond') || ~strcmp(cfg.extracond,'Faes_Method');
-    fprintf('\n')    
+    fprintf('\n')
     error(['TRENTOOL ERROR: You requested ensemble method with GPU ' ...
         'calculation. Please provide "Faes_Method" in "cfg.extracond". ' ...
         'See help!']);
 end;
 if isfield(cfg, 'shifttest') && ~strcmp(cfg.shifttest,'no');
-    fprintf('\n')    
+    fprintf('\n')
     error(['TRENTOOL ERROR: You requested ensemble method with GPU ' ...
         'calculation AND a shifttest. A shifttest is not possible ' ...
         'when using the ensemble method, use the Faes method ' ...
@@ -401,7 +451,7 @@ if ~isfield (cfg,'surrogatetype') || ~strcmp(cfg.surrogatetype,'trialperm')
 end
 
 % check optimizemethod
-if ~isfield(cfg, 'optdimusage'),  
+if ~isfield(cfg, 'optdimusage'),
     fprintf('\n')
     error('TRENTOOL ERROR: cfg.optdimusage is not defined, see help!')
 else
@@ -414,7 +464,7 @@ end;
 
 % check if MI calculation is requested
 if ~isfield(cfg,'MIcalc')
-    % by default, switch MI calculation on 
+    % by default, switch MI calculation on
     TEconsoleoutput(verbosity, 'TRENTOOL will also calculate mutual information (MI)', LOG_INFO_MINOR);
     MIcalc = 1;
     cfg.MIcalc = 1;
@@ -425,18 +475,18 @@ else
         MIcalc = 0;
     end
 end
-    
-% check if local TE calculation is requested (requires a lot of disc space)    
+
+% check if local TE calculation is requested (requires a lot of disc space)
 if ~isfield(cfg,'TELcalc')
     cfg.TELcalc = 0;
-else 
+else
 	if cfg.TELcalc
         fprintf('\n')
 		warning('TRENTOOL: You''re calculating local TE, this may require a lot of disc space when saving files!');
 	end
 end
 
-% check dim 
+% check dim
 if ~isfield(cfg, 'dim')
     if strcmp(cfg.optdimusage, 'indivdim')
         cfg.dim = data.TEprepare.optdimmat;
@@ -447,7 +497,7 @@ else
     if strcmp(cfg.optdimusage, 'indivdim')
         if size(cfg.dim,1) ~= size(data.TEprepare.channelcombi,1) || size(cfg.dim,2) > 1
             fprintf('\n')
-            error('TRENTOOL ERROR: cfg.dim has to have dimensions [channelcombi x 1], see help!')                    
+            error('TRENTOOL ERROR: cfg.dim has to have dimensions [channelcombi x 1], see help!')
         end
     else % cfg.optdimusage= 'maxdim'
         if cfg.dim < data.TEprepare.optdim
@@ -466,18 +516,18 @@ end;
 
 % check tau
 if ~isfield(cfg, 'tau')
-    if strcmp(data.TEprepare.cfg.optimizemethod, 'ragwitz') 
+    if strcmp(data.TEprepare.cfg.optimizemethod, 'ragwitz')
         if strcmp(cfg.optdimusage, 'indivdim')
             cfg.tau = data.TEprepare.opttaumat;
         else
             cfg.tau(1:size(data.TEprepare.channelcombi,1)) = data.TEprepare.opttau;
         end
-    elseif strcmp(data.TEprepare.cfg.optimizemethod, 'cao') 
+    elseif strcmp(data.TEprepare.cfg.optimizemethod, 'cao')
         cfg.tau(1:size(data.TEprepare.channelcombi,1)) = data.TEprepare.cfg.caotau;
     end
-    
+
 else
-    if strcmp(cfg.optdimusage, 'indivdim') && strcmp(data.TEprepare.cfg.optimizemethod, 'ragwitz') 
+    if strcmp(cfg.optdimusage, 'indivdim') && strcmp(data.TEprepare.cfg.optimizemethod, 'ragwitz')
         if size(cfg.tau,1) ~= size(data.TEprepare.channelcombi,1) || size(cfg.tau,2) > 1
             fprintf('\n')
             error('TRENTOOL ERROR: cfg.tau has to have dimensions [channelconmbi x 1], see help!')
@@ -488,7 +538,7 @@ else
             error('TRENTOOL ERROR: cfg.tau must be a scalar, see help!');
         end
     end
-    
+
 end
 
 % select trials
@@ -496,17 +546,17 @@ trials                = data.TEprepare.trials;
 nrtrials              = data.TEprepare.nrtrials;
 cfg.permtest.trials   = trials;
 cfg.permtest.nrtrials = nrtrials;
-    
-    
+
+
 % check TE parameter
-if isempty(cfg.predicttime_u), 
+if isempty(cfg.predicttime_u),
     fprintf('\n')
-    error('TRENTOOL ERROR: specify cfg.predicttime_u, see help!');  
+    error('TRENTOOL ERROR: specify cfg.predicttime_u, see help!');
 end;
 if ~isfield(cfg, 'kth_neighbors'),  cfg.kth_neighbors = 4;  end;
 if ~isfield(cfg, 'TheilerT'),       cfg.TheilerT = 'ACT';   end;
 if strcmp(cfg.TheilerT, 'ACT');
-    cfg.TheilerT = max(squeeze(data.TEprepare.ACT(:,2,:)),[],2);        
+    cfg.TheilerT = max(squeeze(data.TEprepare.ACT(:,2,:)),[],2);
 else
     if ~isscalar(cfg.TheilerT)
         fprintf('\n')
@@ -527,7 +577,7 @@ end
 
 
 
-%% check nr of permutations 
+%% check nr of permutations
 % -------------------------------------------------------------------------
 TEconsoleoutput(verbosity, 'Checking number of permutations', LOG_INFO_MINOR);
 
@@ -614,17 +664,17 @@ if isfield(data, 'datatype')
     else
         minsamples = 150/min(min(nrtrials));
     end
-else    
-    % determine minsamples over trials, as samples are later pooled over 
+else
+    % determine minsamples over trials, as samples are later pooled over
     % trials for neighbor searches
-    minsamples = 150/min(min(nrtrials)); 
+    minsamples = 150/min(min(nrtrials));
 end
 
 msg = sprintf('Min. sample points left after embedding: %d (min. required: %d)', mindatapoints, ceil(minsamples));
 TEconsoleoutput(verbosity, msg, LOG_INFO_MINOR);
 
 % compare samples in analysis window against minimum feasible no. sample points
-if mindatapoints <= minsamples    
+if mindatapoints <= minsamples
     error(['\nTRENTOOL ERROR: not enough data points left after ' ...
         ' embedding (required: %d, available: %d).'], ...
         minsamples, mindatapoints);
@@ -635,14 +685,14 @@ end
 % -------------------------------------------------------------------------
 
 % data is no longer needed at this point
-% this serves memory as embedding all datapoints at once over trials 
+% this serves memory as embedding all datapoints at once over trials
 % is quite memory intensive
 clear data;
 
 
 %% loop over channelcombinations, embed original data and create surrogates
 % -------------------------------------------------------------------------
-timeindices = TEpreparestruct.timeindices; 
+timeindices = TEpreparestruct.timeindices;
 
 
 % prepare output structures
@@ -659,38 +709,38 @@ end
 TEsetRandStream;
 
 for channelpair = 1:size(channelcombi,1)
-	
-    msg = sprintf('Embedding original data for channelpair %d of %d', channelpair, size(channelcombi,1));		
-    TEconsoleoutput(verbosity, msg, LOG_INFO_MINOR);    
-	
-    % prepare data strucuters for embedding		
+
+    msg = sprintf('Embedding original data for channelpair %d of %d', channelpair, size(channelcombi,1));
+    TEconsoleoutput(verbosity, msg, LOG_INFO_MINOR);
+
+    % prepare data strucuters for embedding
 	pointsets_concat_2   = [];
 	pointsets_concat_p2  = [];
-	pointsets_concat_21  = [];	
+	pointsets_concat_21  = [];
 	pointsets_concat_p21 = [];
-	
+
 	% if no MI calculation is requested, these remain empty and are passed to TEcallGPUsearch
 	pointsets_concat_1   = [];
 	pointsets_concat_12  = [];
 
-	
+
 	% embed original data per trial
 	for t4t = 1:nrtrials(channelpair,2)
-		
+
         timespan = timeindices(1):timeindices(2);
-        trial1 = t4t; 
+        trial1 = t4t;
         trial2 = trial1;
 		a=squeeze(data4embedding{channelpair,1}(trial1,timespan));
 		b=squeeze(data4embedding{channelpair,2}(trial2,timespan));
-		
-		
+
+
 		% TEembedding(a,b,cfg.dim(channelpair),round(cfg.tau(channelpair)*ACT(channelpair,trials{channelpair,2}(t4t))),dimu,cfg.extracond);
-		
+
 		currentTau = round(cfg.tau(channelpair)*ACT(channelpair,2,trials{channelpair,2}(t4t)));
 		if currentTau < 1
 			currentTau = 1;		% this may become zero for small ACT values -> overwrite manually
 		end
-	
+
 		% check if source needs to be embedded too
 		if strcmp(cfg.embedsource,'no')
 			pointset = TEembedding_noSourceEmb(a,b,cfg.dim(channelpair),currentTau,dimu(channelpair),cfg.extracond);
@@ -700,24 +750,24 @@ for channelpair = 1:size(channelcombi,1)
 
 		pointsets_concat_2 = cat(1,pointsets_concat_2,pointset.pointset_2);
 		pointsets_concat_p2 = cat(1,pointsets_concat_p2,pointset.pointset_p2);
-		pointsets_concat_21 = cat(1,pointsets_concat_21,pointset.pointset_21);		
+		pointsets_concat_21 = cat(1,pointsets_concat_21,pointset.pointset_21);
 		pointsets_concat_p21 = cat(1,pointsets_concat_p21,pointset.pointset_p21);
-		
+
 		if MIcalc
 		    pointsets_concat_1 = cat(1,pointsets_concat_1,pointset.pointset_1);
 		    pointsets_concat_12 = cat(1,pointsets_concat_12,pointset.pointset_12);
 		end
-		
+
 		clear pointset;
     end
-    
+
     % preallocate memory for surrogate data embedding
     % data is casted to single precision to save memory
     % 'chunksize' is the number of embedded points summed over all trials
-    chunksize  = size(pointsets_concat_2,1);      
+    chunksize  = size(pointsets_concat_2,1);
     pointsets_concat_2   = cat(1,single(pointsets_concat_2),zeros(chunksize*numpermutation,size(pointsets_concat_2,2)));
     pointsets_concat_p2  = cat(1,single(pointsets_concat_p2),zeros(chunksize*numpermutation,size(pointsets_concat_p2,2)));
-    pointsets_concat_21  = cat(1,single(pointsets_concat_21),zeros(chunksize*numpermutation,size(pointsets_concat_21,2)));    
+    pointsets_concat_21  = cat(1,single(pointsets_concat_21),zeros(chunksize*numpermutation,size(pointsets_concat_21,2)));
     pointsets_concat_p21 = cat(1,single(pointsets_concat_p21),zeros(chunksize*numpermutation,size(pointsets_concat_p21,2)));
     if MIcalc
         pointsets_concat_1   = cat(1,single(pointsets_concat_1),zeros(chunksize*numpermutation,size(pointsets_concat_1,2)));
@@ -725,13 +775,13 @@ for channelpair = 1:size(channelcombi,1)
     end
 
 
-    % carry a indices vector to identify individual chunks later   
+    % carry a indices vector to identify individual chunks later
     chunk_ind = zeros(chunksize*(numpermutation+1),1);
     chunk_ind(1:chunksize) = 1;
     cutpoint = chunksize*2;
-    
-	
-	% shuffle orig data and embed shuffled data per trial  
+
+
+	% shuffle orig data and embed shuffled data per trial
     if numpermutation > 0 && ~strcmp(cfg.verbosity, 'none')
         fprintf('\n')
         stack = dbstack;
@@ -743,50 +793,50 @@ for channelpair = 1:size(channelcombi,1)
             ': Generating surrogate data sets ...'];
         ft_progress('init', 'text', msg)
     end
-    
+
     for ii = 1:numpermutation
         if  ~strcmp(cfg.verbosity, 'none')
             ft_progress(ii/numpermutation, [repmat('   ', 1, length(dbstack)-1) '   data set %d of %d'], ii, numpermutation);
         end
-        
+
         % get permutation for trials in second/target channel
         channel2_shuffle = randperm(nrtrials(channelpair,2)); %\\ TODO check randstream
-        
-        % build auxiliary data structures to collect embedded surrogate data over trials       
+
+        % build auxiliary data structures to collect embedded surrogate data over trials
         pointsets_concat_2_aux   = [];
         pointsets_concat_p2_aux  = [];
-        pointsets_concat_21_aux  = [];        
+        pointsets_concat_21_aux  = [];
         pointsets_concat_p21_aux = [];
 	if MIcalc
 	    pointsets_concat_1_aux   = [];
 	    pointsets_concat_12_aux  = [];
 	end
-        
+
         % embed shuffled data per trial
         for t4t = 1:nrtrials(channelpair,2)
-            
+
             % get trials
             trial1 = t4t;
             trial2 = channel2_shuffle(t4t);
             timespan = timeindices(1):timeindices(2);
-            
+
             a=squeeze(data4embedding{channelpair,1}(trial1,timespan));
             b=squeeze(data4embedding{channelpair,2}(trial2,timespan));
-            
+
             % TEembedding(a,b,cfg.dim(channelpair),round(cfg.tau(channelpair)*ACT(channelpair,trials{channelpair,2}(t4t))),dimu,cfg.extracond);
-	    
+
 	    currentTau = round(cfg.tau(channelpair)*ACT(channelpair,2,trials{channelpair,2}(t4t)));
 		if currentTau < 1
 			currentTau = 1;		% this may become zero for small ACT values -> overwrite manually
         end
-	    
+
         % check if source needs to be embedded too
 		if strcmp(cfg.embedsource,'no')
 			pointset = TEembedding_noSourceEmb(a,b,cfg.dim(channelpair),currentTau,dimu(channelpair),cfg.extracond);
 		else
 			pointset = TEembedding(a,b,cfg.dim(channelpair),currentTau,dimu(channelpair),cfg.extracond);
 		end
-                        
+
             % concatenate individually embedded trials in the first dimension
             pointsets_concat_2_aux   = cat(1,pointsets_concat_2_aux,pointset.pointset_2);
             pointsets_concat_p2_aux  = cat(1,pointsets_concat_p2_aux,pointset.pointset_p2);
@@ -794,59 +844,59 @@ for channelpair = 1:size(channelcombi,1)
             pointsets_concat_p21_aux = cat(1,pointsets_concat_p21_aux,pointset.pointset_p21);
 	    if MIcalc
 	        pointsets_concat_1_aux   = cat(1,pointsets_concat_1_aux,pointset.pointset_1);
-            pointsets_concat_12_aux  = cat(1,pointsets_concat_12_aux,pointset.pointset_12);            
+            pointsets_concat_12_aux  = cat(1,pointsets_concat_12_aux,pointset.pointset_12);
 	    end
             clear pointset;
         end
-        
+
         % stack embedded surrogate data in the 1st dimension
         pointsets_concat_2(cutpoint-chunksize+1:cutpoint,:)   = pointsets_concat_2_aux;
         pointsets_concat_p2(cutpoint-chunksize+1:cutpoint,:)  = pointsets_concat_p2_aux;
-        pointsets_concat_21(cutpoint-chunksize+1:cutpoint,:)  = pointsets_concat_21_aux;        
+        pointsets_concat_21(cutpoint-chunksize+1:cutpoint,:)  = pointsets_concat_21_aux;
         pointsets_concat_p21(cutpoint-chunksize+1:cutpoint,:) = pointsets_concat_p21_aux;
 	if MIcalc
             pointsets_concat_1(cutpoint-chunksize+1:cutpoint,:)   = pointsets_concat_1_aux;
             pointsets_concat_12(cutpoint-chunksize+1:cutpoint,:)  = pointsets_concat_12_aux;
 	end
-	
+
         chunk_ind(cutpoint-chunksize+1:cutpoint)=ii+1;
         cutpoint = cutpoint + chunksize;
-        
+
         clear *_aux;
-        
+
     end
-        
-    if numpermutation > 0 && ~strcmp(cfg.verbosity, 'none'); 
+
+    if numpermutation > 0 && ~strcmp(cfg.verbosity, 'none');
         ft_progress('close');
     end;
-    
-    TEconsoleoutput(verbosity, 'Starting GPU neighbour count ...', LOG_INFO_MINOR);    
-    
+
+    TEconsoleoutput(verbosity, 'Starting GPU neighbour count ...', LOG_INFO_MINOR);
+
     % remember indices of individual chunks
-    cfg.chunk_ind = chunk_ind;    
-       
+    cfg.chunk_ind = chunk_ind;
+
 	% get point counts from GPU functions
 
     [ncount] =  TEcallGPUsearch(cfg,channelpair,pointsets_concat_1,pointsets_concat_2, ...
         pointsets_concat_p2, pointsets_concat_21,pointsets_concat_12,pointsets_concat_p21);
 
     clear pointsets*; cfg = rmfield(cfg,'chunk_ind');
-	
+
 	% calculate TE and MI for orig and surrogate data (returns arrays of size nchunks = numpermutation + 1)
 	[te mi tel] = TEcalc(cfg,ncount);
-    clear ncount;    
-	
+    clear ncount;
+
     % get values for original data and add it to output structure
-	TEmat(channelpair)       = te(1); 
+	TEmat(channelpair)       = te(1);
 	MImat(channelpair)       = mi(1);
     TEmat_sur(channelpair,:) = te(2:end);
 	if cfg.TELcalc
 		TELmat{channelpair} = tel;
-    end	
-    
+    end
+
     TEconsoleoutput(verbosity, 'Calculating Transfer Entropy', LOG_INFO_MINOR);
 	[p TE_diff] = TEpvalue(te,numpermutation);
-    
+
 	% do statistical comparison (is TE_orig an extreme value with respect to the TE values of the surrogate data?)
 	% add results to output structure
     % 	1 - p_values of the statistic within the surrogate data
@@ -859,7 +909,7 @@ for channelpair = 1:size(channelcombi,1)
 	TEpermvalues(channelpair,2) = TEpermvalues(channelpair,1) < cfg.alpha;	 % statistical significance at alpha level
     % TEpermvalues(channelpair,3) is set below (significance after cmc)
 	TEpermvalues(channelpair,4) = TE_diff;                                   % difference between empirical TE and median of surrogate distribution
-	TEpermvalues(channelpair,5) = 0;                                         % Faes method is mandatory for ensemble method, takes care of volume conduction    
+	TEpermvalues(channelpair,5) = 0;                                         % Faes method is mandatory for ensemble method, takes care of volume conduction
 end
 
 
@@ -892,8 +942,8 @@ TEpermtest.numpermutation = cfg.numpermutation;
 TEpermtest.TEprepare      = TEpreparestruct;
 TEpermtest.nr2cmc         = nr2cmc;
 TEpermtest.TEmat          = TEmat;
-TEpermtest.MImat          = MImat; 
-TEpermtest.TEmat_sur      = TEmat_sur; 
+TEpermtest.MImat          = MImat;
+TEpermtest.TEmat_sur      = TEmat_sur;
 TEpermtest.TELmat         = TELmat;
 
 % add results to TEresult

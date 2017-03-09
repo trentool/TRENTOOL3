@@ -13,18 +13,19 @@ switch cmd
 
         command = 'srmc max gpumem';
         [status,cmdout] = system(command);
-        if status == 0    
+        if status == 0
             gpu_memsize = str2double(cmdout(strfind(cmdout, ' '):end));
             msg = sprintf('Max. GPU memory is %d MB', gpu_memsize);
             TEconsoleoutput(verbosity, msg, 2);
         else
+            fprintf('\n')
             error('TRENTOOL ERROR: call to srmc returned non-zero exit!')
         end
-        
+
         ret = gpu_memsize;
 
     case 'request'
-        
+
         resources = varargin{1};
 
         %fprintf(1, '---------------------------------------------------\n');
@@ -52,17 +53,18 @@ switch cmd
             TEwaitbar('init',50); fprintf('\b')
             TEwaitbar('init',50); fprintf('\b')
         end
-        
+
         if ~strcmp(unit(1:11), '/dev/nvidia')
+            fprintf('\n')
             error('TRENTOOL error: resource manager returned unkown unit.');
         else
             gpuid = str2double(unit(12:end));
         end
-        
+
         ret = gpuid;
 
     case 'return'
-        
+
         resources = varargin{1};
         unit      = varargin{2};
 
@@ -91,9 +93,9 @@ switch cmd
             TEwaitbar('init',50); fprintf('\b')
             TEwaitbar('init',50); fprintf('\b')
         end
-    
+
     otherwise
-        
+        fprintf('\n')
         error('TRENTOOL ERROR: Unkown command for srmc.')
 end
 

@@ -2,17 +2,17 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 
 % TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,ps_p21)
 %
-% TECALLGPUSEARCH: This function is wrapper for the GPU functions 
-% conducting the k-nearest neighbour and range search on trialwise embedded 
-% data. The function splits up the data according to the capacities (memory 
+% TECALLGPUSEARCH: This function is wrapper for the GPU functions
+% conducting the k-nearest neighbour and range search on trialwise embedded
+% data. The function splits up the data according to the capacities (memory
 % and max no. of inputs, see comments in the code).
-% 
-% NOTES: 
+%
+% NOTES:
 %   - this version of the code calls the multigpu-functions
 %   - this version doesn't require a GPU ID, the ID is set by the srm
-%   - the code is written for MATLAB Version 7.9 (R2009b) and later (~ is 
+%   - the code is written for MATLAB Version 7.9 (R2009b) and later (~ is
 %     used to ignore some function outputs)
-% 
+%
 %
 %
 % * REFERENCE INFORMATION
@@ -27,19 +27,19 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 %       mutual information", Phys. Rev. E 69 (6) 066138, (2004).
 %
 %   - knn algorithm
-%     - Merkwirth, Parlitz & Lauterborn (2000). Fast nearest-neighbor 
-%       searching for nonlinear signal processing. Phys. Rev. E, 
+%     - Merkwirth, Parlitz & Lauterborn (2000). Fast nearest-neighbor
+%       searching for nonlinear signal processing. Phys. Rev. E,
 %       American Physical Society, 62, 2089-2097.
 %
 %   - ensemble method
-%     - Gomez-Herrero, Wu, Rutanen, Soriano, Pipa & Vicente (2010). 
-%       Assessing coupling dynamics from an ensemble of time series. 
+%     - Gomez-Herrero, Wu, Rutanen, Soriano, Pipa & Vicente (2010).
+%       Assessing coupling dynamics from an ensemble of time series.
 %       arXiv preprint arXiv:1008.0539.
 %
 %
 % * DEPENDENCIES
-%     - running srmd (small resource manager) if cfg.site = 'ffm'
-%     - functions 'range_search_all_multigpu.mexa64' and 
+%     - running srmd (small resource manager) if cfg.site = 'ffm_srmc'
+%     - functions 'range_search_all_multigpu.mexa64' and
 %	  - 'fnearneigh_multigpu.mexa64' are used for nearest neighbour and
 %       range searches (Martinez-Zarzuela, 2012)
 %     - this function is called by TEsurrogatestats_ensemble.m, the data
@@ -53,11 +53,11 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 %   cfg             = configuration structure - it MUST contain:
 %       .TheilerT   = number of temporal neighbors excluded to avoid serial
 %                     correlations (Theiler correction) (for default ACT,
-%                     the maximum ACT for current signalcombination over 
+%                     the maximum ACT for current signalcombination over
 %                     all trials is taken)
 %       .k_th       = number of neighbors for fixed mass search (controls
 %                     balance of bias/statistical errors) (default = 4)
-%	    .MIcalc     = 1 if mutual information (MI) should be calculated 
+%	    .MIcalc     = 1 if mutual information (MI) should be calculated
 %                     additionally to TE, 0 if not (faster)
 %       .chunk_ind  = vector with indices encoding the chunk a single
 %                     pointset belongs to
@@ -65,23 +65,38 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 %                     on the GPU
 %       .maxgriddim = maximum dimension of the grid of blocks
 %     (The last three parameters are used to determine the maximum size of
-%     the array that can be passed to the GPU in one call. The memory size 
-%     limits the number of values that can be in one input array. The max. 
-%     number of threads and maximum grid size limits the dimension of the 
+%     the array that can be passed to the GPU in one call. The memory size
+%     limits the number of values that can be in one input array. The max.
+%     number of threads and maximum grid size limits the dimension of the
 %     input array.)
 %   	.verbosity   = set the verbosity of console output (see 'help
 %                      TEconsoleoutput', default: 'info_minor')
-%   	.site        = can be set to 'ffm' if TRENTOOL is executed on the
-%                      cluster in the MEG Lab Frankfurt (default = 'other')
+%   	.site        = can be either 'ffm', 'ffm_srmc', or 'other'
+%                      (default = 'other'); set to 'ffm' if TRENTOOL is
+%                      executed on the cluster in the MEG Lab Frankfurt using
+%                      multiple GPUs with manual parallelization via
+%                      specification of the GPUid; set to 'ffm_srmc' if TRENTOOL
+%                      is executed on the cluster in the MEG Lab Frankfurt using
+%                      multiple GPUs with the small resource manager (srmc),
+%                      the manager automatically distributes jobs over GPUs,
+%                      managing the available main memory and devices
 %
+%   additional hardware specifications of GPU device if .site='ffm':
+%      .GPUid        = device to be used for GPU computation
+%   additional hardware specifications of GPU device if .site='ffm' or 'other':
+%      .GPUmemsize   = the memory of the GPU in MB (e.g. cfg.GPUmemsize =
+%                      4200), this information is mandatory if cfg.site is
+%                      not set to 'ffm'.
+%   if .site='other' no multi-GPU support is provided, all jobs will be
+%   executed on the device with the lowest ID.
 %
 %   channelpair  = current channelcombination (this is needed to read
 %                 the current TheilerT from the vector cfg.TheilerT
 %
 %   pointsets   = concatenation of individually embedded trials, original
-%		  and surrogate data are stacked in the first dimension: 
+%		  and surrogate data are stacked in the first dimension:
 %		  indices for individual chunks (all pointsets for one
-%		  channelcombination are stored in 'chunk_ind' ('1' 
+%		  channelcombination are stored in 'chunk_ind' ('1'
 %		  indicates original data)
 %		  dimension: [nr.trialsXdatapointsXnumpermutations dim]
 %
@@ -90,7 +105,7 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 %	ps_p2	= perdiction point + target time series embedded
 %	ps_21	= joint target and source time series embedded
 %	ps_12	= joint source and target time series embedded
-%	ps_p21	= perdiction point + joint target and source time series 
+%	ps_p21	= perdiction point + joint target and source time series
 %		  embedded
 %
 %
@@ -100,10 +115,10 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 %	    relevant for TE calculation (see function TEcalc.m)
 %	.ncount_p21_p2
 %	.ncount_p21_p2
-%	.ncount_p21_21 
-%	.ncount_p21_2 
-%	.ncount_12_1 
-%	.ncount_12_2 
+%	.ncount_p21_21
+%	.ncount_p21_2
+%	.ncount_12_1
+%	.ncount_12_2
 %	.nchunks       = total nr of chunks used in the neighbour searches
 %			 (equal to numpermutation+1)
 %
@@ -114,7 +129,7 @@ function [ncount] = TEcallGPUsearch(cfg,channelpair,ps_1,ps_2,ps_p2,ps_21,ps_12,
 %
 % This program is distributed in the hope that it will be useful,
 % but WITHOUT ANY WARRANTY;
-% 
+%
 % Version 1.0 by Michael Wibral, Patricia Wollstadt, Mario Martinez-
 % Zarzuela, Thomas Sattler
 % Frankfurt 2015
@@ -141,7 +156,7 @@ LOG_DEBUG_FINE   = 4;
 % -------------------------------------------------------------------------
 
 k_th      = cfg.kth_neighbors;
-TheilerT  = cfg.TheilerT(channelpair); 
+TheilerT  = cfg.TheilerT(channelpair);
 chunk_ind = cfg.chunk_ind;
 MIcalc    = cfg.MIcalc;
 
@@ -157,24 +172,24 @@ end
 
 % data that can go onto the GPU is limited in size by two parameters:
 %	(1) Memory in the GPU RAM (on a Tesla C2075 this is ~5259 MB)
-%	(2) Number of threads in a block and maximum grid dimension (on a 
+%	(2) Number of threads in a block and maximum grid dimension (on a
 %       Tesla C2075 this is 512 threads, 65535 maximum grid dimension)
 %
 % Both parameters limit the maximum number of data, that can go onto the
 % GPU in one call. Input size has to be smaller in memory than (1).
-% Additionally the first dimension of the input array can not exceed the 
+% Additionally the first dimension of the input array can not exceed the
 % number of threads times the grid size.
-% (Note that the GPU RAM has to hold input, output and temporary files 
+% (Note that the GPU RAM has to hold input, output and temporary files
 % generated during the execution of the GPU functions, this is taken into
 % account when determining maximum size of the input.)
 
 switch cfg.site
-    case 'ffm'
+    case 'ffm_srmc'
         gpu_memsize = TEsrmc(pause_time, 'maxmem', cfg.verbosity);
-    case 'other'
+    case {'other', 'ffm'}
         gpu_memsize = cfg.GPUmemsize;
     otherwise
-        error('TRENTOOL ERROR: unkown site (has to be ''ffm'' or ''other'').')
+        error('TRENTOOL ERROR: unkown site (has to be ''ffm'', ''ffm_srmc'', or ''other'').')
 end
 
 max_dim  = cfg.numthreads*cfg.maxgriddim; % max. 1st dimension for data input
@@ -189,7 +204,7 @@ chunksize    = (chunkelem*4)/(1024*1024);       % get size in memory (in MB)
 
 
 % decide how many chunks fit on the card in one run
-max_chunksperrun = min([ ...        
+max_chunksperrun = min([ ...
     floor(max_dim/chunkdim) ...
     floor(gpu_memsize/chunksize) ...
     ]);
@@ -197,8 +212,8 @@ max_chunksperrun = min([ ...
 % calculate the number of runs and chunks per run
 n_chunks = chunk_ind(end);
 if n_chunks > max_chunksperrun
-    nrruns = ceil(n_chunks/max_chunksperrun);	
-    chunksperrun = ceil(n_chunks/nrruns);  
+    nrruns = ceil(n_chunks/max_chunksperrun);
+    chunksperrun = ceil(n_chunks/nrruns);
 else
     nrruns = 1;
     chunksperrun = n_chunks;
@@ -211,12 +226,15 @@ msg = sprintf('Number of runs: %.0f (%0.4f MB per run)', nrruns, mem_run);
 TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 
 switch cfg.site
-    case 'ffm'
+    case 'ffm_srmc'
         gpu_id = TEsrmc(pause_time, 'request', cfg.verbosity, sprintf('gpumem:%d', ceil(mem_run)));
+    case 'ffm'
+        gpu_id = cfg.GPUid - 1;
+	% fprintf('\n\n site is Frankfurt - using GPU %d\n\n', gpu_id);
     case 'other'
         ; % do nothing
     otherwise
-        error('TRENTOOL ERROR: unkown site (has to be ''ffm'' or ''other'').')
+        error('TRENTOOL ERROR: unkown site (has to be ''ffm'', ''ffm_srmc'', or ''other'').')
 end
 
 %% allocate memory for neighbor counts
@@ -241,15 +259,15 @@ for ii=1:nrruns
 
 	msg = sprintf('channelpair %d (u = %d) - run %d of %d',channelpair,cfg.u_in_ms(channelpair),ii,nrruns);
     TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
-	
+
 	%% get data for this run (i.e. call of GPU functions) by concatenating indiv. chunks
-	
+
     if ii==nrruns  % take remaining data if this is the last run
-        
+
         % get number and index of first chunk for this run
         chunk_start = cutpoint-chunksperrun+1;
         ind1 = find(chunk_ind==chunk_start,1);
-        
+
         % get data from concatenated datasets
         pointset_p21 = ps_p21(ind1:end,:);
         pointset_p2  = ps_p2(ind1:end,:);
@@ -259,18 +277,18 @@ for ii=1:nrruns
             pointset_1   = ps_1(ind1:end,:);
             pointset_12  = ps_12(ind1:end,:);
         end
-        
+
         ind2 = size(ps_p21,1);
         nchunks = (chunk_ind(end)-(chunk_start))+1;
-        
+
     else
-        
+
         % get number and indices of first and last chunk for this run
         chunk_start = cutpoint-chunksperrun+1;
         chunk_end   = cutpoint;
         ind1        = find(chunk_ind==chunk_start,1);
         ind2        = find(chunk_ind==chunk_end,1,'last');
-        
+
         pointset_p21 = ps_p21(ind1:ind2,:);
         pointset_p2  = ps_p2(ind1:ind2,:);
         pointset_21  = ps_21(ind1:ind2,:);
@@ -279,57 +297,57 @@ for ii=1:nrruns
             pointset_1   = ps_1(ind1:ind2,:);
             pointset_12  = ps_12(ind1:ind2,:);
         end
-        
+
         cutpoint = cutpoint+chunksperrun;
-        
+
     end
-    
+
 	%% TE
-    
+
 	% k nearest neighbors search (fixed mass)
 	t = tic;
     switch cfg.site
-        case 'ffm'
-            [~, distance_p21] = fnearneigh_multigpu(single(pointset_p21),single(pointset_p21),k_th,TheilerT,nchunks,gpu_id);	
+        case {'ffm', 'ffm_srmc'}
+            [~, distance_p21] = fnearneigh_multigpu(single(pointset_p21),single(pointset_p21),k_th,TheilerT,nchunks,gpu_id);
         case 'other'
-            [~, distance_p21] = fnearneigh_gpu(single(pointset_p21),single(pointset_p21),k_th,TheilerT,nchunks);	
+            [~, distance_p21] = fnearneigh_gpu(single(pointset_p21),single(pointset_p21),k_th,TheilerT,nchunks);
     end
 	clear index_p21;
 	t = toc(t);
-	msg = sprintf('knn search for TE - %.1f minutes',t/60);    
+	msg = sprintf('knn search for TE - %.1f minutes',t/60);
     TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 	clear t;
-    
-	% n nearest neighbor range search (fixed radius)		
+
+	% n nearest neighbor range search (fixed radius)
     t = tic;
 	radius_p21 = single(distance_p21(:,k_th));
 	radius_p21 = radius_p21 - eps('single');
 	clear distance_p21;
-    
+
     switch cfg.site
-        case 'ffm'
+        case {'ffm', 'ffm_srmc'}
             ncount_p21_p2(ind1:ind2) = range_search_all_multigpu(single(pointset_p2),single(pointset_p2),radius_p21,TheilerT,nchunks,gpu_id);
             ncount_p21_21(ind1:ind2) = range_search_all_multigpu(single(pointset_21),single(pointset_21),radius_p21,TheilerT,nchunks,gpu_id);
             ncount_p21_2(ind1:ind2)  = range_search_all_multigpu(single(pointset_2),single(pointset_2),radius_p21,TheilerT,nchunks,gpu_id);
         case 'other'
             ncount_p21_p2(ind1:ind2) = range_search_all_gpu(single(pointset_p2),single(pointset_p2),radius_p21,TheilerT,nchunks);
             ncount_p21_21(ind1:ind2) = range_search_all_gpu(single(pointset_21),single(pointset_21),radius_p21,TheilerT,nchunks);
-            ncount_p21_2(ind1:ind2)  = range_search_all_gpu(single(pointset_2),single(pointset_2),radius_p21,TheilerT,nchunks);    
+            ncount_p21_2(ind1:ind2)  = range_search_all_gpu(single(pointset_2),single(pointset_2),radius_p21,TheilerT,nchunks);
     end
     t = toc(t);
-	
-	msg = sprintf('range search for TE - %.1f minutes',t/60);    
+
+	msg = sprintf('range search for TE - %.1f minutes',t/60);
     TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 	clear t;
-	
-	
+
+
 	%% MI estimation (optional)
 	if MIcalc
-	
+
 		% k nearest neighbors search (fixed mass)
         t = tic;
         switch cfg.site
-            case 'ffm'
+            case {'ffm', 'ffm_srmc'}
                 [~, distance_12]   = fnearneigh_multigpu(single(pointset_12),single(pointset_12),k_th,TheilerT,nchunks,gpu_id);
             case 'other'
                 [~, distance_12]   = fnearneigh_gpu(single(pointset_12),single(pointset_12),k_th,TheilerT,nchunks);
@@ -337,39 +355,39 @@ for ii=1:nrruns
         t = toc(t);
 		msg = sprintf('knn search for MI - %.1f minutes',t/60);
         TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
-		clear t;	
-		
-		% n nearest neighbor range search (fixed radius)	
+		clear t;
+
+		% n nearest neighbor range search (fixed radius)
 		t = tic;
 		radius_12  = single(distance_12(:,k_th));
 		radius_12  = radius_12 - eps('single');
 		clear distance_12 index_12;
-		
+
         switch cfg.site
-            case 'ffm'                
+            case {'ffm', 'ffm_srmc'}
                 ncount_12_1(ind1:ind2) = range_search_all_multigpu(single(pointset_1),single(pointset_1),radius_12,TheilerT,nchunks,gpu_id);
-                ncount_12_2(ind1:ind2) = range_search_all_multigpu(single(pointset_2),single(pointset_2),radius_12,TheilerT,nchunks,gpu_id);	
+                ncount_12_2(ind1:ind2) = range_search_all_multigpu(single(pointset_2),single(pointset_2),radius_12,TheilerT,nchunks,gpu_id);
             case 'other'
                 ncount_12_1(ind1:ind2) = range_search_all_gpu(single(pointset_1),single(pointset_1),radius_12,TheilerT,nchunks);
-                ncount_12_2(ind1:ind2) = range_search_all_gpu(single(pointset_2),single(pointset_2),radius_12,TheilerT,nchunks);	
+                ncount_12_2(ind1:ind2) = range_search_all_gpu(single(pointset_2),single(pointset_2),radius_12,TheilerT,nchunks);
         end
-        t = toc(t); 
-		
+        t = toc(t);
+
 		msg = sprintf('range search for MI - %.1f minutes',t/60);
         TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 		clear t;
-	end	
-	
+	end
+
 end
 
 %fprintf('\nNeighbour count - ok \n');
 
 switch cfg.site
-    case 'ffm'
+    case 'ffm_srmc'
         resource = sprintf('gpumem:%d', ceil(mem_run));
         unit     = sprintf('/dev/nvidia%d', gpu_id);
         TEsrmc(pause_time, 'return', cfg.verbosity, resource, unit);
-    case 'other'
+    case {'other', 'ffm'}
         ;
     otherwise
         error('TRENTOOL ERROR: unkown site (has to be ''ffm'' or ''other'').')

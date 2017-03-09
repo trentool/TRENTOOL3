@@ -7,7 +7,7 @@ ft_defaults;
 %% define data paths
 
 OutputDataPath = '/results/';
-InputDataPath  = 'TRENTOOL3.3.1/exampledata/Lorenz_2_systems/Lorenz_1->2_45ms.mat';
+InputDataPath  = 'TRENTOOL3_exampledata/Lorenz_2_systems/lorenz_1-2_45ms.mat';
 
 load(InputDataPath);
 
@@ -113,7 +113,7 @@ cfgPLOT.hlcolor       = [0 0 0];
 cfgPLOT.hlmarkersize  = 4;
 cfgPLOT.arrowcolorpos = [1 0 0];
 
-figure; 
+figure;
 TEplot2D(cfgPLOT,TGA_results_GA)
 
 
