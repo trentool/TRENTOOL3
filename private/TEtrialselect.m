@@ -27,11 +27,12 @@ function [trials,nrtrials]=TEtrialselect(cfg,datacell,ACT,channelcombi)
 % 2011-12-28: ML changed the internal cells and matrices (datacell, datamat,
 % ACT, trials, nrtrials) to a common structure (channelcombi x ??)
 
-% note: channelcombi either refers to 
+% note: channelcombi either refers to
 % a ROW vector of all used channels
 % when called from Ragwitz or Cao criteria calculation
 % a nx2 matrix of channel index combinations
 % when called from TEprepare outside of ragwitz or Cao
+% (the cao method for embedding optimisation is deprecated)
 
 
 
@@ -51,8 +52,8 @@ if strcmp(cfg.trialselect, 'ACT')
     % select trials by ACT criteria
     actthreshold = [0 cfg.actthrvalue];
     badchancmb=zeros(size(channelcombi, 1),1);
-    
-   
+
+
     for ii = 1:size(channelcombi, 1) % here channelcombi is a nx2 matrix of channel indices from all combinations
         for pp = 1:2
             % select trials from target channel reaching ACT criteria
@@ -64,7 +65,7 @@ if strcmp(cfg.trialselect, 'ACT')
         trials{ii, pp}=trialselect;
         end
     end
-        
+
     % error message if bad channel exist
     if sum(badchancmb) > 0
          fprintf(['\nbad channel combinations: ',num2str(sum(badchancmb)),'\n']);
@@ -76,18 +77,18 @@ if strcmp(cfg.trialselect, 'ACT')
         fprintf('\n')
         error('TRENTOOL ERROR: less than mininmum nr of trials reached ACT threshold criteria - to solve the problem change the ACT threshold (cfg.actthrvalue) or remove the bad channel combinations');
     end
-    
+
 elseif strcmp(cfg.trialselect, 'range')
     % select trials from range
-   
+
     for ii = 1:size(channelcombi, 1)
         for pp = 1:2
             trials{ii,pp} = cfg.trial_from:cfg.trial_to;
             nrtrials(ii,pp) = cfg.trial_to+1-cfg.trial_from;
         end
     end
-    
-   
+
+
 elseif strcmp(cfg.trialselect, 'no')
     % use all trials
     for ii = 1:size(channelcombi, 1)
@@ -96,7 +97,7 @@ elseif strcmp(cfg.trialselect, 'no')
             nrtrials(ii,pp) = size(datacell{ii,pp},1);
         end
     end
-   
+
 end;
 
 

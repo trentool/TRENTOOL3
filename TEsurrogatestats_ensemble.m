@@ -83,15 +83,9 @@ function TEpermtest=TEsurrogatestats_ensemble(cfg,data)
 %                     TEprepare will be used, which is the recommended
 %                     option!
 %   cfg.tau         = embedding delay in units of act (x*act). If not
-%                     specified (recommended option), the tau is used as
-%                     followed:
-%                     Depending optimizemethod in TEprepare:
-%                           'ragwitz' = optimal tau found via ragwitz
-%                                       critrion
-%                           'cao'     = cfg.tau given by user in TEprepare
-%                     If not specified, the optimal embedding delay found
-%                     in TEprepare will be used, which is the recommended
-%                     option!
+%                     specified, tau is optimized together with the optimal
+%                     embedding dimension using the Ragwitz critrion, which is
+%                     the recommended option!
 %   cfg.alpha       = significance level for statisatical permutation test
 %                     and correction for multiple comparison
 %                     (default = 0.05)

@@ -54,10 +54,10 @@ function TEpermtest=TEsurrogatestats(cfg,data)
 %                     each trial
 %       .time       = cell (1xnr of trials) containing the time indices for
 %                     each trial
-%       .label      = cell (1xnr of channels), containing the labels of 
+%       .label      = cell (1xnr of channels), containing the labels of
 %                     channels included in the data
 %       .fsample    = value of sampling rate (in Hertz)
-%       .TEprepare  = structure added by TEprepare 
+%       .TEprepare  = structure added by TEprepare
 %
 % AND
 %
@@ -71,26 +71,20 @@ function TEpermtest=TEsurrogatestats(cfg,data)
 %
 %   cfg.dim         = Value(s) for embedding dimension. In case of using
 %                     cfg.optdimusage = 'maxdim' this has to be a scalar
-%                     value. In case of cfg.optdimusage = 'indivdim' this 
-%                     has to be a vector of the size (channelcombi x 1). 
-%                     If not specified, the optimal dimension(s) found in 
-%                     TEprepare will be used, which is the recommended 
+%                     value. In case of cfg.optdimusage = 'indivdim' this
+%                     has to be a vector of the size (channelcombi x 1).
+%                     If not specified, the optimal dimension(s) found in
+%                     TEprepare will be used, which is the recommended
 %                     option!
 %   cfg.tau         = embedding delay in units of act (x*act). If not
-%                     specified (recommended option), the tau is used as
-%                     followed:
-%                     Depending optimizemethod in TEprepare:
-%                           'ragwitz' = optimal tau found via ragwitz 
-%                                       critrion
-%                           'cao'     = cfg.tau given by user in TEprepare
-%                     If not specified, the optimal embedding delay found  
-%                     in TEprepare will be used, which is the recommended 
-%                     option!
-%   cfg.predicttime_u = prediction time in ms (scalar or vector [no. 
-%                       channel combinations X 1]), the (assumed) delay 
-%                       between source process X and target Y. 
-%   cfg.alpha       = significance level for statisatical permutation test 
-%                     and correction for multiple comparison 
+%                     specified, tau is optimized together with the optimal
+%                     embedding dimension using the Ragwitz critrion, which is
+%                     the recommended option!
+%   cfg.predicttime_u = prediction time in ms (scalar or vector [no.
+%                       channel combinations X 1]), the (assumed) delay
+%                       between source process X and target Y.
+%   cfg.alpha       = significance level for statisatical permutation test
+%                     and correction for multiple comparison
 %                     (default = 0.05)
 %   cfg.surrogatetype = 'trialshuffling','trialreverse','blockresampling',
 %                     'blockreverse1','blockreverse2', or 'blockreverse3'
@@ -118,10 +112,10 @@ function TEpermtest=TEsurrogatestats(cfg,data)
 %                       blockreverse2:      6 5 4 1 2 3
 %                       blockreverse3:      4 5 6 3 2 1
 %                       swapneighbors:      2 1 4 3 6 5
-%  
+%
 %   cfg.extracond   = perform conditioning in te tansfer entropy formula on
 %                     additional variables. Values:
-%                     'Faes_Method' - include the future sample of the 
+%                     'Faes_Method' - include the future sample of the
 %                     source at the prediction time into the state vector
 %                     of the past of of the target to condition on it.
 %                     In principle, this removes any volume conduction effect.
@@ -134,7 +128,7 @@ function TEpermtest=TEsurrogatestats(cfg,data)
 %                     system, i.e. a global system state.This will be done
 %                     by creating a channel carrying that signal which will
 %                     then be used as an addional entry for the past state
-%                     of the source 
+%                     of the source
 %
 %   cfg.shifttest   = perform shift test to identify instantaneous mixing
 %                     between the signal pairs. Values: 'yes' or 'no'
@@ -149,19 +143,19 @@ function TEpermtest=TEsurrogatestats(cfg,data)
 %                     NaN and the corresponding p-values of the permutation
 %                     test to 1.
 %                     Note: If cfg.extracond = 'Faes_Method' is requested,
-%                     cfg.shifttest has to be set to 'no' as both methods 
+%                     cfg.shifttest has to be set to 'no' as both methods
 %                     are mutually exclusive.
 %   cfg.shifttesttype = The shift test can be calculated for the direction
 %                     TE value of original data > TE values of shifted data
 %                     (value = 'TE>TEshift') or for the other direction
 %                     (value = 'TEshift>TE'). In this case the alpha is
 %                     set to 0.1 . (default = 'TE>TEshift')
-%   cfg.shifttype     = Shifting the data 'onesample' or the length of the 
+%   cfg.shifttype     = Shifting the data 'onesample' or the length of the
 %                     'predicttime' (default = 'predicttime')
 %   cfg.numpermutation = nr of permutations in permutation test
 %                     (default = 190100)
 %   cfg.permstatstype  = 'mean' to use the distribution of the mean
-%                     differences, 'normmean' to use the distribution of 
+%                     differences, 'normmean' to use the distribution of
 %                     the normalized mean differences and 'depsamplesT' or
 %                     'indepsamplesT' for distribution of the
 %                     t-values. (default = 'indepsamplesT')
@@ -188,8 +182,8 @@ function TEpermtest=TEsurrogatestats(cfg,data)
 %                           3 - 1 (0), if the statistics is significant
 %                               after correction for multiple comparisons
 %                               (or not)
-%                           4 - 1 (0), mean difference, normalized mean 
-%                               difference or tvalue of mean difference 
+%                           4 - 1 (0), mean difference, normalized mean
+%                               difference or tvalue of mean difference
 %                               depending on cfg.permstatstype
 %                           5 - 1 (0), if instantaneous mixing (volume
 %                               conduction) exists (or not)
@@ -206,14 +200,14 @@ function TEpermtest=TEsurrogatestats(cfg,data)
 %            .TEprepare     = results of the function TEprepare from the
 %                             data
 %
-% AND 
+% AND
 %
 %  TEresult             = Output structure of the function tranferentropy
 %          .TEmat       = resultmatrix including transfer entropy(TE)
 %                         values (channelpairs x u x trial)
 %          .MImat       = resultmatrix including mutual information (MI)
 %                         values (channelpairs x u x trial)
-%          .dimord      = 'channelpair_u_trial'; the dimensions of TEmat 
+%          .dimord      = 'channelpair_u_trial'; the dimensions of TEmat
 %                         and MImat
 %          .cfg         = configuration file used to calculate TE
 %          .trials      = trial numbers selected from raw dataset
@@ -221,7 +215,7 @@ function TEpermtest=TEsurrogatestats(cfg,data)
 %          .sgncmb      = labels of channel combinations (source -> target)
 %          .TEprepare   = results of the function TEprepare from the
 %                         data
-%   if instantaneous mixing is found in the data, then another field will 
+%   if instantaneous mixing is found in the data, then another field will
 %   be added:
 %          .instantaneousmixing = matrix (channel x u) which indicates were
 %          the instantaneous mixings were found (1) or not (0).%
@@ -351,11 +345,11 @@ if strcmp(cfg.shifttest , 'yes') == 0 && strcmp(cfg.shifttest , 'no') == 0
 end
 % check whether, Faes method and shift test are requested, this is not
 % allowed
-if strcmp(cfg.shifttest , 'yes')  && strcmp(cfg.extracond , 'Faes_Method') 
+if strcmp(cfg.shifttest , 'yes')  && strcmp(cfg.extracond , 'Faes_Method')
     fprintf('\n')
     error('TRENTOOL ERROR: you requested Faes method AND the conduction of a shift test. Set "cfg.shifttest = no" as Both methods are mutually exclusive, see help!');
 end
-if strcmp(cfg.shifttest , 'yes') 
+if strcmp(cfg.shifttest , 'yes')
     if ~isfield(cfg, 'shifttype'),    cfg.shifttype = 'predicttime'; end;
     if ~isfield(cfg, 'shifttesttype'),  cfg.shifttesttype = 'TE>TEshift'; end;
     if strcmp(cfg.shifttesttype , 'TE>TEshift') == 0 && strcmp(cfg.shifttesttype , 'TEshift>TE') == 0
@@ -363,24 +357,24 @@ if strcmp(cfg.shifttest , 'yes')
         error('TRENTOOL ERROR: wrong cfg.shifttesttype - use ''TE>TEshift'' or ''TEshift>TE'', see help!');
     end
 end
-    
+
 if ~isfield(cfg, 'fileidout'),
     fprintf('\n')
     error('TRENTOOL ERROR: cfg.fileidout must be defined, see help!');
 end;
 
 % check optimizemethod
-if ~isfield(cfg, 'optdimusage'),  
+if ~isfield(cfg, 'optdimusage'),
     fprintf('\n')
     error('TRENTOOL ERROR: cfg.optdimusage is not defined, see help!')
 else
-    if strcmp(cfg.optdimusage, 'maxdim') == 0 && strcmp(cfg.optdimusage, 'indivdim') == 0 
+    if strcmp(cfg.optdimusage, 'maxdim') == 0 && strcmp(cfg.optdimusage, 'indivdim') == 0
         fprintf('\n')
         error(['TRENTOOL ERROR: ',cfg.optdimusage,' is a wrong input for cfg.optdimusage , see help!'])
     end
 end;
 
-% check dim 
+% check dim
 if ~isfield(cfg, 'dim')
     if strcmp(cfg.optdimusage, 'indivdim')
         cfg.dim = data.TEprepare.optdimmat;
@@ -420,18 +414,18 @@ end;
 
 % check tau
 if ~isfield(cfg, 'tau')
-    if strcmp(data.TEprepare.cfg.optimizemethod, 'ragwitz') 
+    if strcmp(data.TEprepare.cfg.optimizemethod, 'ragwitz')
         if strcmp(cfg.optdimusage, 'indivdim')
             cfg.tau = data.TEprepare.opttaumat;
         else
             cfg.tau(1:size(data.TEprepare.channelcombi,1)) = data.TEprepare.opttau;
         end
-    elseif strcmp(data.TEprepare.cfg.optimizemethod, 'cao') 
+    elseif strcmp(data.TEprepare.cfg.optimizemethod, 'cao')
         cfg.tau(1:size(data.TEprepare.channelcombi,1)) = data.TEprepare.cfg.caotau;
     end
-    
+
 else
-    if strcmp(cfg.optdimusage, 'indivdim') && strcmp(data.TEprepare.cfg.optimizemethod, 'ragwitz') 
+    if strcmp(cfg.optdimusage, 'indivdim') && strcmp(data.TEprepare.cfg.optimizemethod, 'ragwitz')
         if size(cfg.tau,1) ~= size(data.TEprepare.channelcombi,1)
             fprintf('\n')
             error('TRENTOOL ERROR: cfg.tau has to be in that size: (channelconmbi x 1), see help!')
@@ -445,17 +439,17 @@ else
             error('TRENTOOL ERROR: cfg.tau must include a scalar, see help!');
         end
     end
-    
+
 end
-    
-    
+
+
 % check TE parameter
 if isempty(cfg.predicttime_u)
-    error('TRENTOOL ERROR: specify cfg.predicttime_u, see help!');  
+    error('TRENTOOL ERROR: specify cfg.predicttime_u, see help!');
 elseif length(cfg.predicttime_u) == 1
     cfg.predicttime_u = repmat(cfg.predicttime_u, size(data.TEprepare.channelcombi,1), 1);
 elseif length(cfg.predicttime_u) ~= size(data.TEprepare.channelcombi,1)
-    error('TRENTOOL ERROR: cfg.predicttime_u should either be a scalar or a vector of size [n channel combinations X 1], see help!'); 
+    error('TRENTOOL ERROR: cfg.predicttime_u should either be a scalar or a vector of size [n channel combinations X 1], see help!');
 end;
 
 if ~isfield(cfg, 'kth_neighbors'),  cfg.kth_neighbors = 4;  end;
@@ -496,7 +490,7 @@ trials=data.TEprepare.trials;
 nrtrials=data.TEprepare.nrtrials;
 cfg.permtest.trials=trials;
 cfg.permtest.nrtrials=nrtrials;
- 
+
 
 %% check nr of permutations
 % -------------------------------------------------------------------------
@@ -506,7 +500,7 @@ TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 if isfield(cfg, 'numpermutation') && strcmp(cfg.numpermutation, 'findDelay');
     cfg.numpermutation = 0;
     cfg.shifttest = 0;
-else 
+else
     cfg.numpermutation = TEchecknumperm(cfg, size(cfg.permtest.channelcombi, 1), min(nrtrials(:,2)), min(nrtrials(:,2)));
 end
 
@@ -536,14 +530,14 @@ cfg.calctime = 'no';
 if strcmp(cfg.shifttest, 'yes')
     msg = 'Calculating transfer entropy for shifted data';
     TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
-    
+
     cfg.shuffle = 'no';
     [TEshift] = transferentropy(cfg,data,'shifttest');
 
 %     %$ML
 %     save(strcat(cfg.fileidout,'_TEshift'), 'TEshift','-v7.3');
 
-    
+
     % permutation test for shift test
     msg = 'Start permutation tests for shift test';
     TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
@@ -564,16 +558,16 @@ if strcmp(cfg.shifttest, 'yes')
     end
     cfg.permstatstype = permstatstype;
     cfg.tail=tailtype;
-    
-    
-    
+
+
+
 %     %$ML
 %     save(strcat(cfg.fileidout,'_TEpermshift'), 'TEpermshift','-v7.3');
 
-    
-    % analyze shift test       
+
+    % analyze shift test
     TEconsoleoutput(cfg.verbosity, 'Analyzing shift test', LOG_INFO_MINOR);
-    
+
     % MW: check if there are NaNs in TEresult from errors in
     % transferentropy
     NaNidx=find(isnan(TEresult.TEmat));
@@ -582,8 +576,8 @@ if strcmp(cfg.shifttest, 'yes')
         warning('TRENTOOL WARNING: Found NaN in TEresult.TEmat! Aborting')
         return
     end
-    
-    
+
+
     if strcmp(cfg.shifttesttype, 'TE>TEshift')
         indexinstmix = find(TEpermshift.TEpermvalues(:,2)==0);
         if size(indexinstmix,1) == 0
@@ -613,7 +607,7 @@ if strcmp(cfg.shifttest, 'yes')
             TEresult.instantaneousmixing = TEpermshift.TEpermvalues(:,2);
         end
     end
-    
+
     clear TEpermshift
 end
 
@@ -622,14 +616,14 @@ end
 % TEshuffle is created inside transferentropy.m as a reduced version of
 % TEresult without certain fields. TEshuffle is never written to disk/file
 % to avoid later confusion. Please save TEshuffle yourself if necessary.
-if cfg.numpermutation > 0    
+if cfg.numpermutation > 0
     msg = 'Calculating transfer entropy for shuffled data';
-    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);    
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
     cfg.shuffle = 'yes';
     [TEshuffle] = transferentropy(cfg,data);
     cfg = rmfield(cfg, 'shuffle');
     msg = 'Starting permutation tests';
-    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR); 
+    TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
     TEpermtest = TEperm(cfg,TEresult,TEshuffle);
     TEpermtest.TEmat_sur = TEshuffle.TEmat;
     cfg.correctm = TEpermtest.correctm;

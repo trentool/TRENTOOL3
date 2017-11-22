@@ -52,7 +52,7 @@ function DataOut = TEprepare(varargin)
 %  cfg.channel     = list of channels - testing will be done all-by-all
 %
 %  and
-%		    
+%
 %  cfg.toi         = the time range of interest (vector 1 x 2) in seconds
 %                    e.g. (time_from, time_to) (units: seconds)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -78,7 +78,7 @@ function DataOut = TEprepare(varargin)
 %                     (default='VW_ds')
 %                     THE FOLLOWING ESTIMATORS ARE NO LONGER SUPPORTED:
 %                     'V' : self-prediction of the target signal and cross-
-%                     prediction are both made from states in source and 
+%                     prediction are both made from states in source and
 %                     target that precede the target state to be predicted
 %                     by cfg.predicttime_u.
 %                     'VW' : the self-prediction time for the target is tau
@@ -87,7 +87,7 @@ function DataOut = TEprepare(varargin)
 %                     cfg.predicttime_u.
 %                     (to solve the problem of decreasing self-prediction
 %                     accuracy for large prediction times)
-%                     
+%
 %  cfg.predicttime_u = time ahead for the advance prediction (scalar, in
 %                      ms) -- this is the effective delay of the acition
 %                      from source to target that is assumed
@@ -97,14 +97,14 @@ function DataOut = TEprepare(varargin)
 %
 %  if you choose 'ensemblemethod = 'yes'':
 %       The size of the GPU memory has to be provided to
-%       TEsurrogatestats_ensemble.m. Note, that using the Faes-Method 
-%       is mandatory when using the GPU. Also no shifttest can be computed 
-%       and the surrogatetype has to be set to 'trialperm' (see also 
+%       TEsurrogatestats_ensemble.m. Note, that using the Faes-Method
+%       is mandatory when using the GPU. Also no shifttest can be computed
+%       and the surrogatetype has to be set to 'trialperm' (see also
 %       help TEsurrogatestats_ensemble).
 %
 %
-%  cfg.optimizemethod = Method to optimize parameters: 'ragwitz' or 'cao'
-%                       
+%  cfg.optimizemethod = Method to optimize parameters: 'ragwitz' (note that the
+%        'cao' method is deprecated)
 %
 %  if you choose 'ragwitz':
 %       cfg.ragdim  = range of embedding dimensions to scan vector
@@ -120,28 +120,12 @@ function DataOut = TEprepare(varargin)
 %                     prediction is performed (it has to be smaller than
 %                     length(timeSeries)-(dimEmb-1)*tauEmb-u)
 %
-%  if you choose 'cao' (recommended for fMRI Data, deprecated for MEEG data):
-%       cfg.caodim      = range of embedding dimension to scan with
-%                       stepwidth 1 (vector 1 x numdim)
-%                       (default = [1,2,3,4,5,6,7,8,9,10])
-%       cfg.caokth_neighbors = number of neighbors for fixed mass search
-%                    for cao (controls balance of bias/statistical errors)
-%                    (default = 4)
-%       cfg.caotau      = embedding delay in units of ACT (x*ACT)
-%                       (default = 1.5)
-%
-%   cfg.kth_neighbors = number of neighbors for fixed mass search (controls
-%                     balance of bias/statistical errors) (default = 4)
-%   cfg.TheilerT    = number of temporal neighbors excluded to avoid serial
-%                     correlations (Theiler correction) (default = ACT)
-%
-%
 %  cfg.trialselect = ACT threshholding of trials - 'ACT' ,'range' or 'no'
 %                    (default = 'ACT'; for fMRI default = 'no')
 %      if you chose 'ACT' (or nothing):
 %      cfg.actthrvalue = max threshold for ACT; min threshold
 %      cfg.minnrtrials = minimum no. trials required for TE estimation after
-%                        exclusion of trials due to an ACT higher than 
+%                        exclusion of trials due to an ACT higher than
 %                        actthrvalue
 %      if you chose 'range':
 %      cfg.trial_from  = Inferior limit for the trials to be considered
@@ -157,10 +141,10 @@ function DataOut = TEprepare(varargin)
 %
 % in case of parallel computing
 %
-%  cfg.TEparallel.parON = 'yes' for paralell computing tool. 
+%  cfg.TEparallel.parON = 'yes' for paralell computing tool.
 %
 %  cfg.TEparallel.workers = number of workers for parallel computing, if it
-%       is bigger than the default matlab configuration then the maximum 
+%       is bigger than the default matlab configuration then the maximum
 %       workers will equal the default matlab configuration
 %
 % * OUTPUT PARAMETERS
@@ -181,18 +165,13 @@ function DataOut = TEprepare(varargin)
 %                             the used trials
 %       .nrtrials           = matrix with the number of the used trials per
 %                             channel combination (channelcombi x 2)
-%       .nrreferencepoints  = matrix (channelcombi x trial) with the number
-%                             of reference points for the cao calculation
-%       .cao                = Structure containing two matrices
-%                             (trial x channel x caodim) with the
-%                             values E1 and E2 of the cao function
 %       .optdimmattrial     = matrix (channelcombi x trial) with optimal
 %                             embedding dimension for each trial
 %       .optdimmat          = vector (channelcombi) with optimal
 %                             embedding dimension over trials
 %       .optdim             = max of the optdimmat which should be used as
 %                             embedding dimension in the further steps
-%       .timeindices        = vector of timeindices in samples (from 
+%       .timeindices        = vector of timeindices in samples (from
 %                             cfg.toi) (1 x 2)
 %       .u_in_samples       = points ahead for the advance prediction (from
 %                             cfg.predictionstime_u) in samples
@@ -205,7 +184,7 @@ function DataOut = TEprepare(varargin)
 %                             combination over trials
 %       .opttau             = max of the opttaumat which should be used as
 %                             embedding delay in the further steps
-%       
+%
 %
 %
 %
@@ -240,14 +219,14 @@ function DataOut = TEprepare(varargin)
 % 2013-25-01: PW - added 'ensemblemethod' option for GPU computation of TE
 %
 % 2013-05-03: PW corrected the test for no. data points after embedding:
-% no. data points in whole recording was used, instead of no. data points in 
+% no. data points in whole recording was used, instead of no. data points in
 % analysis window only
 %
-% 2014-04-10: PW corrected the selection of maxact, before, maximum ACT was taken over 
+% 2014-04-10: PW corrected the selection of maxact, before, maximum ACT was taken over
 % ALL trials also those excluded because of an ACT above threshold
 %
 % 2014-05-30: PW fixed the selection of the opttau -> the old version always chose
-% the smallest value 
+% the smallest value
 %
 % 2014-10-08: PW changed the checks for the ragtau/ragdim, such that scalar
 % values can now be entered for both parameters
@@ -256,7 +235,7 @@ function DataOut = TEprepare(varargin)
 %
 % 2015-15-06: PW added a default for minnrtrials
 %
-% 2015-25-09: PW added new output to console 
+% 2015-25-09: PW added new output to console
 %
 % 2015-02-10: PW, tau for calls to TEragwitz was calculated using ceil(), I
 % changed that to round() with a check if tau >= 1 (otherwise the tau used
@@ -375,11 +354,11 @@ if isfield(data, 'datatype'),
         elseif strcmp(cfg.optimizemethod, 'ragwitz')
             fprintf('\n')
             error('TRENTOOL ERROR: in case of fMRI Data and the use of ragwitz criterion cfg.embedding_delay_unit must be ''ACT''.')
-        
+
 %         elseif strcmp(cfg.fmridatatype, '3DAsEmbed')
 %             if ~isfield(cfg, 'tau'),              cfg.caotau = 1;               end;
         end;
-        
+
     end
 
 end;
@@ -401,7 +380,7 @@ if ~isfield(cfg, 'minnrtrials'),      cfg.minnrtrials = 12;            end;
 
 
 
-%% check optimizemethod 
+%% check optimizemethod
 % -------------------------------------------------------------------------
 
 if ~isfield(cfg, 'optimizemethod'),  cfg.optimizemethod = 'ragwitz';  end;
@@ -410,27 +389,27 @@ if strcmp(cfg.optimizemethod, 'ragwitz')
 
     % check input for ragwitz
     if ~isfield(cfg, 'ragtausteps'), cfg.ragtausteps = 10;  end
-    
+
     if isfield(cfg, 'ragtausteps')
         if cfg.ragtausteps < 5
             warning(['\nTRENTOOL WARNING: cfg.ragtausteps is %d, it ' ...
                 'should bigger than 5!'], cfg.ragtausteps)
         end
-    else     
+    else
         fprintf('\n')
         error('TRENTOOL ERROR: specify cfg.ragtaurange, see help!')
     end
-    
-    
+
+
     if length(cfg.ragtaurange) == 1
-        
+
         cfg.ragtau = cfg.ragtaurange;
-        
+
         if cfg.ragtausteps ~= 1
             fprintf('\n')
             warning('TRENTOOL WARNING: ragtaurange is a scalar, not using the number of ragtausteps specified in cfg.ragtausteps.');
         end
-        
+
     elseif length(cfg.ragtaurange) == 2
 
         if cfg.ragtaurange(1) > cfg.ragtaurange(2)
@@ -445,14 +424,14 @@ if strcmp(cfg.optimizemethod, 'ragwitz')
         % create cfg.ragtau vector
         if cfg.ragtaurange(1) == cfg.ragtaurange(2)
             cfg.ragtau = cfg.ragtaurange(1);
-        else            
+        else
             cfg.ragtau = unique(linspace(cfg.ragtaurange(1),cfg.ragtaurange(2),cfg.ragtausteps));
         end
     else
         fprintf('\n')
         error('TRENTOOL ERROR: cfg.ragtaurange is misspecified, should be a 1-by-2-array, see help!')
     end
-    
+
 
     if ~isfield(cfg, 'ragdim'),
         cfg.ragdim = 1:10;
@@ -506,16 +485,16 @@ elseif strcmp(cfg.optimizemethod, 'cao')
     elseif size(cfg.caokth_neighbors,1)>size(cfg.caokth_neighbors,2)
         cfg.caokth_neighbors=cfg.caokth_neighbors';
     end;
-    
+
     fprintf('\n\nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n');
     fprintf('XX                                                                        XX\n');
     fprintf('XX  THE CAO CRITERION IS DEPRECATED AS AN OPTION IN TRENTOOL VERSIONS 3.0   XX\n');
-    fprintf('XX  AND HIGHER. SEE HELP.                                                 XX\n');    
+    fprintf('XX  AND HIGHER. SEE HELP.                                                 XX\n');
     fprintf('XX                                                                        XX\n');
     fprintf('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n\n');
-    
+
     pause(10);
-    
+
 end;
 
 
@@ -564,7 +543,7 @@ elseif isfield(cfg, 'channel') && ~isfield(cfg, 'sgncmb') ,
     % channels enters the analysis -> PW: I removed this warning, I can't
     % find any issues
     %if max(size(cfg.channel))<size(data.trial{1},1) % If there are less channels
-    %    fprintf('\nTRENTOOL WARNING: your are specifying a subselection of channels \n - please use cfg.sgncmb to specify channelcombinations directly'); 
+    %    fprintf('\nTRENTOOL WARNING: your are specifying a subselection of channels \n - please use cfg.sgncmb to specify channelcombinations directly');
     %end
 elseif ~isfield(cfg, 'channel') && isfield(cfg, 'sgncmb') ,
     if size(cfg.sgncmb) ~= 2
@@ -607,15 +586,15 @@ par_state = check_set_parallel(cfg); %check for parallel and set the configurati
 % -------------------------------------------------------------------------
 
 if strcmp(cfg.ensemblemethod, 'yes')
-    
-    [status, result] = system('nvidia-smi');    
+
+    [status, result] = system('nvidia-smi');
     if status~=0
         result = strrep(result, '%', '%%');
         fprintf(result);
         error('TRENTOOL ERROR: You requested ensemble method with GPU calculation. No Nvidia GPU could be detected on your system. See help!');
     end;
     clear status result;
-    
+
     % set ensemble method, so InteractionDelayReconstruction_calculate can
     % switch to the appropriate version of TEsurrogatestats.m
     TEprepare.ensemblemethod = 'yes';
@@ -687,7 +666,7 @@ if timeindices(1) >= timeindices(2)
         timeindices(1), timeindices(2))
 else
     TEprepare.timeindices = timeindices;
-    msg = sprintf('Time indices are %.0f and %.0f',timeindices(1),timeindices(2));    
+    msg = sprintf('Time indices are %.0f and %.0f',timeindices(1),timeindices(2));
     TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
 end
 
@@ -749,8 +728,8 @@ else
 
         % define channel on which ragwitz is performed
         targetchannel = 2; % this is index of the target channel in the matrices
-        
-        
+
+
         % define max tau in samples
         maxact = min([max(max(ACT(:,targetchannel,:))) cfg.actthrvalue]);
         maxtau = ceil( maxact * max(cfg.ragtau) );
@@ -762,18 +741,18 @@ else
             theiler_corr = cfg.TheilerT;
         end
         rem_samples = avail_samples - theiler_corr - emb_length - dimu_max;
-        msg = {...                        
-            'theiler corr.' num2str(theiler_corr); ... 
-            'embedding legth' num2str(emb_length); ... 
-            'delay u' num2str(dimu_max); ... 
-            'available samples' num2str(avail_samples); ... 
+        msg = {...
+            'theiler corr.' num2str(theiler_corr); ...
+            'embedding legth' num2str(emb_length); ...
+            'delay u' num2str(dimu_max); ...
+            'available samples' num2str(avail_samples); ...
             'remaining samples' num2str(rem_samples); ...
             'cfg.repPred' num2str(cfg.repPred); ...
             };
         TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR, 'Required no. samples for TE estimation:');
-        
+
         % check if enough data points for embedding exist
-        if cfg.repPred >= rem_samples            
+        if cfg.repPred >= rem_samples
             fprintf('\n')
             error(['TRENTOOL ERROR: Not enough points in timeseries ' ...
                 'for current analysis settings (cfg.repPred > remaining ' ...
@@ -781,10 +760,10 @@ else
                 'ACT/Theiler T, embedding length (max(cfg.ragdim)-1*max(cfg.ragtaurange)) ' ...
                 ', or maximum delay u.']);
         end
-        
+
         msg = 'Optimizing embedding parameters using Ragwitz'' criterion';
         TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
-        
+
         % create matrices with nans
         optdim = nan(size(channelcombi,1),max(nrtrials(:,targetchannel)));
         opttau = nan(size(channelcombi,1),max(nrtrials(:,targetchannel)));
@@ -796,13 +775,13 @@ else
 
         % create comand line waitbar
         TEwaitbar('init', size(channelcombi,1), cfg.verbosity);
-        
+
 %-------------------------------------------------------------------------------
-        for channel = 1:size(channelcombi,1) % loop over used channels     
-                        
+        for channel = 1:size(channelcombi,1) % loop over used channels
+
             TEwaitbar('update', channel, cfg.verbosity);
-            
-            if ~par_state 
+
+            if ~par_state
                for nt = 1:nrtrials(channel,targetchannel) % loop over trials
 
                     if strcmp(cfg.TheilerT, 'ACT');
@@ -822,7 +801,7 @@ else
                             if tau_sample < 1
                                 tau_sample = 1;
                             end
-                            
+
                             [mre(rd,rt)] = TEragwitz(cfg,dat,cfg.repPred,1,cfg.flagNei,cfg.sizeNei,cfg.ragdim(rd),tau_sample,TheilerT,max(cfg.ragdim),maxtau);
                         end
                     end
@@ -832,7 +811,7 @@ else
                         S = eye(size(cfg.ragtau,2));
                         S(2:end, 1:end-1) = S(2:end, 1:end-1) + Smin;
                         S(1:end-1, 2:end) = S(1:end-1, 2:end) + Smin;
-                        S(3, 1) = 1; 
+                        S(3, 1) = 1;
                         S(end-2, end) = 1;
                         Smoothedmre = (mre * S) ./ 3;
                     else % ... forget about smoothing
@@ -871,8 +850,8 @@ else
                             if tau_sample < 1
                                 tau_sample = 1;
                             end
-                            
-                            [mre(rd,rt)] = TEragwitz(cfg,dat,cfg.repPred,1,cfg.flagNei,cfg.sizeNei,cfg.ragdim(rd),tau_sample,TheilerT,max(cfg.ragdim),maxtau);                            
+
+                            [mre(rd,rt)] = TEragwitz(cfg,dat,cfg.repPred,1,cfg.flagNei,cfg.sizeNei,cfg.ragdim(rd),tau_sample,TheilerT,max(cfg.ragdim),maxtau);
                         end
                     end
 
@@ -881,7 +860,7 @@ else
                         S = eye(size(cfg.ragtau,2));
                         S(2:end, 1:end-1) = S(2:end, 1:end-1) + Smin;
                         S(1:end-1, 2:end) = S(1:end-1, 2:end) + Smin;
-                        S(3, 1) = 1; 
+                        S(3, 1) = 1;
                         S(end-2, end) = 1;
                         Smoothedmre = (mre * S) ./ 3;
                     else % ... forget about smoothing
@@ -893,8 +872,8 @@ else
                     %opttau(channel,nt) = cfg.ragtau(min(opttauidx));
                     aux_optdim(nt) = cfg.ragdim(min(optdimidx));
                     aux_opttau(nt) = cfg.ragtau(min(opttauidx));
-                
-                end               
+
+                end
                 optdim(channel,:) = aux_optdim;
                 opttau(channel,:) = aux_opttau;
             end
@@ -913,13 +892,13 @@ else
 %             end
 %         end
         opttau_act = opttau;
-        
+
         % find max tau
         % TEprepare.opttaumat includes a vector with the maximum tau for
         % each channel combination
         TEprepare.opttaumat = max(opttau_act,[],2);
         TEprepare.opttaumattrial = opttau_act;
-% PW 30/05/2014 bugfix: I don't think this is needed (and probably wrong?), we 
+% PW 30/05/2014 bugfix: I don't think this is needed (and probably wrong?), we
 % just keep the max. ragtau as the tau for the whole data set
 %         [chanidx, trialidx] = find(opttau_act == max(max(opttau_act)));
 %         opttaumultiplier = opttau_act(min(chanidx), min(trialidx));	% PW: the two min functions choose an arbitrary value in ottau_act?
@@ -937,7 +916,7 @@ else
         % TEprepare.optdimmat includes a vector with the maximum (over trials) dimension for
         % each channel combination
         TEprepare.optdimmattrial = optdim;
-        
+
         TEprepare.optdimmat = max(optdim,[],2);
         % TEprepare.optdim includes a scalar with the maximum dimension for
         % all channel combinations
@@ -953,31 +932,31 @@ else
 
         msg = '\nOptimization using cao criteria\n';
         TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
-        
+
         % Change to directory containing mex files for the nearest neighbors search
         %[dir_mex] = TEarch(cfg);
         %cd(dir_mex);
         TEarch;
-        
-        
+
+
         % scan dimensions for each channel and trial
         % -------------------------------------------------------------------------
         maxdim = max(cfg.caodim)+1;
         TEprepare.nrreferencepoints=zeros(size(datacell,1),size(datacell{1,1},1));
         optdim=zeros(size(datacell,1),maxdim-1);
-        
+
         % channel of the channelpair used to calculate for: 2 = target channel
         targetchannel = 2; % this is index of the target channel in the matrices
-        
+
         ch_count = 0;
         for chanpair = 1:size(channelcombi,1) %
             ch_count = ch_count +1;
-            
+
             nt_count = 0;
             for nt = 1:nrtrials(chanpair,targetchannel)
                 nt_count = nt_count +1;
-                
-                
+
+
                 dat = squeeze(datacell{chanpair,targetchannel}(nt,timeindices(1)+1:timeindices(2)));
                 tau = ceil(cfg.caotau*squeeze(ACT(chanpair,2,trials{chanpair,2}(nt))));
 
@@ -998,7 +977,7 @@ else
                         pointset(ii,jj) = dat(ii+(maxdim-1)*tau-(jj-1)*tau);
                     end
                 end
-                TEprepare.nrreferencepoints(chanpair,nt)=size(pointset,1); 
+                TEprepare.nrreferencepoints(chanpair,nt)=size(pointset,1);
 
                 % calculate cao
                 [E,Ex]=cao(pointset,query,cfg.caokth_neighbors);
@@ -1026,7 +1005,7 @@ else
             error(['\nTRENTOOL ERROR: Optimal dimension found (%d) is the ' ...
                 'highest in cfg.caodim. Rerun the data with higher ' ...
                 'values for cfg.caodim!'], max(max(optdim)))
-        else            
+        else
             msg = sprintf('Optimal dimension for this dataset may be: %d', max(max(optdim)));
             TEconsoleoutput(cfg.verbosity, msg, LOG_INFO_MINOR);
         end
@@ -1036,7 +1015,7 @@ else
 
     end
 
-    if strcmp(cfg.optimizemethod, 'nonuniformMuTE') == 1        
+    if strcmp(cfg.optimizemethod, 'nonuniformMuTE') == 1
         TEprepare.embeddingMtx = nonUniformEmbedding_MuTE(cfg,TEprepare,data);
         warning('TRENTOOL_DEV: Return after estimating embedding points with MuTE!');
         return
@@ -1065,7 +1044,7 @@ end
 function par_state = check_set_parallel(cfg)
 
 if isfield(cfg,'TEparallel') && ft_hastoolbox('DCT') && isfield(cfg.TEparallel,'parON') && strcmp(cfg.TEparallel.parON,'yes')
-    
+
     par_state = 1;
     parallelConfig = findResource('scheduler','configuration',defaultParallelConfig);
     %parallelConfig = parcluster(parallel.defaultClusterProfile);
@@ -1073,15 +1052,15 @@ if isfield(cfg,'TEparallel') && ft_hastoolbox('DCT') && isfield(cfg.TEparallel,'
     if ~isfield(cfg.TEparallel,'workers')
         cfg.TEparallel.workers = max_workers;
     end
-    
+
     if  matlabpool('size')== 0
-        
+
         if cfg.TEparallel.workers <= max_workers
             matlabpool(cfg.TEparallel.workers)
         else
             matlabpool(max_workers)
         end
-        
+
     else if matlabpool('size') > cfg.TEparallel.workers
             matlabpool close;
             matlabpool(cfg.TEparallel.workers)
